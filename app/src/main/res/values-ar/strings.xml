@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">شارك أبك | ShareAPK</string>
+    <string name="app_short_name">شارك أبك</string>
+    <string name="app_subtitle">استخراج ومشاركة ونسخ التطبيقات بدون إنترنت</string>
+    <string name="nav_apps">التطبيقات</string>
+    <string name="nav_backup">النسخ والاسترجاع</string>
+    <string name="nav_history">السجل</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="action_install_external">تثبيت ملف خارجي</string>
+    <string name="search_hint">ابحث باسم التطبيق أو الحزمة (Package)...</string>
+    <string name="filter_user_apps">تطبيقات المستخدم</string>
+    <string name="filter_system_apps">تطبيقات النظام</string>
+    <string name="filter_split_only">مقسّم (.apks)</string>
+    <string name="filter_favorites">المفضلة ★</string>
+    <string name="sort_name">الاسم (أ-ي)</string>
+    <string name="sort_size">الحجم (الأكبر)</string>
+    <string name="sort_installed">تاريخ التثبيت</string>
+    <string name="sort_updated">آخر تحديث</string>
+    <string name="badge_split_apk">مقسّم (.apks)</string>
+    <string name="badge_single_apk">ملف (.apk)</string>
+    <string name="action_share">مشاركة</string>
+    <string name="action_save_downloads">حفظ في التنزيلات</string>
+    <string name="action_wifi_share">مشاركة عبر Wi-Fi</string>
+    <string name="action_reinstall_verify">فحص / إعادة تثبيت</string>
+    <string name="action_system_info">معلومات النظام</string>
+    <string name="action_open_play">متجر Google Play</string>
+    <string name="action_copy">نسخ</string>
+    <string name="copied_to_clipboard">تم النسخ إلى الحافظة</string>
+    <string name="saved_to_downloads">تم الحفظ في مجلد التنزيلات بنجاح</string>
+    <string name="open_downloads">فتح التنزيلات</string>
+    <string name="split_warning_title">تنبيه: تطبيق مقسّم (Split APKS)</string>
+    <string name="split_warning_message">هذا التطبيق يتكون من عدة ملفات (base.apk + إضافات المعمارية واللغات). سيتم تجميعها في ملف (.apks) واحد. يحتاج الطرف المستلم إلى مثبت "شارك أبك" المدمج أو تطبيق SAI لتثبيته بنجاح.</string>
+    <string name="continue_action">متابعة</string>
+    <string name="cancel_action">إلغاء</string>
+    <string name="developer_name">حسين محمد علي الطويل</string>
+    <string name="developer_name_en">Hussein Mohammed Ali Al-Taweel</string>
+</resources>
