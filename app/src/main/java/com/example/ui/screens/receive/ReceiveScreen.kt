@@ -137,7 +137,15 @@ private fun DeviceCard(status: ReceiverStatus, enabled: Boolean, onToggle: (Bool
         Switch(
             checked = enabled,
             onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(checkedTrackColor = Color.White.copy(alpha = 0.35f), checkedThumbColor = Color.White)
+            colors = SwitchDefaults.colors(
+                // Clear on/off on top of the gradient card.
+                checkedTrackColor = ShareApkGradients.green.end,
+                checkedThumbColor = Color.White,
+                checkedBorderColor = Color.Transparent,
+                uncheckedTrackColor = Color.White.copy(alpha = 0.18f),
+                uncheckedThumbColor = Color.White.copy(alpha = 0.85f),
+                uncheckedBorderColor = Color.White.copy(alpha = 0.5f)
+            )
         )
     }
 }
