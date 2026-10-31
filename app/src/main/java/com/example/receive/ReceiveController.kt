@@ -59,7 +59,7 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
 
     @Volatile private var fingerprint = ""
     val peers = PeerRegistry({ fingerprint })
-    val sender = SendController(scope, ::identity, onBusyChanged = { refreshService() }, history = history)
+    val sender = SendController(scope, ::identity, onBusyChanged = { refreshService() }, history = history, client = com.example.send.SendClient(com.example.send.PrefsPins(app)))
 
     private val lock = Mutex()
     private var server: LocalSendServer? = null

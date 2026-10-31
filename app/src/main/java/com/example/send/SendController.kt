@@ -55,19 +55,27 @@ class SendController(
     }
 
     /** Prepares files (e.g. extracts APKs) and sends them to [peer]. Ignored while another send runs. */
+    @Synchronized
     fun send(peer: NearbyDevice, prepare: suspend () -> List<OutgoingFile>) {
+        // Synchronized + state set before launching: a double tap can't start two sends.
         if (isBusy()) return
+        _state.value = SendState.Preparing(peer)
         job = scope.launch(Dispatchers.IO) {
+            val me = coroutineContext[Job]
             set(SendState.Preparing(peer))
             val files = runCatching { prepare() }.getOrElse {
                 set(SendState.Failed(peer, it.message ?: "prepare failed")); return@launch
             }
             set(SendState.Waiting(peer))
             val result = try {
-                client.send(peer, identity().toDto(), files) { sent, total -> _state.value = SendState.Sending(peer, sent, total) }
+                client.send(peer, identity().toDto(), files) { sent, total ->
+                    // Progress arrives on OkHttp threads; ignore it once this send was cancelled.
+                    if (me?.isActive == true) _state.value = SendState.Sending(peer, sent, total)
+                }
             } catch (e: CancellationException) {
                 set(SendState.Idle); throw e
             }
+            if (me?.isActive != true) return@launch
             set(
                 when (result) {
                     SendResult.Sent -> SendState.Done(peer, files.size)

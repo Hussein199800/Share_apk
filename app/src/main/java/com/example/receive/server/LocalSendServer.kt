@@ -68,6 +68,10 @@ class LocalSendServer(
                 }
                 get("$BASE/info") { call.respondJson(ProtocolJson.encode(identity().toDto())) }
                 post("$BASE/prepare-upload") {
+                    // Metadata only: refuse oversized bodies instead of reading them into memory.
+                    if ((call.request.headers["Content-Length"]?.toLongOrNull() ?: 0) > MAX_JSON_BYTES) {
+                        return@post call.respond(HttpStatusCode.PayloadTooLarge)
+                    }
                     val req = runCatching { ProtocolJson.decode<PrepareUploadRequest>(call.receiveText()) }.getOrNull()
                         ?: return@post call.respond(HttpStatusCode.BadRequest)
                     when (val r = manager.prepare(req, call.request.origin.remoteAddress)) {
@@ -91,7 +95,7 @@ class LocalSendServer(
                     )
                 }
                 post("$BASE/cancel") {
-                    call.request.queryParameters["sessionId"]?.let(manager::cancel)
+                    call.request.queryParameters["sessionId"]?.let { manager.cancel(it, call.request.origin.remoteAddress) }
                     call.respond(HttpStatusCode.OK)
                 }
             }
@@ -110,5 +114,6 @@ class LocalSendServer(
 
     companion object {
         const val BASE = "/api/localsend/v2"
+        const val MAX_JSON_BYTES = 1_000_000L
     }
 }

@@ -10,17 +10,33 @@ import com.example.receive.protocol.ProtocolJson
 import com.example.receive.protocol.ShareApkMetaDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okio.BufferedSink
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
+import java.security.SecureRandom
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 data class OutgoingFile(val file: File, val fileName: String, val meta: ShareApkMetaDto?, val label: String = fileName)
 
@@ -31,12 +47,28 @@ sealed interface SendResult {
     data class Failed(val message: String) : SendResult
 }
 
-/** LocalSend v2 upload-API client (works with LocalSend and ShareAPK receivers). */
-class SendClient {
+/** Remembers which TLS certificate each LocalSend device presented (trust on first use). */
+interface PinStore {
+    fun get(deviceFingerprint: String): String?
+    fun put(deviceFingerprint: String, certSha256: String)
+}
+
+class InMemoryPins : PinStore {
+    private val map = ConcurrentHashMap<String, String>()
+    override fun get(deviceFingerprint: String) = map[deviceFingerprint]
+    override fun put(deviceFingerprint: String, certSha256: String) { map[deviceFingerprint] = certSha256 }
+}
+
+/**
+ * LocalSend v2 upload-API client (works with LocalSend and ShareAPK receivers).
+ *
+ * Peer identity over HTTPS: a ShareAPK peer must present the certificate whose SHA-256 is its
+ * announced fingerprint; any other LocalSend peer is pinned on first contact and refused if its
+ * certificate later changes.
+ */
+class SendClient(private val pins: PinStore = InMemoryPins()) {
     private val json = "application/json".toMediaType()
     private val base = TrustAllHttp.client()
-    // prepare-upload blocks until the receiver's user decides.
-    private val prepareClient = base.newBuilder().readTimeout(3, TimeUnit.MINUTES).callTimeout(4, TimeUnit.MINUTES).build()
     private val probeClient = base.newBuilder().connectTimeout(1500, TimeUnit.MILLISECONDS).readTimeout(2, TimeUnit.SECONDS).build()
 
     /** Asks [ip]:[port] who it is (legacy HTTP discovery). Tries HTTPS, then HTTP. */
@@ -54,14 +86,22 @@ class SendClient {
         null
     }
 
-    /** Sends [files] to [peer]. [onProgress] reports (sentBytes, totalBytes). Cancel the coroutine to abort. */
+    /** Sends [files] to [peer]. [onProgress] reports (sentBytes, totalBytes). Cancelling the coroutine aborts the HTTP calls. */
     suspend fun send(
         peer: NearbyDevice,
         me: DeviceInfoDto,
         files: List<OutgoingFile>,
         onProgress: (Long, Long) -> Unit
     ): SendResult = withContext(Dispatchers.IO) {
-        val root = "${peer.scheme}://${peer.ip}:${peer.port}/api/localsend/v2"
+        val (client, seenCert) = clientFor(peer)
+        // prepare-upload blocks until the receiver's user decides.
+        val prepareClient = client.newBuilder().readTimeout(3, TimeUnit.MINUTES).callTimeout(4, TimeUnit.MINUTES).build()
+        // Uploads may take long for big bundles: no overall call timeout, only inactivity timeouts.
+        val uploadClient = client.newBuilder().callTimeout(0, TimeUnit.SECONDS).readTimeout(2, TimeUnit.MINUTES).writeTimeout(2, TimeUnit.MINUTES).build()
+        val root = "${peer.scheme}://${peer.ip}:${peer.port}/api/localsend/v2".toHttpUrl()
+        fun url(path: String, vararg query: Pair<String, String>): HttpUrl =
+            root.newBuilder().addPathSegment(path).apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }.build()
+
         val dtos = files.mapIndexed { i, f ->
             FileDto(
                 id = "f$i",
@@ -74,8 +114,13 @@ class SendClient {
         }
         val body = ProtocolJson.encode(PrepareUploadRequest(me, dtos.associateBy { it.id }))
         val prep = runCatching {
-            prepareClient.newCall(Request.Builder().url("$root/prepare-upload").post(body.toRequestBody(json)).build()).execute()
-        }.getOrElse { return@withContext SendResult.Failed(it.message ?: "connection failed") }
+            prepareClient.newCall(Request.Builder().url(url("prepare-upload")).post(body.toRequestBody(json)).build()).await()
+        }.getOrElse {
+            if (it is kotlinx.coroutines.CancellationException) throw it
+            return@withContext SendResult.Failed(it.message ?: "connection failed")
+        }
+        // The TLS handshake succeeded with an acceptable certificate: remember it for next time.
+        seenCert()?.let { pins.put(peer.info.fingerprint, it) }
 
         val response = prep.use { r ->
             when (r.code) {
@@ -97,22 +142,46 @@ class SendClient {
                 val token = response.files[id] ?: return@forEachIndexed // receiver skipped this file
                 val offset = sentBefore
                 val req = Request.Builder()
-                    .url("$root/upload?sessionId=${response.sessionId}&fileId=$id&token=$token")
+                    .url(url("upload", "sessionId" to response.sessionId, "fileId" to id, "token" to token))
                     .post(ProgressBody(f.file) { n -> onProgress(offset + n, total) })
                     .build()
-                val code = prepareClient.newCall(req).execute().use { it.code }
+                val code = uploadClient.newCall(req).await().use { it.code }
                 if (code != 200) return@withContext SendResult.Failed("upload HTTP $code")
                 sentBefore += f.file.length()
             }
         } catch (e: Exception) {
             runCatching {
-                base.newCall(Request.Builder().url("$root/cancel?sessionId=${response.sessionId}").post(ByteArray(0).toRequestBody()).build()).execute().close()
+                base.newCall(Request.Builder().url(url("cancel", "sessionId" to response.sessionId)).post(ByteArray(0).toRequestBody()).build()).execute().close()
             }
             if (e is kotlinx.coroutines.CancellationException) throw e
             return@withContext SendResult.Failed(e.message ?: e.javaClass.simpleName)
         }
         onProgress(total, total)
         SendResult.Sent
+    }
+
+    /** HTTP client for [peer] plus a getter for the certificate hash it presented (HTTPS only). */
+    private fun clientFor(peer: NearbyDevice): Pair<OkHttpClient, () -> String?> {
+        if (peer.scheme != "https") return base to { null }
+        var seen: String? = null
+        val expected = if (peer.isShareApk) peer.info.fingerprint.lowercase() else pins.get(peer.info.fingerprint)
+        val tm = object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
+            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                val leaf = chain?.firstOrNull() ?: throw CertificateException("no certificate")
+                val hash = MessageDigest.getInstance("SHA-256").digest(leaf.encoded).joinToString("") { "%02x".format(it) }
+                if (expected != null && hash != expected) throw CertificateException("device identity changed")
+                seen = hash
+            }
+            override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+        }
+        val ssl = SSLContext.getInstance("TLS").apply { init(null, arrayOf(tm), SecureRandom()) }
+        // A dedicated connection pool, so a connection verified for another peer is never reused.
+        val client = base.newBuilder()
+            .connectionPool(okhttp3.ConnectionPool())
+            .sslSocketFactory(ssl.socketFactory, tm)
+            .build()
+        return client to { seen }
     }
 
     private fun sha256(file: File): String {
@@ -142,4 +211,13 @@ class SendClient {
             }
         }
     }
+}
+
+/** Runs the call asynchronously; cancelling the coroutine cancels the HTTP call (and its upload). */
+internal suspend fun Call.await(): Response = suspendCancellableCoroutine { cont ->
+    enqueue(object : Callback {
+        override fun onResponse(call: Call, response: Response) = cont.resume(response)
+        override fun onFailure(call: Call, e: IOException) { if (!cont.isCancelled) cont.resumeWithException(e) }
+    })
+    cont.invokeOnCancellation { runCatching { cancel() } }
 }

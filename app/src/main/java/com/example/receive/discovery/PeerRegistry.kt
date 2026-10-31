@@ -24,8 +24,14 @@ class PeerRegistry(
     fun seen(info: DeviceInfoDto, ip: String) {
         if (info.fingerprint == ownFingerprint()) return
         val device = NearbyDevice(info.copy(announce = null), ip, clock())
-        _peers.update { list -> (list.filterNot { it.info.fingerprint == info.fingerprint } + device).sortedBy { it.info.alias.lowercase() } }
+        _peers.update { list ->
+            (list.filterNot { it.info.fingerprint == info.fingerprint } + device)
+                .sortedByDescending { it.lastSeen }.take(MAX_PEERS) // bounded against announcement floods
+                .sortedBy { it.info.alias.lowercase() }
+        }
     }
 
     fun clear() { _peers.value = emptyList() }
+
+    companion object { const val MAX_PEERS = 64 }
 }

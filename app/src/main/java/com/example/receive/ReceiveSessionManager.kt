@@ -198,10 +198,11 @@ class ReceiveSessionManager(
     }
 
     /** Sender cancelled (or the user did): drop partial files and return to idle. */
-    fun cancel(sessionId: String) {
+    fun cancel(sessionId: String, senderIp: String? = null) {
         synchronized(lock) {
             val s = session ?: return
             if (s.id != sessionId) return
+            if (senderIp != null && senderIp != s.senderIp) return
             session = null
             usedTokens.clear()
             sessionDir(s.id).deleteRecursively()

@@ -74,6 +74,7 @@ class Updater(private val context: Context, private val repo: String = REPO) {
 
     /** Downloads and verifies the APK; on success the state becomes [UpdateState.Ready]. */
     suspend fun download(release: ReleaseInfo) {
+        if (_state.value is UpdateState.Downloading) return // double tap
         _state.value = UpdateState.Downloading(release, null)
         val dir = File(context.cacheDir, "update").apply { deleteRecursively(); mkdirs() }
         val out = File(dir, "shareapk-${release.version}.apk")

@@ -28,8 +28,11 @@ class SendFlowTest {
     private val registry = PeerRegistry({ "receiver-fp" })
     private var port = 0
 
+    private lateinit var realFp: String
+
     @Before fun setUp() {
         val cert = CertificateStore(tmp.newFolder()).load()
+        realFp = cert.fingerprint
         receiver = ReceiveSessionManager(tmp.newFolder(), decisionTimeoutMs = 5_000)
         server = LocalSendServer(cert, receiver, onPeer = registry::seen) { DeviceIdentity("Receiver", "Pixel", cert.fingerprint, port) }
         port = server.start(0)
@@ -83,5 +86,27 @@ class SendFlowTest {
         r.seen(DeviceInfoDto(alias = "A2", fingerprint = "x"), "10.0.0.3")
         r.seen(DeviceInfoDto(alias = "Me", fingerprint = "me"), "10.0.0.4")
         assertEquals(listOf("A2" to "10.0.0.3"), r.peers.value.map { it.info.alias to it.ip })
+    }
+
+    private fun shareApkPeer(fp: String) =
+        NearbyDevice(DeviceInfoDto(alias = "Receiver", fingerprint = fp, port = port, protocol = "https", shareApk = true), "127.0.0.1", 0)
+
+    @Test fun shareApkPeerWithMatchingCertificateIsAccepted() = runBlocking {
+        val src = tmp.newFile("a.apk").apply { writeBytes(ByteArray(10)) }
+        autoDecide(true)
+        assertEquals(SendResult.Sent, SendClient().send(shareApkPeer(realFp), me, listOf(OutgoingFile(src, "a.apk", null))) { _, _ -> })
+    }
+
+    @Test fun impostorClaimingAnotherFingerprintIsRefused() = runBlocking {
+        val src = tmp.newFile("a.apk").apply { writeBytes(ByteArray(10)) }
+        val r = SendClient().send(shareApkPeer("0".repeat(64)), me, listOf(OutgoingFile(src, "a.apk", null))) { _, _ -> }
+        assertTrue(r is SendResult.Failed)
+    }
+
+    @Test fun changedCertificateForKnownDeviceIsRefused() = runBlocking {
+        val pins = InMemoryPins().apply { put("receiver-fp", "f".repeat(64)) }
+        val src = tmp.newFile("a.apk").apply { writeBytes(ByteArray(10)) }
+        val r = SendClient(pins).send(peer(), me, listOf(OutgoingFile(src, "a.apk", null))) { _, _ -> }
+        assertTrue(r is SendResult.Failed)
     }
 }

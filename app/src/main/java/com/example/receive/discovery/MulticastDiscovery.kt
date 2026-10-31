@@ -30,7 +30,7 @@ class MulticastDiscovery(
     /** Whether to announce ourselves / answer others (false while receiving is off). */
     private val visible: () -> Boolean = { true }
 ) {
-    private var socket: MulticastSocket? = null
+    @Volatile private var socket: MulticastSocket? = null
     private var job: Job? = null
     private val http by lazy { TrustAllHttp.client(timeoutSeconds = 3) }
     private val group: InetAddress by lazy { InetAddress.getByName(DiscoveryMessages.GROUP) }
@@ -54,6 +54,7 @@ class MulticastDiscovery(
                 }
             }
             val buf = ByteArray(8 * 1024)
+            try {
             while (isActive && !s.isClosed) {
                 val packet = DatagramPacket(buf, buf.size)
                 runCatching { s.receive(packet) }.onFailure { return@launch }
@@ -64,6 +65,10 @@ class MulticastDiscovery(
                     val from = packet.address
                     launch { respond(s, from, msg, me) }
                 }
+            }
+            } finally {
+                // Always release the socket, even if stop() ran before it was assigned.
+                runCatching { s.close() }
             }
         }
     }
