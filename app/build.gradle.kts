@@ -3,6 +3,7 @@ import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesS
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
@@ -64,6 +65,18 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  packaging {
+    resources {
+      // Netty / Ktor / BouncyCastle ship overlapping metadata files.
+      excludes += setOf(
+        "META-INF/INDEX.LIST",
+        "META-INF/io.netty.versions.properties",
+        "META-INF/DEPENDENCIES",
+        "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+        "META-INF/*.kotlin_module"
+      )
+    }
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
@@ -124,10 +137,15 @@ dependencies {
   // implementation(libs.firebase.appcheck.recaptcha)
   // implementation(libs.firebase.appcheck.debug)
   implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.kotlinx.serialization.json)
+  implementation(libs.ktor.server.core)
+  implementation(libs.ktor.server.netty)
+  implementation(libs.bouncycastle.pkix)
+  implementation(libs.androidx.lifecycle.process)
   implementation(libs.kotlinx.coroutines.core)
   // implementation(libs.logging.interceptor)
   // implementation(libs.moshi.kotlin)
-  // implementation(libs.okhttp)
+  implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   // implementation(libs.retrofit)
   testImplementation(libs.androidx.compose.ui.test.junit4)
