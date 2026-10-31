@@ -860,9 +860,6 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { prefsRepository.setThemePreference(theme) }
     }
 
-    fun setDynamicColorEnabled(enabled: Boolean) {
-        viewModelScope.launch { prefsRepository.setDynamicColorEnabled(enabled) }
-    }
 
     fun setLanguagePreference(language: LanguagePreference) {
         viewModelScope.launch {

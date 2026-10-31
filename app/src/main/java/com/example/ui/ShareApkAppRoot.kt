@@ -61,8 +61,9 @@ import com.example.ui.components.design.ShareApkRail
 import com.example.ui.navigation.MoreDestination
 import com.example.ui.screens.apps.AppsScreen
 import com.example.ui.screens.backup.BackupScreen
-import com.example.ui.screens.HistoryScreen
-import com.example.ui.screens.SettingsAndAboutScreen
+import com.example.ui.screens.history.HistoryScreen
+import com.example.ui.screens.settings.AboutScreen
+import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.screens.more.MoreScreen
 import com.example.ui.screens.receive.ReceiveScreen
 import com.example.ui.screens.send.SendScreen
@@ -326,26 +327,31 @@ fun ShareApkAppRoot(
                     )
                 }
 
-                MoreDestination.HISTORY -> Box(Modifier.testTag("more_HISTORY")) {
-                    HistoryScreen(
-                        historyItems = historyItems,
-                        onDeleteItem = viewModel::deleteHistoryItem,
-                        onClearAll = viewModel::clearAllHistory
-                    )
-                }
+                MoreDestination.HISTORY -> HistoryScreen(
+                    historyItems = historyItems,
+                    onDeleteItem = viewModel::deleteHistoryItem,
+                    onClearAll = viewModel::clearAllHistory,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_HISTORY")
+                )
 
-                MoreDestination.SETTINGS, MoreDestination.ABOUT -> Box(Modifier.testTag("more_${moreDestination.name}")) {
-                    SettingsAndAboutScreen(
-                        prefs = prefs,
-                        cacheSizeBytes = cacheSizeBytes,
-                        onThemeChange = viewModel::setThemePreference,
-                        onDynamicColorChange = viewModel::setDynamicColorEnabled,
-                        onLanguageChange = viewModel::setLanguagePreference,
-                        onNamingFormatChange = viewModel::setFileNamingFormat,
-                        onClearCacheNow = viewModel::clearSharedCacheNow,
-                        onAutoClearCacheChange = viewModel::setAutoClearCacheOnExit
-                    )
-                }
+                MoreDestination.SETTINGS -> SettingsScreen(
+                    prefs = prefs,
+                    cacheSizeBytes = cacheSizeBytes,
+                    onThemeChange = viewModel::setThemePreference,
+                    onLanguageChange = viewModel::setLanguagePreference,
+                    onNamingFormatChange = viewModel::setFileNamingFormat,
+                    onClearCacheNow = viewModel::clearSharedCacheNow,
+                    onAutoClearCacheChange = viewModel::setAutoClearCacheOnExit,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_SETTINGS")
+                )
+
+                MoreDestination.ABOUT -> AboutScreen(
+                    appVersion = appVersion,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_ABOUT")
+                )
             }
         }
 

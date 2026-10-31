@@ -182,7 +182,9 @@ data class AppStrings(
     val filterAll: String,
     val appsCountFormat: String,
     val sortAction: String,
-    val toggleViewAction: String
+    val toggleViewAction: String,
+    val deleteItemAction: String,
+    val fontLicenseLine: String
 )
 
 val ArabicStrings = AppStrings(
@@ -346,7 +348,9 @@ val ArabicStrings = AppStrings(
     filterAll = "الكل",
     appsCountFormat = "%d تطبيقاً مثبتاً",
     sortAction = "ترتيب",
-    toggleViewAction = "تبديل طريقة العرض"
+    toggleViewAction = "تبديل طريقة العرض",
+    deleteItemAction = "حذف",
+    fontLicenseLine = "الخط: IBM Plex Sans Arabic — SIL Open Font License 1.1"
 )
 
 val EnglishStrings = AppStrings(
@@ -510,7 +514,9 @@ val EnglishStrings = AppStrings(
     filterAll = "All",
     appsCountFormat = "%d installed apps",
     sortAction = "Sort",
-    toggleViewAction = "Toggle view"
+    toggleViewAction = "Toggle view",
+    deleteItemAction = "Delete",
+    fontLicenseLine = "Font: IBM Plex Sans Arabic — SIL Open Font License 1.1"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

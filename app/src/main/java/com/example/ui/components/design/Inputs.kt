@@ -92,6 +92,23 @@ fun <K> FilterChipRow(
     }
 }
 
+/** Single-choice chips (always one selected), wrapping onto new lines. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun <K> ChoiceChipRow(
+    options: List<Pair<K, String>>,
+    selected: K,
+    onSelect: (K) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { (key, label) -> ShareApkChip(label, selected == key) { onSelect(key) } }
+    }
+}
+
 @Composable
 private fun ShareApkChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     val c = ShareApkTheme.colors
