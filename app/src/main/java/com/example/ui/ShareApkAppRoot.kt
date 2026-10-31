@@ -167,6 +167,14 @@ fun ShareApkAppRoot(
     val receiverStatus by viewModel.receiverStatus.collectAsStateWithLifecycle()
     val receivedItems by viewModel.receivedItems.collectAsStateWithLifecycle()
     val receiveEvent by viewModel.receiveEvent.collectAsStateWithLifecycle()
+    val sendState by viewModel.sendState.collectAsStateWithLifecycle()
+    val nearbyPeers by viewModel.nearbyPeers.collectAsStateWithLifecycle()
+    val scanningPeers by viewModel.scanningPeers.collectAsStateWithLifecycle()
+    val manualPeerResult by viewModel.manualPeerResult.collectAsStateWithLifecycle()
+    // Look for devices when the Send tab opens with an empty list.
+    LaunchedEffect(currentTab) {
+        if (currentTab == MainNavTab.SEND && viewModel.nearbyPeers.value.isEmpty()) viewModel.refreshPeers()
+    }
     val deviceName = receiverStatus.alias
     val appVersion = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
@@ -247,7 +255,16 @@ fun ShareApkAppRoot(
             MainNavTab.SEND -> SendScreen(
                 selectedApps = remember(selectedPackageNames, apps) { viewModel.getSelectedAppsList() },
                 onPickApps = { viewModel.selectTab(MainNavTab.APPS) },
-                onShareViaLink = shareViaLink
+                onShareViaLink = shareViaLink,
+                peers = nearbyPeers,
+                scanning = scanningPeers,
+                sendState = sendState,
+                manualResult = manualPeerResult,
+                onSendTo = viewModel::sendToPeer,
+                onRefresh = viewModel::refreshPeers,
+                onAddManual = viewModel::addManualPeer,
+                onCancel = viewModel::cancelSend,
+                onReset = viewModel::resetSend
             )
 
             MainNavTab.RECEIVE -> ReceiveScreen(

@@ -214,7 +214,27 @@ data class AppStrings(
     val helpReceiveTips: String,
     val helpSendTitle: String,
     val helpSendSteps: String,
-    val helpTipsTitle: String
+    val helpTipsTitle: String,
+    val nearbyEmpty: String,
+    val scanningNetwork: String,
+    val refreshAction: String,
+    val manualAddressBtn: String,
+    val manualAddressTitle: String,
+    val manualAddressHint: String,
+    val manualAddressNotFound: String,
+    val addBtn: String,
+    val selectAppsFirst: String,
+    val sendPreparing: String,
+    val sendWaiting: String,
+    val sendSending: String,
+    val sendDone: String,
+    val sendRejected: String,
+    val sendBusy: String,
+    val sendFailed: String,
+    val badgeShareApk: String,
+    val badgeLocalSend: String,
+    val helpSendDirectSteps: String,
+    val helpSendOtherSteps: String
 )
 
 val ArabicStrings = AppStrings(
@@ -410,7 +430,27 @@ val ArabicStrings = AppStrings(
     helpReceiveTips = "يجب أن يكون الجهازان على نفس الواي فاي، أو شغّل نقطة اتصال (Hotspot) من أحدهما.|يعمل مع LocalSend سواء كان «التشفير» مفعّلاً أو مطفأً في إعداداته.|إن لم يظهر جهازك عند المرسل فقد يكون الراوتر يحجب الاكتشاف، فاستخدم نقطة الاتصال.|يُقبل فقط: APK وAPKS وXAPK وAPKM.",
     helpSendTitle = "طرق المشاركة",
     helpSendSteps = "إرسال مباشر لجهاز قريب عليه LocalSend أو «شارك أبك»: قادم في التحديث القادم.|مشاركة عبر رابط لأي جهاز بلا تطبيق: حدّد التطبيقات ثم اضغط زر الواي فاي، وامسح رمز QR أو افتح العنوان في متصفح الجهاز الآخر على نفس الشبكة.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…).",
-    helpTipsTitle = "نصائح"
+    helpTipsTitle = "نصائح",
+    nearbyEmpty = "لا توجد أجهزة بعد. افتح «شارك أبك» أو LocalSend على الجهاز الآخر في نفس الشبكة، ثم اضغط تحديث.",
+    scanningNetwork = "جارٍ البحث في الشبكة…",
+    refreshAction = "تحديث",
+    manualAddressBtn = "إدخال العنوان يدوياً",
+    manualAddressTitle = "إضافة جهاز بالعنوان",
+    manualAddressHint = "مثال: 192.168.1.20 أو 192.168.1.20:53317",
+    manualAddressNotFound = "لم يرد أي جهاز على هذا العنوان.",
+    addBtn = "إضافة",
+    selectAppsFirst = "حدّد التطبيقات أولاً ثم اختر الجهاز.",
+    sendPreparing = "جارٍ تجهيز الملفات…",
+    sendWaiting = "بانتظار موافقة %s…",
+    sendSending = "جارٍ الإرسال إلى %s",
+    sendDone = "تم إرسال %1\$d تطبيقات إلى %2\$s",
+    sendRejected = "%s رفض الطلب.",
+    sendBusy = "%s مشغول باستلام آخر، حاول بعد قليل.",
+    sendFailed = "تعذّر الإرسال إلى %1\$s: %2\$s",
+    badgeShareApk = "شارك أبك",
+    badgeLocalSend = "LocalSend",
+    helpSendDirectSteps = "حدّد تطبيقاً أو أكثر من تبويب التطبيقات واضغط «إرسال».|على الجهاز الآخر افتح LocalSend أو «شارك أبك» (تبويب استقبال) على نفس الشبكة.|اختر الجهاز من «الأجهزة القريبة». إن لم يظهر اضغط «تحديث» أو أدخل عنوانه يدوياً (يظهر في شاشة الاستلام لديه).|انتظر حتى يقبل الطلب على الجهاز الآخر.",
+    helpSendOtherSteps = "لجهاز بلا تطبيق: زر الواي فاي في شريط التحديد يفتح رابطاً ورمز QR يُفتح في المتصفح.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…)."
 )
 
 val EnglishStrings = AppStrings(
@@ -606,7 +646,27 @@ val EnglishStrings = AppStrings(
     helpReceiveTips = "Both devices must be on the same Wi-Fi, or use one phone's hotspot.|Works with LocalSend whether its Encryption setting is on or off.|If this device doesn't appear on the sender, the router may block discovery — use a hotspot.|Accepted: APK, APKS, XAPK, APKM.",
     helpSendTitle = "Ways to share",
     helpSendSteps = "Direct send to a nearby device with LocalSend or ShareAPK: coming in the next update.|Share via link to any device without an app: select apps, tap the Wi-Fi button, then scan the QR code or open the address in the other device's browser on the same network.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…).",
-    helpTipsTitle = "Tips"
+    helpTipsTitle = "Tips",
+    nearbyEmpty = "No devices yet. Open ShareAPK or LocalSend on the other device on the same network, then refresh.",
+    scanningNetwork = "Searching the network…",
+    refreshAction = "Refresh",
+    manualAddressBtn = "Enter address",
+    manualAddressTitle = "Add device by address",
+    manualAddressHint = "e.g. 192.168.1.20 or 192.168.1.20:53317",
+    manualAddressNotFound = "No device answered at this address.",
+    addBtn = "Add",
+    selectAppsFirst = "Select apps first, then pick a device.",
+    sendPreparing = "Preparing files…",
+    sendWaiting = "Waiting for %s to accept…",
+    sendSending = "Sending to %s",
+    sendDone = "Sent %1\$d apps to %2\$s",
+    sendRejected = "%s declined.",
+    sendBusy = "%s is busy with another transfer; try again shortly.",
+    sendFailed = "Couldn't send to %1\$s: %2\$s",
+    badgeShareApk = "ShareAPK",
+    badgeLocalSend = "LocalSend",
+    helpSendDirectSteps = "Select one or more apps in the Apps tab and tap Send.|On the other device open LocalSend or ShareAPK (Receive tab) on the same network.|Pick it under Nearby devices. If it doesn't show, tap Refresh or enter its address (shown on its receive screen).|Wait for the other device to accept.",
+    helpSendOtherSteps = "Device without the app: the Wi-Fi button in the selection bar opens a link and QR code for the browser.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…)."
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

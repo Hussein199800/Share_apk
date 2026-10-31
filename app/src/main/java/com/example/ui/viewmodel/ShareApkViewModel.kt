@@ -20,6 +20,10 @@ import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
 import com.example.receive.ReceiveController
+import com.example.receive.discovery.NearbyDevice
+import com.example.receive.protocol.ShareApkMetaDto
+import com.example.send.OutgoingFile
+import com.example.send.SendState
 import com.example.receive.ReceiveEvent
 import com.example.receive.ReceiveState
 import com.example.receive.ReceivedItem
@@ -97,6 +101,36 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val receiveEvent: StateFlow<ReceiveEvent?> = receiver.sessions.lastEvent
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
+
+    // ---- Direct send ----
+    val sendState: StateFlow<SendState> = receiver.sender.state
+    val nearbyPeers: StateFlow<List<NearbyDevice>> = receiver.peers.peers
+    val scanningPeers: StateFlow<Boolean> = receiver.sender.scanning
+    private val _manualPeerResult = MutableStateFlow<Boolean?>(null)
+    /** null = idle, true = device found, false = nothing answered. */
+    val manualPeerResult: StateFlow<Boolean?> = _manualPeerResult.asStateFlow()
+
+    fun refreshPeers() = receiver.refreshPeers()
+    fun cancelSend() = receiver.sender.cancel()
+    fun resetSend() = receiver.sender.reset()
+
+    fun addManualPeer(address: String) {
+        _manualPeerResult.value = null
+        viewModelScope.launch { _manualPeerResult.value = receiver.addManualPeer(address) != null }
+    }
+
+    /** Extracts the selected apps (as .apk/.apks) and sends them to [peer]. */
+    fun sendToPeer(peer: NearbyDevice) {
+        val apps = getSelectedAppsList()
+        if (apps.isEmpty()) return
+        val format = userPrefs.value.fileNamingFormat
+        receiver.sender.send(peer) {
+            apps.map { app ->
+                val file = apkRepository.prepareAppInCache(app, format)
+                OutgoingFile(file, file.name, ShareApkMetaDto(app.packageName, app.versionName, app.versionCode), app.label)
+            }
+        }
+    }
     fun cancelReceive() = receiver.sessions.cancelActive()
     fun acknowledgeReceive() = receiver.sessions.acknowledge()
     fun deleteReceived(item: ReceivedItem) = receiver.deleteReceived(item)

@@ -24,7 +24,11 @@ import java.net.MulticastSocket
  */
 class MulticastDiscovery(
     private val scope: CoroutineScope,
-    private val identity: () -> DeviceIdentity
+    private val identity: () -> DeviceIdentity,
+    /** Every other device heard on the group (announcements and replies). */
+    private val onPeer: (DeviceInfoDto, String) -> Unit = { _, _ -> },
+    /** Whether to announce ourselves / answer others (false while receiving is off). */
+    private val visible: () -> Boolean = { true }
 ) {
     private var socket: MulticastSocket? = null
     private var job: Job? = null
@@ -45,7 +49,7 @@ class MulticastDiscovery(
             // Announce a few times: the first packets are often dropped while Wi-Fi wakes up.
             launch {
                 repeat(3) {
-                    announce(s)
+                    if (visible()) announce(s)
                     delay(1_500)
                 }
             }
@@ -55,7 +59,8 @@ class MulticastDiscovery(
                 runCatching { s.receive(packet) }.onFailure { return@launch }
                 val msg = DiscoveryMessages.parse(packet.data.copyOf(packet.length)) ?: continue
                 val me = identity()
-                if (DiscoveryMessages.shouldRespond(msg, me.fingerprint)) {
+                if (msg.fingerprint != me.fingerprint) packet.address.hostAddress?.let { onPeer(msg, it) }
+                if (visible() && DiscoveryMessages.shouldRespond(msg, me.fingerprint)) {
                     val from = packet.address
                     launch { respond(s, from, msg, me) }
                 }

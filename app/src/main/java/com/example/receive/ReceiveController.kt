@@ -9,9 +9,12 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.data.local.AppDatabase
 import com.example.data.local.HistoryRepository
 import com.example.receive.discovery.MulticastDiscovery
+import com.example.receive.discovery.NearbyDevice
+import com.example.receive.discovery.PeerRegistry
 import com.example.receive.identity.CertificateStore
 import com.example.receive.identity.DeviceIdentity
 import com.example.receive.server.LocalSendServer
+import com.example.send.SendController
 import com.example.service.ReceiveForegroundService
 import com.example.util.FileNameAndHashUtils
 import kotlinx.coroutines.CoroutineScope
@@ -35,9 +38,10 @@ data class ReceiverStatus(
 )
 
 /**
- * App-wide receiver: HTTPS server + multicast discovery while the app is in the foreground and
- * receiving is enabled. During a transfer a foreground service keeps the process alive even if
- * the user leaves the app; the receiver stops once the transfer ends in the background.
+ * App-wide LocalSend networking:
+ * - discovery (multicast listen + peer registry) whenever the app is in the foreground, for sending;
+ * - the HTTPS/HTTP receive server while receiving is enabled;
+ * - a foreground service while a transfer (either direction) runs, so it survives leaving the app.
  */
 class ReceiveController private constructor(private val app: Context) : DefaultLifecycleObserver {
 
@@ -53,45 +57,55 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     private val _received = MutableStateFlow<List<ReceivedItem>>(emptyList())
     val received: StateFlow<List<ReceivedItem>> = _received.asStateFlow()
 
+    @Volatile private var fingerprint = ""
+    val peers = PeerRegistry({ fingerprint })
+    val sender = SendController(scope, ::identity, onBusyChanged = { refreshService() }, history = history)
+
     private val lock = Mutex()
     private var server: LocalSendServer? = null
     private var discovery: MulticastDiscovery? = null
     private var multicastLock: WifiManager.MulticastLock? = null
-    private var fingerprint = ""
-    private var enabled = true
-    private var inForeground = false
+    @Volatile private var enabled = true
+    @Volatile private var inForeground = false
 
     init {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         refreshReceived()
         scope.launch {
             sessions.state.collect { st ->
+                refreshService()
                 when (st) {
-                    is ReceiveState.Receiving -> ReceiveForegroundService.start(app, st.sender.alias)
-                    is ReceiveState.Done -> {
-                        ReceiveForegroundService.stop(app)
-                        onDone(st)
-                        if (!inForeground) stop()
-                    }
-                    ReceiveState.Idle -> {
-                        ReceiveForegroundService.stop(app)
-                        if (!inForeground) stop()
-                    }
-                    is ReceiveState.AwaitingDecision -> Unit
+                    is ReceiveState.Done -> { onDone(st); if (!inForeground) stopAll() }
+                    ReceiveState.Idle -> if (!inForeground) stopAll()
+                    else -> Unit
                 }
             }
         }
+        scope.launch { sender.state.collect { if (!inForeground && !busy()) stopAll() } }
     }
 
     fun setAlias(alias: String?) {
         _status.value = _status.value.copy(alias = alias?.takeIf { it.isNotBlank() } ?: defaultAlias())
-        discovery?.announceNow()
+        if (enabled) discovery?.announceNow()
     }
 
     fun setEnabled(value: Boolean) {
+        if (enabled == value) return
         enabled = value
-        if (value && inForeground) start() else if (!value) stop(force = true)
+        scope.launch {
+            if (value && inForeground) startServer() else if (!value) stopServer(force = true)
+        }
     }
+
+    /** Clears the list and asks the network again; falls back to a subnet scan when nothing answers. */
+    fun refreshPeers() {
+        peers.clear()
+        discovery?.announceNow()
+        sender.scanSubnet(_status.value.ip ?: localLanIpv4(), peers)
+    }
+
+    /** Adds a device typed in by the user (IP or IP:port). Returns false if nothing answered. */
+    suspend fun addManualPeer(address: String): NearbyDevice? = sender.probeAddress(address)?.also { peers.seen(it.info, it.ip) }
 
     fun refreshReceived() {
         scope.launch(Dispatchers.IO) { _received.value = library.list() }
@@ -106,47 +120,77 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
 
     override fun onStart(owner: LifecycleOwner) {
         inForeground = true
-        if (enabled) start()
+        scope.launch {
+            ensureIdentity()
+            startDiscovery()
+            if (enabled) startServer()
+        }
         refreshReceived()
     }
 
     override fun onStop(owner: LifecycleOwner) {
         inForeground = false
-        if (sessions.state.value !is ReceiveState.Receiving) stop()
+        if (!busy()) stopAll()
     }
 
-    private fun identity() = DeviceIdentity(_status.value.alias, Build.MODEL, fingerprint, _status.value.port)
+    private fun busy() = sessions.state.value is ReceiveState.Receiving || sender.isBusy()
 
-    private fun start() {
-        scope.launch {
-            lock.withLock {
-                if (server != null) return@withLock
-                runCatching {
-                    val cert = withContext(Dispatchers.IO) { certStore.load() }
-                    fingerprint = cert.fingerprint
-                    val s = LocalSendServer(cert, sessions, ::identity)
-                    // Default LocalSend port; fall back to any free port if it's taken.
-                    val port = runCatching { s.start(DeviceIdentity.DEFAULT_PORT) }.getOrElse { s.start(0) }
-                    server = s
-                    _status.value = _status.value.copy(running = true, port = port, ip = localLanIpv4(), error = null)
-                    acquireMulticast()
-                    discovery = MulticastDiscovery(scope, ::identity).also { it.start() }
-                }.onFailure { e ->
-                    _status.value = _status.value.copy(running = false, error = e.message ?: e.javaClass.simpleName)
-                }
-            }
+    private fun refreshService() {
+        val receiving = sessions.state.value as? ReceiveState.Receiving
+        when {
+            receiving != null -> ReceiveForegroundService.start(app, receiving.sender.alias)
+            sender.isBusy() -> ReceiveForegroundService.start(app, sender.peerAlias().orEmpty())
+            else -> ReceiveForegroundService.stop(app)
         }
     }
 
-    private fun stop(force: Boolean = false) {
+    fun identity() = DeviceIdentity(_status.value.alias, Build.MODEL, fingerprint, _status.value.port.takeIf { it > 0 } ?: DeviceIdentity.DEFAULT_PORT)
+
+    private suspend fun ensureIdentity() {
+        if (fingerprint.isNotEmpty()) return
+        runCatching { withContext(Dispatchers.IO) { certStore.load() } }
+            .onSuccess { fingerprint = it.fingerprint }
+            .onFailure { e -> _status.value = _status.value.copy(error = e.message ?: e.javaClass.simpleName) }
+    }
+
+    private suspend fun startDiscovery() = lock.withLock {
+        if (discovery != null) return@withLock
+        acquireMulticast()
+        discovery = MulticastDiscovery(scope, ::identity, onPeer = peers::seen, visible = { enabled && server != null })
+            .also { it.start() }
+    }
+
+    private suspend fun startServer() = lock.withLock {
+        if (server != null) return@withLock
+        runCatching {
+            val cert = withContext(Dispatchers.IO) { certStore.load() }
+            fingerprint = cert.fingerprint
+            val s = LocalSendServer(cert, sessions, onPeer = peers::seen, identity = ::identity)
+            // Default LocalSend port; fall back to any free port if it's taken.
+            val port = runCatching { s.start(DeviceIdentity.DEFAULT_PORT) }.getOrElse { s.start(0) }
+            server = s
+            _status.value = _status.value.copy(running = true, port = port, ip = localLanIpv4(), error = null)
+        }.onFailure { e ->
+            _status.value = _status.value.copy(running = false, error = e.message ?: e.javaClass.simpleName)
+        }
+        discovery?.announceNow()
+    }
+
+    private suspend fun stopServer(force: Boolean) = lock.withLock {
+        if (!force && sessions.state.value is ReceiveState.Receiving) return@withLock
+        if (force) sessions.cancelActive()
+        withContext(Dispatchers.IO) { server?.stop() }
+        server = null
+        _status.value = _status.value.copy(running = false)
+    }
+
+    private fun stopAll() {
         scope.launch {
+            if (busy()) return@launch
+            stopServer(force = false)
             lock.withLock {
-                if (!force && sessions.state.value is ReceiveState.Receiving) return@withLock
-                if (force) sessions.cancelActive()
                 discovery?.stop(); discovery = null
-                withContext(Dispatchers.IO) { server?.stop() }; server = null
                 multicastLock?.takeIf { it.isHeld }?.release(); multicastLock = null
-                _status.value = _status.value.copy(running = false)
             }
         }
     }

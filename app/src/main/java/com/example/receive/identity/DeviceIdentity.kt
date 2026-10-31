@@ -18,7 +18,8 @@ data class DeviceIdentity(
         port = port,
         protocol = "https",
         download = false,
-        announce = announce
+        announce = announce,
+        shareApk = true
     )
 
     companion object {

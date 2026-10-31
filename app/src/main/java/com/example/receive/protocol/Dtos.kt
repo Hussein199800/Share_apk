@@ -13,7 +13,9 @@ data class DeviceInfoDto(
     val port: Int? = null,
     val protocol: String? = null,
     val download: Boolean = false,
-    val announce: Boolean? = null
+    val announce: Boolean? = null,
+    /** ShareAPK extension so peers can label us; LocalSend ignores it. */
+    val shareApk: Boolean? = null
 )
 
 /** ShareAPK-only extension; other LocalSend clients ignore it. */

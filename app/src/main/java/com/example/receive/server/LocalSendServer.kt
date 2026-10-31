@@ -5,6 +5,7 @@ import com.example.receive.ReceiveSessionManager
 import com.example.receive.UploadResult
 import com.example.receive.identity.CertificateStore
 import com.example.receive.identity.DeviceIdentity
+import com.example.receive.protocol.DeviceInfoDto
 import com.example.receive.protocol.PrepareUploadRequest
 import com.example.receive.protocol.ProtocolJson
 import io.ktor.http.ContentType
@@ -33,6 +34,8 @@ import kotlinx.coroutines.runBlocking
 class LocalSendServer(
     private val cert: CertificateStore.Loaded,
     private val manager: ReceiveSessionManager,
+    /** Called with every device that registers with us (replies to our announcement, scans). */
+    private val onPeer: (DeviceInfoDto, String) -> Unit = { _, _ -> },
     private val identity: () -> DeviceIdentity
 ) {
     private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
@@ -58,7 +61,11 @@ class LocalSendServer(
             }
         ) {
             routing {
-                post("$BASE/register") { call.respondJson(ProtocolJson.encode(identity().toDto())) }
+                post("$BASE/register") {
+                    runCatching { ProtocolJson.decode<DeviceInfoDto>(call.receiveText()) }.getOrNull()
+                        ?.let { onPeer(it, call.request.origin.remoteAddress) }
+                    call.respondJson(ProtocolJson.encode(identity().toDto()))
+                }
                 get("$BASE/info") { call.respondJson(ProtocolJson.encode(identity().toDto())) }
                 post("$BASE/prepare-upload") {
                     val req = runCatching { ProtocolJson.decode<PrepareUploadRequest>(call.receiveText()) }.getOrNull()
