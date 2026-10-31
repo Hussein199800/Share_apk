@@ -36,7 +36,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.GradientPair
@@ -190,22 +192,24 @@ fun LetterIconBox(label: String, modifier: Modifier = Modifier, size: Dp = 46.dp
 @Composable
 fun HaloBackground(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val c = ShareApkTheme.colors
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(c.background)
             .drawBehind {
+                fun x(f: Float) = if (rtl) size.width * (1f - f) else size.width * f
                 drawRect(
                     Brush.radialGradient(
                         colors = listOf(c.haloA, Color.Transparent),
-                        center = Offset(size.width * 0.95f, -size.height * 0.04f),
+                        center = Offset(x(0.95f), -size.height * 0.04f),
                         radius = size.width * 1.1f
                     )
                 )
                 drawRect(
                     Brush.radialGradient(
                         colors = listOf(c.haloB, Color.Transparent),
-                        center = Offset(-size.width * 0.12f, size.height * 0.4f),
+                        center = Offset(x(-0.12f), size.height * 0.4f),
                         radius = size.width * 1.0f
                     )
                 )

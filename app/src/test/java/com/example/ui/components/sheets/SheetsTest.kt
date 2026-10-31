@@ -54,4 +54,12 @@ class SheetsTest {
         rule.onNodeWithTag("onboarding_next").performClick()
         assertTrue(finished)
     }
+
+    @Test
+    fun onboardingFirstPageOffersSkip() {
+        var finished = false
+        rule.setContent { ShareAPKTheme(darkTheme = true) { OnboardingPagerDialog(onFinishOnboarding = { finished = true }) } }
+        rule.onNodeWithText(ArabicStrings.skipBtn).performClick()
+        assertTrue(finished)
+    }
 }

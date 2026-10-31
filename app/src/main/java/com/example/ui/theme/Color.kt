@@ -41,8 +41,8 @@ val DarkShareApkColors = ShareApkColors(
     warning = Color(0xFFFBBF24),
     info = Color(0xFF38BDF8),
     error = Color(0xFFF87171),
-    haloA = Color(0xFF6366F1).copy(alpha = 0.24f),
-    haloB = Color(0xFF38BDF8).copy(alpha = 0.12f),
+    haloA = Color(0x551D3A8A),
+    haloB = Color(0x335B21B6),
     isDark = true
 )
 
@@ -60,8 +60,8 @@ val LightShareApkColors = ShareApkColors(
     warning = Color(0xFF9A4508),
     info = Color(0xFF0369A1),
     error = Color(0xFFB91C1C),
-    haloA = Color(0xFF6366F1).copy(alpha = 0.16f),
-    haloB = Color(0xFF38BDF8).copy(alpha = 0.12f),
+    haloA = Color(0x88C7D2FE),
+    haloB = Color(0x55FBCFE8),
     isDark = false
 )
 

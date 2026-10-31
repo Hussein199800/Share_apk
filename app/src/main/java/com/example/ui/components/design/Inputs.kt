@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.ui.theme.LocalAppStrings
 import com.example.ui.theme.ShareApkGradients
 import com.example.ui.theme.ShareApkTheme
 import com.example.ui.theme.ShareApkTokens
@@ -56,7 +58,7 @@ fun SearchField(
                     .clip(shape)
                     .background(c.input)
                     .border(ShareApkTokens.Hairline, c.outline, shape)
-                    .padding(horizontal = 14.dp),
+                    .padding(start = 14.dp, end = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -66,6 +68,17 @@ fun SearchField(
                         Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, maxLines = 1)
                     }
                     inner()
+                }
+                if (value.isNotEmpty()) {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = LocalAppStrings.current.clearSearch,
+                        tint = c.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(ShareApkTokens.MinTouch)
+                            .clickable(role = Role.Button) { onValueChange("") }
+                            .padding(12.dp)
+                    )
                 }
             }
         }

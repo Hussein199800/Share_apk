@@ -102,7 +102,7 @@ fun OnboardingPagerDialog(onFinishOnboarding: () -> Unit) {
                 Spacer(Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (!isLast) {
-                        SecondaryButton(s.getStartedBtn, onFinishOnboarding, Modifier.weight(1f), height = ShareApkTokens.SheetButtonHeight)
+                        SecondaryButton(s.skipBtn, onFinishOnboarding, Modifier.weight(1f), height = ShareApkTokens.SheetButtonHeight)
                     }
                     PrimaryButton(
                         text = if (isLast) s.getStartedBtn else s.nextBtn,

@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
@@ -118,5 +119,13 @@ class DesignComponentsTest {
         }
         val h = rule.onNodeWithTag("tile").getUnclippedBoundsInRoot().height
         assertTrue("height=$h", h <= 220.dp)
+    }
+
+    @Test
+    fun searchFieldClearButtonEmptiesQuery() {
+        var value = "abc"
+        rule.setContent { ShareAPKTheme(darkTheme = true) { SearchField(value = value, onValueChange = { value = it }, placeholder = "x") } }
+        rule.onNodeWithContentDescription(com.example.ui.theme.ArabicStrings.clearSearch).performClick()
+        assertEquals("", value)
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -84,12 +85,16 @@ fun ScreenScaffold(
 fun ShareApkBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    allowSwipeDismiss: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val c = ShareApkTheme.colors
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { allowSwipeDismiss || it != SheetValue.Hidden }
+        ),
         shape = RoundedCornerShape(topStart = ShareApkTokens.SheetRadius, topEnd = ShareApkTokens.SheetRadius),
         containerColor = c.surface,
         contentColor = c.onBackground,

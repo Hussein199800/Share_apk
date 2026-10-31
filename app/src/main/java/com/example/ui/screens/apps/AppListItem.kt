@@ -137,7 +137,7 @@ fun AppListItem(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             TitleRow(app)
             LtrBox {
-                Text(app.metaLine(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, maxLines = 1)
+                Text(app.metaLine(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         SelectBox(isSelected, onToggleSelect, app.label)

@@ -178,7 +178,9 @@ data class AppStrings(
     val fontLicenseLine: String,
     val wifiDownloadsFormat: String,
     val onboardingTabsTitle: String,
-    val onboardingTabsBody: String
+    val onboardingTabsBody: String,
+    val clearSearch: String,
+    val skipBtn: String
 )
 
 val ArabicStrings = AppStrings(
@@ -338,7 +340,9 @@ val ArabicStrings = AppStrings(
     fontLicenseLine = "الخط: IBM Plex Sans Arabic — SIL Open Font License 1.1",
     wifiDownloadsFormat = "عدد التحميلات: %d",
     onboardingTabsTitle = "أربعة تبويبات بسيطة",
-    onboardingTabsBody = "التطبيقات: استخرج وشارك واحفظ. إرسال واستقبال: انقل التطبيقات بين الأجهزة القريبة. المزيد: النسخ الاحتياطي والسجل والإعدادات."
+    onboardingTabsBody = "التطبيقات: استخرج وشارك واحفظ. إرسال واستقبال: انقل التطبيقات بين الأجهزة القريبة. المزيد: النسخ الاحتياطي والسجل والإعدادات.",
+    clearSearch = "مسح البحث",
+    skipBtn = "تخطي"
 )
 
 val EnglishStrings = AppStrings(
@@ -498,7 +502,9 @@ val EnglishStrings = AppStrings(
     fontLicenseLine = "Font: IBM Plex Sans Arabic — SIL Open Font License 1.1",
     wifiDownloadsFormat = "Downloads: %d",
     onboardingTabsTitle = "Four simple tabs",
-    onboardingTabsBody = "Apps: extract, share and save. Send and Receive: move apps between nearby devices. More: backup, history and settings."
+    onboardingTabsBody = "Apps: extract, share and save. Send and Receive: move apps between nearby devices. More: backup, history and settings.",
+    clearSearch = "Clear search",
+    skipBtn = "Skip"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

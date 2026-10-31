@@ -5,10 +5,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class NavStateTest {
-    @Test fun selectionClearedFirst() = assertEquals(
+    @Test fun visibleSelectionClearedFirst() = assertEquals(
         BackAction.ClearSelection,
+        resolveBack(NavSnapshot(MainNavTab.APPS, MoreDestination.HOME, hasSelection = true))
+    )
+
+    @Test fun hiddenSelectionDoesNotEatBackOnSubPage() = assertEquals(
+        BackAction.MoreHome,
         resolveBack(NavSnapshot(MainNavTab.MORE, MoreDestination.SETTINGS, hasSelection = true))
     )
+
+    @Test fun appsWithoutSelectionLeavesBackToSystem() =
+        assertEquals(false, canHandleBack(NavSnapshot(MainNavTab.APPS, MoreDestination.HOME, hasSelection = false)))
+
+    @Test fun subPageBackIsHandled() =
+        assertEquals(true, canHandleBack(NavSnapshot(MainNavTab.MORE, MoreDestination.BACKUP, hasSelection = false)))
 
     @Test fun subPageReturnsToMoreHome() = assertEquals(
         BackAction.MoreHome,

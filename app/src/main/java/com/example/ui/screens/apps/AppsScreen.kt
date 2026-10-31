@@ -80,6 +80,7 @@ fun AppsScreen(
     onReinstallVerifyApp: (InstalledAppInfo) -> Unit,
     onWifiShareApps: (List<InstalledAppInfo>) -> Unit,
     onShareSelectedApps: () -> Unit,
+    onWifiShareSelected: () -> Unit,
     onBackupSelectedToZip: () -> Unit,
     onCancelQuickZipBackup: () -> Unit,
     onToggleFavorite: (String) -> Unit,
@@ -178,7 +179,7 @@ fun AppsScreen(
                     onClear = onClearMultiSelect,
                     onShare = onShareSelectedApps,
                     onZip = onBackupSelectedToZip,
-                    onWifi = { onWifiShareApps(selectedApps) },
+                    onWifi = onWifiShareSelected,
                     onSend = onSendSelected,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)

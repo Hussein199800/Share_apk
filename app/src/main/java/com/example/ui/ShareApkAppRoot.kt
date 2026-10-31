@@ -1,7 +1,6 @@
 package com.example.ui
 
 import android.Manifest
-import android.app.Activity
 import android.app.DownloadManager
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -32,6 +30,8 @@ import com.example.ui.components.sheets.SplitApkWarningDialog
 import com.example.ui.components.sheets.UnknownSourcesPermissionDialog
 import com.example.ui.components.sheets.WifiShareServerDialog
 import com.example.ui.navigation.MoreDestination
+import com.example.ui.navigation.NavSnapshot
+import com.example.ui.navigation.canHandleBack
 import com.example.ui.screens.apps.AppsScreen
 import com.example.ui.screens.backup.BackupScreen
 import com.example.ui.screens.history.HistoryScreen
@@ -179,9 +179,9 @@ fun ShareApkAppRoot(
     }
 
     // Back order lives in ui/navigation/NavState.kt (selection → More sub-page → Apps → exit).
-    BackHandler(enabled = true) {
-        if (!viewModel.onBack()) (context as? Activity)?.finish()
-    }
+    // Disabled on Apps with nothing selected, so the system keeps the activity (and running work) alive.
+    val backSnapshot = NavSnapshot(currentTab, moreDestination, selectedPackageNames.isNotEmpty())
+    BackHandler(enabled = canHandleBack(backSnapshot)) { viewModel.onBack() }
 
     ShareApkShell(
         strings = strings,
@@ -219,6 +219,7 @@ fun ShareApkAppRoot(
                 onSaveSingleAppToDownloads = viewModel::requestSaveAppToDownloads,
                 onReinstallVerifyApp = viewModel::inspectInstalledAppForReinstall,
                 onWifiShareApps = viewModel::startWifiShareForApps,
+                onWifiShareSelected = { viewModel.startWifiShareForApps(viewModel.getSelectedAppsList()) },
                 onShareSelectedApps = {
                     viewModel.executeShareApps(viewModel.getSelectedAppsList()) { chooser ->
                         runCatching { context.startActivity(chooser) }

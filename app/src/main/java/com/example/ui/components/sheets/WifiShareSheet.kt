@@ -42,7 +42,7 @@ import com.example.ui.theme.ShareApkTheme
 import com.example.ui.theme.ShareApkTokens
 import com.example.wifi.WifiServerState
 
-/** Share-via-link sheet: QR, URL, auto-stop countdown and download count. Dismissing stops the server. */
+/** Share-via-link sheet: QR, URL, auto-stop countdown and download count. Back/Stop end sharing; swipe can't, to avoid accidents. */
 @Composable
 fun WifiShareServerDialog(state: WifiServerState, onStopServer: () -> Unit) {
     val s = LocalAppStrings.current
@@ -50,7 +50,7 @@ fun WifiShareServerDialog(state: WifiServerState, onStopServer: () -> Unit) {
     val context = LocalContext.current
     val countdown = "%02d:%02d".format(state.remainingSeconds / 60, state.remainingSeconds % 60)
 
-    ShareApkBottomSheet(onDismiss = onStopServer) {
+    ShareApkBottomSheet(onDismiss = onStopServer, allowSwipeDismiss = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             GradientIconBox(ShareApkGradients.violet) { Icon(Icons.Outlined.Wifi, null, Modifier.size(24.dp)) }
             Column(Modifier.weight(1f)) {

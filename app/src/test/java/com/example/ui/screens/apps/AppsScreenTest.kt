@@ -60,7 +60,7 @@ class AppsScreenTest {
                 onToggleGridView = {}, onRefreshApps = {}, onSelectAppForDetails = {},
                 onToggleAppMultiSelect = {}, onClearMultiSelect = {}, onShareSingleApp = {},
                 onSaveSingleAppToDownloads = {}, onReinstallVerifyApp = {}, onWifiShareApps = {},
-                onShareSelectedApps = {}, onBackupSelectedToZip = {}, onCancelQuickZipBackup = {},
+                onShareSelectedApps = {}, onWifiShareSelected = {}, onBackupSelectedToZip = {}, onCancelQuickZipBackup = {},
                 onToggleFavorite = {}, onComputeSha256 = {}, onSendSelected = { sent = true }
             )
         }
