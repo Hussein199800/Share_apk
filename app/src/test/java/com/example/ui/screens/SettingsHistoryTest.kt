@@ -64,9 +64,10 @@ class SettingsHistoryTest {
     }
 
     @Test
-    fun aboutShowsVersionAndFontLicense() {
+    fun aboutShowsVersionDeveloperAndFont() {
         rule.setContent { ShareAPKTheme(darkTheme = true) { AboutScreen(appVersion = "2.4.0", onBack = {}) } }
         rule.onNodeWithText(ArabicStrings.appVersionFormat.format("2.4.0"), substring = true).assertExists()
-        rule.onNodeWithText("SIL Open Font License", substring = true).assertExists()
+        rule.onNodeWithText(ArabicStrings.aboutDevName, substring = true).assertExists()
+        rule.onNodeWithText(ArabicStrings.aboutFontValue).assertExists()
     }
 }

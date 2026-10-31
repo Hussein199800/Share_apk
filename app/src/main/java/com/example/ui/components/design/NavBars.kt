@@ -52,10 +52,10 @@ fun ShareApkBottomBar(
             .padding(ShareApkTokens.BottomBarMargin)
             .fillMaxWidth()
             .height(ShareApkTokens.BottomBarHeight)
-            .shadow(10.dp, shape)
-            .clip(shape)
-            .background(c.surface.copy(alpha = 0.96f))
-            .border(ShareApkTokens.Hairline, c.outline, shape),
+            .shadow(8.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
+            .background(c.surface, shape)
+            .border(ShareApkTokens.Hairline, c.outline, shape)
+            .clip(shape),
         verticalAlignment = Alignment.CenterVertically
     ) {
         items.forEach { item ->

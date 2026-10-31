@@ -34,8 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.input.pointer.pointerInput
 import com.example.ui.components.design.GradientIconBox
 import com.example.ui.components.design.HaloBackground
 import com.example.ui.components.design.PrimaryButton
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 
 private data class OnboardingPage(val icon: ImageVector, val gradient: GradientPair, val title: String, val body: String)
 
-/** Full-screen first-run pager. The last page explains the four tabs. */
+/** Full-screen first-run overlay. The last page explains the four tabs. */
 @Composable
 fun OnboardingPagerDialog(onFinishOnboarding: () -> Unit) {
     val s = LocalAppStrings.current
@@ -64,11 +64,10 @@ fun OnboardingPagerDialog(onFinishOnboarding: () -> Unit) {
     val scope = rememberCoroutineScope()
     val isLast = pagerState.currentPage == pages.lastIndex
 
-    Dialog(
-        onDismissRequest = onFinishOnboarding,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-    ) {
-        HaloBackground {
+    BackHandler(onBack = onFinishOnboarding)
+    // Drawn inside the activity window (not a Dialog) so system bar insets are applied correctly.
+    run {
+        HaloBackground(Modifier.pointerInput(Unit) {}) {
             Column(
                 Modifier.fillMaxSize().safeDrawingPadding().padding(ShareApkTokens.ScreenPadding),
                 horizontalAlignment = Alignment.CenterHorizontally

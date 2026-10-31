@@ -160,6 +160,7 @@ fun ShareApkAppRoot(
     }
 
     val moreDestination by viewModel.moreDestination.collectAsStateWithLifecycle()
+    val prefsLoaded by viewModel.prefsLoaded.collectAsStateWithLifecycle()
     val deviceName = remember { Build.MODEL?.takeIf { it.isNotBlank() } ?: "Android" }
     val appVersion = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
@@ -189,7 +190,10 @@ fun ShareApkAppRoot(
         isExpandedScreen = isExpandedScreen,
         currentTab = currentTab,
         onSelectTab = viewModel::selectTab,
-        snackbarHostState = snackbarHostState
+        snackbarHostState = snackbarHostState,
+        overlay = if (prefsLoaded && !prefs.onboardingCompleted) {
+            { OnboardingPagerDialog(onFinishOnboarding = viewModel::completeOnboarding) }
+        } else null
     ) {
         when (currentTab) {
             MainNavTab.APPS -> AppsScreen(
@@ -376,10 +380,6 @@ fun ShareApkAppRoot(
                             )
                         }
 
-                        if (!prefs.onboardingCompleted) {
-                            OnboardingPagerDialog(
-                                onFinishOnboarding = viewModel::completeOnboarding
-                            )
-                        }
+
     }
 }

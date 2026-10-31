@@ -52,6 +52,7 @@ fun ShareApkShell(
     onSelectTab: (MainNavTab) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
+    overlay: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val layoutDirection = if (strings.isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -96,6 +97,7 @@ fun ShareApkShell(
                         }
                     }
                 }
+                overlay?.invoke()
             }
         }
     }

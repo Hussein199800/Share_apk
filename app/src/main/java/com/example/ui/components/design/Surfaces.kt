@@ -216,3 +216,24 @@ fun HaloBackground(modifier: Modifier = Modifier, content: @Composable () -> Uni
             }
     ) { content() }
 }
+
+/** The app's brand mark: launcher glyph on the sky → indigo → violet brand gradient. */
+@Composable
+fun BrandMark(modifier: Modifier = Modifier, size: Dp = 46.dp) {
+    val shape = RoundedCornerShape(size * 0.32f)
+    Box(
+        modifier = modifier
+            .size(size)
+            .shadow(10.dp, shape, ambientColor = ShareApkGradients.heroShadow, spotColor = ShareApkGradients.heroShadow)
+            .clip(shape)
+            .background(ShareApkGradients.brand),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_brand_glyph),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(size * 0.58f)
+        )
+    }
+}

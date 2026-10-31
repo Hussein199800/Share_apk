@@ -1,27 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Glyph: an app package with an arrow leaving it (share). Drawn on a 24-unit grid, scaled into the 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Outer hexagonal package shield in warm sand/gold -->
-    <path
-        android:fillColor="#38241C"
-        android:strokeColor="#C9A227"
-        android:strokeWidth="3.2"
-        android:pathData="M54,24 L78,36 L78,66 L54,82 L30,66 L30,36 Z" />
-    <!-- Package box flaps -->
-    <path
-        android:strokeColor="#D7CCC8"
-        android:strokeWidth="2.2"
-        android:fillColor="#00000000"
-        android:pathData="M30,36 L54,48 L78,36 M54,48 L54,82" />
-    <!-- Bold burnished gold upward share arrow badge -->
-    <path
-        android:fillColor="#C9A227"
-        android:pathData="M54,28 L68,42 L60,42 L60,58 L48,58 L48,42 L40,42 Z" />
-    <!-- Gold base accent bar -->
-    <path
-        android:fillColor="#C9A227"
-        android:pathData="M42,64 L66,64 L66,69 L42,69 Z" />
+    <group android:scaleX="2.4" android:scaleY="2.4" android:translateX="25.2" android:translateY="25.2">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="1.7" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+            android:pathData="M4,10.5 L12,6.5 L20,10.5 L20,18.5 L12,22.5 L4,18.5 Z" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="1.7" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+            android:pathData="M4,10.5 L12,14.5 L20,10.5 M12,14.5 L12,22.5" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="1.7" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+            android:pathData="M12,11.5 L12,1.8 M8.6,5.2 L12,1.8 L15.4,5.2" />
+    </group>
 </vector>

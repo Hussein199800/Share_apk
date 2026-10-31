@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -86,6 +87,13 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = UserPreferencesState()
+    )
+
+    /** True once DataStore has emitted, so first-run UI doesn't flash for returning users. */
+    val prefsLoaded: StateFlow<Boolean> = prefsRepository.preferencesFlow.map { true }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = false
     )
 
     val historyItems: StateFlow<List<HistoryEntity>> = historyRepository.allHistory.stateIn(
