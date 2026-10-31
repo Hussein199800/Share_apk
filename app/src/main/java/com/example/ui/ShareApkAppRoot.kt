@@ -11,39 +11,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.MainNavTab
 import com.example.data.model.ThemePreference
@@ -53,11 +31,6 @@ import com.example.ui.components.sheets.PreInstallValidationSheet
 import com.example.ui.components.sheets.SplitApkWarningDialog
 import com.example.ui.components.sheets.UnknownSourcesPermissionDialog
 import com.example.ui.components.sheets.WifiShareServerDialog
-import com.example.ui.components.design.HaloBackground
-import com.example.ui.components.design.LocalBottomBarClearance
-import com.example.ui.components.design.NavItem
-import com.example.ui.components.design.ShareApkBottomBar
-import com.example.ui.components.design.ShareApkRail
 import com.example.ui.navigation.MoreDestination
 import com.example.ui.screens.apps.AppsScreen
 import com.example.ui.screens.backup.BackupScreen
@@ -67,12 +40,9 @@ import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.screens.more.MoreScreen
 import com.example.ui.screens.receive.ReceiveScreen
 import com.example.ui.screens.send.SendScreen
-import com.example.ui.theme.AppStrings
-import com.example.ui.theme.LocalAppStrings
 import com.example.ui.theme.LocaleHelper
-import com.example.ui.theme.ShareAPKTheme
-import com.example.ui.theme.ShareApkTokens
 import com.example.ui.viewmodel.ShareApkViewModel
+
 
 @Composable
 fun ShareApkAppRoot(
@@ -410,67 +380,5 @@ fun ShareApkAppRoot(
                                 onFinishOnboarding = viewModel::completeOnboarding
                             )
                         }
-    }
-}
-
-/**
- * Stateless chrome: strings, direction, theme, halo background, tab bar or rail, snackbar.
- * Kept separate from [ShareApkAppRoot] so layout direction and navigation can be tested without a ViewModel.
- */
-@Composable
-fun ShareApkShell(
-    strings: AppStrings,
-    darkTheme: Boolean,
-    isExpandedScreen: Boolean,
-    currentTab: MainNavTab,
-    onSelectTab: (MainNavTab) -> Unit,
-    modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState? = null,
-    content: @Composable () -> Unit
-) {
-    val layoutDirection = if (strings.isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr
-    CompositionLocalProvider(
-        LocalAppStrings provides strings,
-        LocalLayoutDirection provides layoutDirection
-    ) {
-        ShareAPKTheme(darkTheme = darkTheme) {
-            val items = listOf(
-                NavItem(MainNavTab.APPS, strings.navApps, Icons.Outlined.Apps),
-                NavItem(MainNavTab.SEND, strings.navSend, Icons.AutoMirrored.Outlined.Send),
-                NavItem(MainNavTab.RECEIVE, strings.navReceive, Icons.Outlined.Download),
-                NavItem(MainNavTab.MORE, strings.navMore, Icons.Outlined.MoreHoriz)
-            )
-            val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val clearance = if (isExpandedScreen) navInset else ShareApkTokens.BottomBarClearance + navInset
-            HaloBackground(modifier) {
-                Row(
-                    Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                        .imePadding()
-                ) {
-                    if (isExpandedScreen) ShareApkRail(items, currentTab, onSelectTab)
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    ) {
-                        CompositionLocalProvider(LocalBottomBarClearance provides clearance) { content() }
-                        if (!isExpandedScreen) {
-                            ShareApkBottomBar(
-                                items, currentTab, onSelectTab,
-                                Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
-                            )
-                        }
-                        if (snackbarHostState != null) {
-                            SnackbarHost(
-                                snackbarHostState,
-                                Modifier.align(Alignment.BottomCenter).padding(bottom = clearance)
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 }

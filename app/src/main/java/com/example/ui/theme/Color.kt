@@ -76,28 +76,3 @@ fun contrastRatio(fg: Color, bg: Color): Double {
     val b = luminance(bg)
     return (max(a, b) + 0.05) / (min(a, b) + 0.05)
 }
-
-// ---- Legacy palette names: temporary aliases so un-migrated screens keep building. ----
-private const val LEGACY = "Phase1: remove in Task 9"
-
-@Deprecated(LEGACY) val DarkEspressoSurface = DarkShareApkColors.background
-@Deprecated(LEGACY) val DarkElevatedCardSurface = DarkShareApkColors.surface
-@Deprecated(LEGACY) val PrimaryCocoaBrown = DarkShareApkColors.primary
-@Deprecated(LEGACY) val SecondaryWarmCinnamon = Color(0xFF7C3AED)
-@Deprecated(LEGACY) val WarmCreamLightBackground = LightShareApkColors.background
-@Deprecated(LEGACY) val LightCardSurface = LightShareApkColors.surfaceElevated
-@Deprecated(LEGACY) val WarmSandAccent = LightShareApkColors.onSurfaceVariant
-@Deprecated(LEGACY) val BurnishedGold = Color(0xFF6366F1)
-@Deprecated(LEGACY) val BurnishedGoldLight = DarkShareApkColors.primaryText
-@Deprecated(LEGACY) val BurnishedGoldContainerDark = DarkShareApkColors.surfaceElevated
-@Deprecated(LEGACY) val BurnishedGoldContainerLight = LightShareApkColors.surfaceElevated
-@Deprecated(LEGACY) val DeepEspressoText = LightShareApkColors.onBackground
-@Deprecated(LEGACY) val CreamTextOnDark = DarkShareApkColors.onBackground
-@Deprecated(LEGACY) val MutedSandOnDark = DarkShareApkColors.onSurfaceVariant
-@Deprecated(LEGACY) val MutedCocoaOnLight = LightShareApkColors.onSurfaceVariant
-@Deprecated(LEGACY) val EmeraldVerified = LightShareApkColors.success
-@Deprecated(LEGACY) val EmeraldVerifiedDark = DarkShareApkColors.success
-@Deprecated(LEGACY) val AmberWarning = LightShareApkColors.warning
-@Deprecated(LEGACY) val AmberWarningDark = DarkShareApkColors.warning
-@Deprecated(LEGACY) val RubyError = LightShareApkColors.error
-@Deprecated(LEGACY) val RubyErrorDark = DarkShareApkColors.error
