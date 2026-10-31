@@ -17,8 +17,8 @@ android {
     applicationId = "com.shareapk.app"
     minSdk = 31
     targetSdk = 36
-    versionCode = 1
-    versionName = "2.4.0"
+    versionCode = 30000
+    versionName = "3.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -44,7 +44,9 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      // R8 shrinks the release APK (Compose, Ktor/Netty, BouncyCastle); keep rules in proguard-rules.pro.
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.

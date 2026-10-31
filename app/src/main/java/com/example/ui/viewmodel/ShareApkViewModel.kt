@@ -20,6 +20,9 @@ import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
 import com.example.receive.ReceiveController
+import com.example.update.ReleaseInfo
+import com.example.update.UpdateState
+import com.example.update.Updater
 import com.example.receive.discovery.NearbyDevice
 import com.example.receive.protocol.ShareApkMetaDto
 import com.example.send.OutgoingFile
@@ -101,6 +104,16 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val receiveEvent: StateFlow<ReceiveEvent?> = receiver.sessions.lastEvent
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
+
+    // ---- In-app updates (GitHub releases) ----
+    private val updater = Updater(context)
+    val updateState: StateFlow<UpdateState> = updater.state
+    fun checkForUpdates() { viewModelScope.launch { updater.check() } }
+    fun downloadUpdate(release: ReleaseInfo) { viewModelScope.launch { updater.download(release) } }
+    fun dismissUpdate() = updater.dismiss()
+    fun installUpdate(ready: UpdateState.Ready) {
+        inspectAndPrepareInstall(androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", ready.apk))
+    }
 
     // ---- Direct send ----
     val sendState: StateFlow<SendState> = receiver.sender.state
@@ -343,6 +356,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     )
 
     init {
+        viewModelScope.launch { updater.autoCheck() }
         // The receiver lives app-wide; keep it in sync with the user's settings.
         viewModelScope.launch {
             userPrefs.collect { p ->

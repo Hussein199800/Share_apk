@@ -234,7 +234,20 @@ data class AppStrings(
     val badgeShareApk: String,
     val badgeLocalSend: String,
     val helpSendDirectSteps: String,
-    val helpSendOtherSteps: String
+    val helpSendOtherSteps: String,
+    val updatesTitle: String,
+    val updateChecking: String,
+    val updateUpToDate: String,
+    val updateAvailable: String,
+    val updateDownloadBtn: String,
+    val updateDownloading: String,
+    val updateReady: String,
+    val updateInstallBtn: String,
+    val updateUnavailable: String,
+    val updateFailed: String,
+    val updateCheckBtn: String,
+    val updateBadge: String,
+    val tileUpdatesAvailable: String
 )
 
 val ArabicStrings = AppStrings(
@@ -450,7 +463,20 @@ val ArabicStrings = AppStrings(
     badgeShareApk = "شارك أبك",
     badgeLocalSend = "LocalSend",
     helpSendDirectSteps = "حدّد تطبيقاً أو أكثر من تبويب التطبيقات واضغط «إرسال».|على الجهاز الآخر افتح LocalSend أو «شارك أبك» (تبويب استقبال) على نفس الشبكة.|اختر الجهاز من «الأجهزة القريبة». إن لم يظهر اضغط «تحديث» أو أدخل عنوانه يدوياً (يظهر في شاشة الاستلام لديه).|انتظر حتى يقبل الطلب على الجهاز الآخر.",
-    helpSendOtherSteps = "لجهاز بلا تطبيق: زر الواي فاي في شريط التحديد يفتح رابطاً ورمز QR يُفتح في المتصفح.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…)."
+    helpSendOtherSteps = "لجهاز بلا تطبيق: زر الواي فاي في شريط التحديد يفتح رابطاً ورمز QR يُفتح في المتصفح.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…).",
+    updatesTitle = "التحديثات",
+    updateChecking = "جارٍ التحقق من التحديثات…",
+    updateUpToDate = "لديك أحدث إصدار (%s).",
+    updateAvailable = "يتوفر إصدار جديد: %s",
+    updateDownloadBtn = "تنزيل وتثبيت",
+    updateDownloading = "جارٍ التنزيل…",
+    updateReady = "تم التنزيل والتحقق من التوقيع.",
+    updateInstallBtn = "تثبيت الآن",
+    updateUnavailable = "لا يمكن الوصول إلى صفحة الإصدارات حالياً (لا توجد إصدارات منشورة، أو المستودع خاص، أو الشبكة تحجب GitHub).",
+    updateFailed = "تعذّر التحديث: %s",
+    updateCheckBtn = "تحقق الآن",
+    updateBadge = "متاح",
+    tileUpdatesAvailable = "الإصدار %s متاح"
 )
 
 val EnglishStrings = AppStrings(
@@ -666,7 +692,20 @@ val EnglishStrings = AppStrings(
     badgeShareApk = "ShareAPK",
     badgeLocalSend = "LocalSend",
     helpSendDirectSteps = "Select one or more apps in the Apps tab and tap Send.|On the other device open LocalSend or ShareAPK (Receive tab) on the same network.|Pick it under Nearby devices. If it doesn't show, tap Refresh or enter its address (shown on its receive screen).|Wait for the other device to accept.",
-    helpSendOtherSteps = "Device without the app: the Wi-Fi button in the selection bar opens a link and QR code for the browser.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…)."
+    helpSendOtherSteps = "Device without the app: the Wi-Fi button in the selection bar opens a link and QR code for the browser.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…).",
+    updatesTitle = "Updates",
+    updateChecking = "Checking for updates…",
+    updateUpToDate = "You're on the latest version (%s).",
+    updateAvailable = "New version available: %s",
+    updateDownloadBtn = "Download & install",
+    updateDownloading = "Downloading…",
+    updateReady = "Downloaded and signature verified.",
+    updateInstallBtn = "Install now",
+    updateUnavailable = "Can't reach the releases page (no published releases, private repository, or GitHub is blocked).",
+    updateFailed = "Update failed: %s",
+    updateCheckBtn = "Check now",
+    updateBadge = "Available",
+    tileUpdatesAvailable = "Version %s available"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

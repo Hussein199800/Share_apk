@@ -16,6 +16,8 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +41,8 @@ import com.example.ui.screens.settings.AboutScreen
 import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.screens.more.MoreScreen
 import com.example.receive.ReceiveState
+import com.example.update.UpdateSheet
+import com.example.update.UpdateState
 import com.example.ui.screens.receive.IncomingRequestSheet
 import com.example.ui.screens.receive.ReceiveScreen
 import com.example.ui.screens.send.SendScreen
@@ -171,6 +175,8 @@ fun ShareApkAppRoot(
     val nearbyPeers by viewModel.nearbyPeers.collectAsStateWithLifecycle()
     val scanningPeers by viewModel.scanningPeers.collectAsStateWithLifecycle()
     val manualPeerResult by viewModel.manualPeerResult.collectAsStateWithLifecycle()
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    var showUpdateSheet by remember { mutableStateOf(false) }
     // Look for devices when the Send tab opens with an empty list.
     LaunchedEffect(currentTab) {
         if (currentTab == MainNavTab.SEND && viewModel.nearbyPeers.value.isEmpty()) viewModel.refreshPeers()
@@ -286,7 +292,9 @@ fun ShareApkAppRoot(
                     appVersion = appVersion,
                     onOpen = viewModel::openMore,
                     onInstallFromFile = pickExternalApk,
-                    onShareViaLink = shareViaLink
+                    onShareViaLink = shareViaLink,
+                    onUpdates = { showUpdateSheet = true; if (updateState !is UpdateState.Available && updateState !is UpdateState.Ready) viewModel.checkForUpdates() },
+                    availableUpdate = (updateState as? UpdateState.Available)?.release?.version
                 )
 
                 MoreDestination.BACKUP -> Box(Modifier.testTag("more_BACKUP")) {
@@ -368,6 +376,16 @@ fun ShareApkAppRoot(
         }
 
         // Dialogs & Sheets
+        if (showUpdateSheet) {
+            UpdateSheet(
+                state = updateState,
+                currentVersion = appVersion,
+                onCheck = viewModel::checkForUpdates,
+                onDownload = viewModel::downloadUpdate,
+                onInstall = { showUpdateSheet = false; viewModel.installUpdate(it) },
+                onDismiss = { showUpdateSheet = false; viewModel.dismissUpdate() }
+            )
+        }
         (receiveState as? ReceiveState.AwaitingDecision)?.let { pending ->
             IncomingRequestSheet(pending.request, viewModel::incomingStatus, viewModel::decideIncoming)
         }

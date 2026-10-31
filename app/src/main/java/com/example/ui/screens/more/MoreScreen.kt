@@ -63,7 +63,9 @@ fun MoreScreen(
     onOpen: (MoreDestination) -> Unit,
     onInstallFromFile: () -> Unit,
     onShareViaLink: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onUpdates: () -> Unit = {},
+    availableUpdate: String? = null
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -73,7 +75,11 @@ fun MoreScreen(
         MoreTile(Icons.Outlined.InstallMobile, s.tileInstallTitle, s.tileInstallSub, ShareApkGradients.amber, onClick = onInstallFromFile),
         MoreTile(Icons.Outlined.Link, s.tileLinkTitle, s.tileLinkSub, ShareApkGradients.violet, onClick = onShareViaLink),
         MoreTile(Icons.Outlined.Settings, s.tileSettingsTitle, s.tileSettingsSub, ShareApkGradients.indigo) { onOpen(MoreDestination.SETTINGS) },
-        MoreTile(Icons.Outlined.Sync, s.tileUpdatesTitle, s.tileUpdatesSub, ShareApkGradients.rose, enabled = false, badge = s.comingSoon) {}
+        MoreTile(
+            Icons.Outlined.Sync, s.tileUpdatesTitle,
+            availableUpdate?.let { s.tileUpdatesAvailable.format(it) } ?: s.tileUpdatesSub,
+            ShareApkGradients.rose, badge = availableUpdate?.let { s.updateBadge }, onClick = onUpdates
+        )
     )
     ScreenScaffold(title = s.moreTitle, modifier = modifier) {
         LazyVerticalGrid(
