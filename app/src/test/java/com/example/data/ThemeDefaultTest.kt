@@ -33,4 +33,18 @@ class ThemeDefaultTest {
         context.shareApkDataStore.edit { it[booleanPreferencesKey("dynamic_color")] = true }
         assertEquals(ThemePreference.DARK, repo.preferencesFlow.first().themePreference)
     }
+
+    @Test
+    fun receivePrefsDefaultsAndAlias() = runTest {
+        val repo = UserPreferencesRepository(context)
+        val p = repo.preferencesFlow.first()
+        org.junit.Assert.assertTrue(p.receiveEnabled)
+        org.junit.Assert.assertNull(p.deviceAlias)
+        repo.setDeviceAlias("  هاتف حسين  ")
+        assertEquals("هاتف حسين", repo.preferencesFlow.first().deviceAlias)
+        repo.setDeviceAlias(" ")
+        org.junit.Assert.assertNull(repo.preferencesFlow.first().deviceAlias)
+        repo.setReceiveEnabled(false)
+        org.junit.Assert.assertFalse(repo.preferencesFlow.first().receiveEnabled)
+    }
 }

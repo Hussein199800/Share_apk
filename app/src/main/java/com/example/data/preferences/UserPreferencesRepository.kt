@@ -24,7 +24,10 @@ data class UserPreferencesState(
     val autoClearCacheOnExit: Boolean = false,
     val onboardingCompleted: Boolean = false,
     val favoritePackages: Set<String> = emptySet(),
-    val lastBackupTreeUri: String? = null
+    val lastBackupTreeUri: String? = null,
+    /** Name shown to nearby devices; null = device model. */
+    val deviceAlias: String? = null,
+    val receiveEnabled: Boolean = true
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -38,6 +41,8 @@ class UserPreferencesRepository(private val context: Context) {
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_completed")
         val FAVORITES = stringSetPreferencesKey("favorite_packages")
         val LAST_BACKUP_URI = stringPreferencesKey("last_backup_tree_uri")
+        val DEVICE_ALIAS = stringPreferencesKey("device_alias")
+        val RECEIVE_ENABLED = booleanPreferencesKey("receive_enabled")
     }
 
     val preferencesFlow: Flow<UserPreferencesState> = context.shareApkDataStore.data.map { prefs ->
@@ -55,7 +60,9 @@ class UserPreferencesRepository(private val context: Context) {
             autoClearCacheOnExit = prefs[Keys.AUTO_CLEAR_CACHE] ?: false,
             onboardingCompleted = prefs[Keys.ONBOARDING_DONE] ?: false,
             favoritePackages = prefs[Keys.FAVORITES] ?: emptySet(),
-            lastBackupTreeUri = prefs[Keys.LAST_BACKUP_URI]
+            lastBackupTreeUri = prefs[Keys.LAST_BACKUP_URI],
+            deviceAlias = prefs[Keys.DEVICE_ALIAS],
+            receiveEnabled = prefs[Keys.RECEIVE_ENABLED] ?: true
         )
     }
 
@@ -103,5 +110,16 @@ class UserPreferencesRepository(private val context: Context) {
                 prefs[Keys.LAST_BACKUP_URI] = uriString
             }
         }
+    }
+
+    suspend fun setDeviceAlias(alias: String?) {
+        context.shareApkDataStore.edit { prefs ->
+            val clean = alias?.trim()?.take(40)
+            if (clean.isNullOrEmpty()) prefs.remove(Keys.DEVICE_ALIAS) else prefs[Keys.DEVICE_ALIAS] = clean
+        }
+    }
+
+    suspend fun setReceiveEnabled(enabled: Boolean) {
+        context.shareApkDataStore.edit { it[Keys.RECEIVE_ENABLED] = enabled }
     }
 }
