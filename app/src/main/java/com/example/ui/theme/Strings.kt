@@ -145,7 +145,8 @@ data class AppStrings(
     val onboardingStep3Title: String,
     val onboardingStep3Body: String,
     val nextBtn: String,
-    val getStartedBtn: String
+    val getStartedBtn: String,
+    val navBack: String
 )
 
 val ArabicStrings = AppStrings(
@@ -272,7 +273,8 @@ val ArabicStrings = AppStrings(
     onboardingStep3Title = "نسخ احتياطي شامل قبل الفورمات",
     onboardingStep3Body = "احفظ جميع تطبيقاتك مع ملفات الـ Split ونسخة من تطبيق شارك أبك وتقرير HTML وبصمات SHA-256 لاسترجاعها دفعة واحدة.",
     nextBtn = "التالي",
-    getStartedBtn = "ابدأ الاستخدام"
+    getStartedBtn = "ابدأ الاستخدام",
+    navBack = "رجوع"
 )
 
 val EnglishStrings = AppStrings(
@@ -399,7 +401,8 @@ val EnglishStrings = AppStrings(
     onboardingStep3Title = "Full Pre-Flash Backup & Restore",
     onboardingStep3Body = "Creates a complete offline folder with ShareAPK's own installer, manifest.json, HTML catalog, and SHA-256 verification.",
     nextBtn = "Next",
-    getStartedBtn = "Get Started"
+    getStartedBtn = "Get Started",
+    navBack = "Back"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

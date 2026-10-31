@@ -399,6 +399,9 @@ fun ShareApkAppRoot(
                                 onClearAll = viewModel::clearAllHistory
                             )
 
+                            // Replaced by the new root in Task 4.
+                            MainNavTab.SEND, MainNavTab.RECEIVE, MainNavTab.MORE -> Unit
+
                             MainNavTab.SETTINGS -> SettingsAndAboutScreen(
                                 prefs = prefs,
                                 cacheSizeBytes = cacheSizeBytes,

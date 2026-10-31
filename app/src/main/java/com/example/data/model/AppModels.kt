@@ -37,6 +37,10 @@ enum class LanguagePreference {
 
 enum class MainNavTab {
     APPS,
+    SEND,
+    RECEIVE,
+    MORE,
+    // Legacy tabs: removed in Task 4 once the new root routes More sub-pages.
     BACKUP_RESTORE,
     HISTORY,
     SETTINGS
