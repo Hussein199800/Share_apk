@@ -83,6 +83,8 @@ class ReceiveSessionManager(
     private val lock = Any()
     private var pendingDecision: CompletableDeferred<Boolean>? = null
     private var session: Session? = null
+    @Volatile private var lastActivity = 0L
+    private val usedTokens = mutableSetOf<String>()
 
     fun sessionDir(sessionId: String) = File(destRoot, sessionId.replace(Regex("[^A-Za-z0-9_-]"), "_"))
 
@@ -103,7 +105,18 @@ class ReceiveSessionManager(
                 IncomingRequest(req.info, senderIp, accepted, req.files.size - accepted.size)
             )
         }
-        val answer = withTimeoutOrNull(decisionTimeoutMs) { decision.await() }
+        val answer = try {
+            withTimeoutOrNull(decisionTimeoutMs) { decision.await() }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Server stopped or the sender hung up while the sheet was showing: never stay wedged.
+            synchronized(lock) {
+                if (pendingDecision === decision) {
+                    pendingDecision = null
+                    _state.value = ReceiveState.Idle
+                }
+            }
+            throw e
+        }
         if (answer == null) _lastEvent.value = ReceiveEvent.TimedOut(req.info.alias)
         val ok = answer ?: false
         synchronized(lock) {
@@ -115,6 +128,7 @@ class ReceiveSessionManager(
             val id = newId()
             val tokens = accepted.associate { it.id to newId() }
             session = Session(id, req.info, senderIp, accepted.associateBy { it.id }, tokens)
+            lastActivity = System.currentTimeMillis()
             sessionDir(id).mkdirs()
             _state.value = ReceiveState.Receiving(
                 req.info, id, accepted.map { FileProgress(it.id, it.fileName, it.size, 0, false) }
@@ -134,6 +148,7 @@ class ReceiveSessionManager(
         if (s == null || s.id != sessionId || dto == null || s.tokens[fileId] != token || s.senderIp != senderIp) {
             return UploadResult.Forbidden
         }
+        synchronized(lock) { if (!usedTokens.add(token)) return UploadResult.Forbidden }
         val target = synchronized(lock) { uniqueTarget(s, dto.fileName).also { s.written[fileId] = it } }
         val digest = MessageDigest.getInstance("SHA-256")
         return try {
@@ -145,9 +160,12 @@ class ReceiveSessionManager(
                     while (true) {
                         val n = body.read(buf)
                         if (n < 0) break
+                        total += n
+                        // Never write more than the sender declared.
+                        if (total > dto.size) throw java.io.IOException("more data than declared")
                         out.write(buf, 0, n)
                         digest.update(buf, 0, n)
-                        total += n
+                        lastActivity = System.currentTimeMillis()
                         if (total - lastReport >= 256 * 1024) {
                             lastReport = total
                             updateProgress(s.id, fileId, total, false)
@@ -167,8 +185,16 @@ class ReceiveSessionManager(
             }
         } catch (e: Exception) {
             target.delete()
+            // A broken upload ends the session so the receiver (and other senders) aren't stuck.
+            cancel(s.id)
             UploadResult.Error(e.message ?: e.javaClass.simpleName)
         }
+    }
+
+    /** Watchdog: cancel an accepted session that has had no upload activity for [idleMs]. */
+    fun expireIfIdle(nowMs: Long = System.currentTimeMillis(), idleMs: Long = 60_000) {
+        val s = synchronized(lock) { session } ?: return
+        if (nowMs - lastActivity > idleMs) cancel(s.id)
     }
 
     /** Sender cancelled (or the user did): drop partial files and return to idle. */
@@ -177,6 +203,7 @@ class ReceiveSessionManager(
             val s = session ?: return
             if (s.id != sessionId) return
             session = null
+            usedTokens.clear()
             sessionDir(s.id).deleteRecursively()
             _state.value = ReceiveState.Idle
         }
@@ -206,6 +233,7 @@ class ReceiveSessionManager(
             val st = _state.value as? ReceiveState.Receiving ?: return
             if (st.sessionId != s.id || !st.files.all { it.done }) return
             session = null
+            usedTokens.clear()
             _state.value = ReceiveState.Done(
                 s.sender,
                 s.files.values.mapNotNull { dto -> s.written[dto.id]?.let { ReceivedFile(it.name, it, dto.shareApk) } }

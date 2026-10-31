@@ -362,7 +362,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { updater.autoCheck() }
         // The receiver lives app-wide; keep it in sync with the user's settings.
         viewModelScope.launch {
-            userPrefs.collect { p ->
+            // The repository flow (not userPrefs) so the receiver never sees the pre-load defaults.
+            prefsRepository.preferencesFlow.collect { p ->
                 receiver.setAlias(p.deviceAlias)
                 receiver.setEnabled(p.receiveEnabled)
             }

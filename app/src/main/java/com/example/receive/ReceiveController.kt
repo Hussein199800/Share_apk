@@ -65,7 +65,9 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     private var server: LocalSendServer? = null
     private var discovery: MulticastDiscovery? = null
     private var multicastLock: WifiManager.MulticastLock? = null
-    @Volatile private var enabled = true
+    // Off until the saved preference arrives, so a disabled receiver never starts briefly.
+    @Volatile private var enabled = false
+    @Volatile private var serviceRunning = false
     @Volatile private var inForeground = false
 
     init {
@@ -82,6 +84,13 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
             }
         }
         scope.launch { sender.state.collect { if (!inForeground && !busy()) stopAll() } }
+        // Watchdog: an accepted transfer with no upload activity for a minute is cancelled.
+        scope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(15_000)
+                sessions.expireIfIdle()
+            }
+        }
     }
 
     fun setAlias(alias: String?) {
@@ -135,12 +144,21 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
 
     private fun busy() = sessions.state.value is ReceiveState.Receiving || sender.isBusy()
 
+    /** Starts the keep-alive service once per transfer (not on every progress update), stops it after. */
+    @Synchronized
     private fun refreshService() {
         val receiving = sessions.state.value as? ReceiveState.Receiving
+        val alias = receiving?.sender?.alias ?: sender.peerAlias()
+        val needed = receiving != null || sender.isBusy()
         when {
-            receiving != null -> ReceiveForegroundService.start(app, receiving.sender.alias)
-            sender.isBusy() -> ReceiveForegroundService.start(app, sender.peerAlias().orEmpty())
-            else -> ReceiveForegroundService.stop(app)
+            needed && !serviceRunning -> {
+                serviceRunning = true
+                ReceiveForegroundService.start(app, alias.orEmpty())
+            }
+            !needed && serviceRunning -> {
+                serviceRunning = false
+                ReceiveForegroundService.stop(app)
+            }
         }
     }
 
@@ -161,7 +179,7 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     }
 
     private suspend fun startServer() = lock.withLock {
-        if (server != null) return@withLock
+        if (server != null || !enabled || !inForeground) return@withLock
         runCatching {
             val cert = withContext(Dispatchers.IO) { certStore.load() }
             fingerprint = cert.fingerprint
@@ -178,7 +196,8 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
 
     private suspend fun stopServer(force: Boolean) = lock.withLock {
         if (!force && sessions.state.value is ReceiveState.Receiving) return@withLock
-        if (force) sessions.cancelActive()
+        // A request waiting for the user can't be answered once the server is gone: decline it.
+        if (force || sessions.state.value is ReceiveState.AwaitingDecision) sessions.cancelActive()
         withContext(Dispatchers.IO) { server?.stop() }
         server = null
         _status.value = _status.value.copy(running = false)

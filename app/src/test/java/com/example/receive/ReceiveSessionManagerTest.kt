@@ -126,4 +126,41 @@ class ReceiveSessionManagerTest {
         advanceTimeBy(1_500); r.await()
         assertEquals(ReceiveEvent.TimedOut("Desk"), m.lastEvent.value)
     }
+
+    @Test fun cancelledPrepareDoesNotWedgeState() = runTest {
+        val m = manager()
+        val r = async { m.prepare(req(file("b", "a.apk")), "ip") }
+        runCurrent()
+        r.cancel() // e.g. server stopped or sender disconnected
+        runCurrent()
+        assertEquals(ReceiveState.Idle, m.state.value)
+        val r2 = async { m.prepare(req(file("c", "c.apk")), "ip") }
+        runCurrent()
+        assertTrue(m.state.value is ReceiveState.AwaitingDecision)
+        m.decide(false); r2.await()
+    }
+
+    @Test fun failedUploadCancelsSession() = runTest {
+        val m = manager()
+        val ok = accepted(m, file("b", "a.apk"))
+        val broken = object : java.io.InputStream() { override fun read(): Int = throw java.io.IOException("peer gone") }
+        val res = m.receive(ok.response.sessionId, "b", ok.response.files.getValue("b"), "ip", broken)
+        assertTrue(res is UploadResult.Error)
+        assertEquals(ReceiveState.Idle, m.state.value)
+    }
+
+    @Test fun idleSessionIsCancelledByWatchdog() = runTest {
+        val m = manager()
+        val ok = accepted(m, file("b", "a.apk"))
+        m.expireIfIdle(nowMs = Long.MAX_VALUE)
+        assertEquals(ReceiveState.Idle, m.state.value)
+        assertFalse(m.sessionDir(ok.response.sessionId).exists())
+    }
+
+    @Test fun uploadLargerThanDeclaredIsRejected() = runTest {
+        val m = manager()
+        val ok = accepted(m, file("b", "a.apk", ByteArray(10)))
+        val res = m.receive(ok.response.sessionId, "b", ok.response.files.getValue("b"), "ip", ByteArray(5000).inputStream())
+        assertTrue(res is UploadResult.Error)
+    }
 }
