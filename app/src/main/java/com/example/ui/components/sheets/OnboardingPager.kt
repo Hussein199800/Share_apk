@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -76,7 +78,7 @@ fun OnboardingPagerDialog(onFinishOnboarding: () -> Unit) {
                 HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { i ->
                     val p = pages[i]
                     Column(
-                        Modifier.fillMaxSize(),
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
                     ) {

@@ -149,7 +149,6 @@ data class AppStrings(
     val tileSettingsSub: String,
     val tileUpdatesTitle: String,
     val tileUpdatesSub: String,
-    val comingSoon: String,
     val aboutTitle: String,
     val sendTitle: String,
     val sendSubtitle: String,
@@ -158,10 +157,8 @@ data class AppStrings(
     val sendPickAppsBtn: String,
     val sendSelectedSummary: String,
     val nearbyDevicesTitle: String,
-    val sendDiscoveryComing: String,
     val receiveTitle: String,
     val receiveSubtitle: String,
-    val receiveComing: String,
     val appVersionFormat: String,
     val filterAll: String,
     val appsCountFormat: String,
@@ -213,7 +210,6 @@ data class AppStrings(
     val helpReceiveSteps: String,
     val helpReceiveTips: String,
     val helpSendTitle: String,
-    val helpSendSteps: String,
     val helpTipsTitle: String,
     val nearbyEmpty: String,
     val scanningNetwork: String,
@@ -247,7 +243,8 @@ data class AppStrings(
     val updateFailed: String,
     val updateCheckBtn: String,
     val updateBadge: String,
-    val tileUpdatesAvailable: String
+    val tileUpdatesAvailable: String,
+    val shareLinkSelectHint: String
 )
 
 val ArabicStrings = AppStrings(
@@ -378,7 +375,6 @@ val ArabicStrings = AppStrings(
     tileSettingsSub = "المظهر واللغة والملفات",
     tileUpdatesTitle = "التحديثات",
     tileUpdatesSub = "التحديث من داخل التطبيق",
-    comingSoon = "قريباً",
     aboutTitle = "حول التطبيق",
     sendTitle = "إرسال",
     sendSubtitle = "إلى الأجهزة القريبة على نفس الشبكة",
@@ -387,10 +383,8 @@ val ArabicStrings = AppStrings(
     sendPickAppsBtn = "اختيار التطبيقات",
     sendSelectedSummary = "%1\$d تطبيقات · %2\$s",
     nearbyDevicesTitle = "الأجهزة القريبة",
-    sendDiscoveryComing = "اكتشاف الأجهزة القريبة والإرسال المباشر قادمان في التحديث القادم. يمكنك الآن المشاركة عبر رابط.",
     receiveTitle = "استقبال",
     receiveSubtitle = "استقبل التطبيقات من الأجهزة القريبة",
-    receiveComing = "الاستقبال المباشر من الأجهزة القريبة قادم في التحديث القادم.",
     appVersionFormat = "الإصدار %s",
     filterAll = "الكل",
     appsCountFormat = "%d تطبيقاً مثبتاً",
@@ -442,7 +436,6 @@ val ArabicStrings = AppStrings(
     helpReceiveSteps = "اترك «شارك أبك» مفتوحاً على هذا التبويب والمفتاح مفعّلاً.|على الجهاز الآخر افتح LocalSend (أو «شارك أبك») ثم «إرسال»، واختر «تطبيق» لإرسال تطبيق مثبّت أو «ملف» لإرسال ملف APK.|اختر «%s» من قائمة الأجهزة القريبة.|ستظهر هنا نافذة الطلب، اضغط «قبول واستلام».|بعد الاستلام اضغط «ثبّت الآن».",
     helpReceiveTips = "يجب أن يكون الجهازان على نفس الواي فاي، أو شغّل نقطة اتصال (Hotspot) من أحدهما.|يعمل مع LocalSend سواء كان «التشفير» مفعّلاً أو مطفأً في إعداداته.|إن لم يظهر جهازك عند المرسل فقد يكون الراوتر يحجب الاكتشاف، فاستخدم نقطة الاتصال.|يُقبل فقط: APK وAPKS وXAPK وAPKM.",
     helpSendTitle = "طرق المشاركة",
-    helpSendSteps = "إرسال مباشر لجهاز قريب عليه LocalSend أو «شارك أبك»: قادم في التحديث القادم.|مشاركة عبر رابط لأي جهاز بلا تطبيق: حدّد التطبيقات ثم اضغط زر الواي فاي، وامسح رمز QR أو افتح العنوان في متصفح الجهاز الآخر على نفس الشبكة.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…).",
     helpTipsTitle = "نصائح",
     nearbyEmpty = "لا توجد أجهزة بعد. افتح «شارك أبك» أو LocalSend على الجهاز الآخر في نفس الشبكة، ثم اضغط تحديث.",
     scanningNetwork = "جارٍ البحث في الشبكة…",
@@ -476,7 +469,8 @@ val ArabicStrings = AppStrings(
     updateFailed = "تعذّر التحديث: %s",
     updateCheckBtn = "تحقق الآن",
     updateBadge = "متاح",
-    tileUpdatesAvailable = "الإصدار %s متاح"
+    tileUpdatesAvailable = "الإصدار %s متاح",
+    shareLinkSelectHint = "حدّد التطبيقات ثم اضغط زر الواي فاي في شريط التحديد."
 )
 
 val EnglishStrings = AppStrings(
@@ -607,7 +601,6 @@ val EnglishStrings = AppStrings(
     tileSettingsSub = "Appearance, language, files",
     tileUpdatesTitle = "Updates",
     tileUpdatesSub = "In-app updates",
-    comingSoon = "Soon",
     aboutTitle = "About",
     sendTitle = "Send",
     sendSubtitle = "To nearby devices on the same network",
@@ -616,10 +609,8 @@ val EnglishStrings = AppStrings(
     sendPickAppsBtn = "Choose apps",
     sendSelectedSummary = "%1\$d apps · %2\$s",
     nearbyDevicesTitle = "Nearby devices",
-    sendDiscoveryComing = "Nearby discovery and direct sending arrive in the next update. For now, share via link.",
     receiveTitle = "Receive",
     receiveSubtitle = "Receive apps from nearby devices",
-    receiveComing = "Direct receiving from nearby devices arrives in the next update.",
     appVersionFormat = "Version %s",
     filterAll = "All",
     appsCountFormat = "%d installed apps",
@@ -671,7 +662,6 @@ val EnglishStrings = AppStrings(
     helpReceiveSteps = "Keep ShareAPK open on this tab with the switch on.|On the other device open LocalSend (or ShareAPK) → Send, then pick “App” to send an installed app or “File” for an APK file.|Choose “%s” from the nearby devices.|The request appears here — tap Accept.|When it arrives, tap Install.",
     helpReceiveTips = "Both devices must be on the same Wi-Fi, or use one phone's hotspot.|Works with LocalSend whether its Encryption setting is on or off.|If this device doesn't appear on the sender, the router may block discovery — use a hotspot.|Accepted: APK, APKS, XAPK, APKM.",
     helpSendTitle = "Ways to share",
-    helpSendSteps = "Direct send to a nearby device with LocalSend or ShareAPK: coming in the next update.|Share via link to any device without an app: select apps, tap the Wi-Fi button, then scan the QR code or open the address in the other device's browser on the same network.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…).",
     helpTipsTitle = "Tips",
     nearbyEmpty = "No devices yet. Open ShareAPK or LocalSend on the other device on the same network, then refresh.",
     scanningNetwork = "Searching the network…",
@@ -705,7 +695,8 @@ val EnglishStrings = AppStrings(
     updateFailed = "Update failed: %s",
     updateCheckBtn = "Check now",
     updateBadge = "Available",
-    tileUpdatesAvailable = "Version %s available"
+    tileUpdatesAvailable = "Version %s available",
+    shareLinkSelectHint = "Select apps, then tap the Wi-Fi button in the selection bar."
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

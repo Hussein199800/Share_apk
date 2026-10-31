@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,7 +11,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -53,6 +56,8 @@ fun ShareApkShell(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
     overlay: (@Composable () -> Unit)? = null,
+    /** Extra lift for the snackbar (e.g. above the Apps selection bar). */
+    snackbarLift: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
     val layoutDirection = if (strings.isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -67,7 +72,9 @@ fun ShareApkShell(
                 NavItem(MainNavTab.RECEIVE, strings.navReceive, Icons.Outlined.Download),
                 NavItem(MainNavTab.MORE, strings.navMore, Icons.Outlined.MoreHoriz)
             )
-            val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            // With the keyboard open the IME already covers the navigation bar: don't add both.
+            val navInsets = WindowInsets.navigationBars.exclude(WindowInsets.ime)
+            val navInset = navInsets.asPaddingValues().calculateBottomPadding()
             val clearance = if (isExpandedScreen) navInset else ShareApkTokens.BottomBarClearance + navInset
             HaloBackground(modifier) {
                 Row(
@@ -86,13 +93,13 @@ fun ShareApkShell(
                         if (!isExpandedScreen) {
                             ShareApkBottomBar(
                                 items, currentTab, onSelectTab,
-                                Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                                Modifier.align(Alignment.BottomCenter).windowInsetsPadding(navInsets)
                             )
                         }
                         if (snackbarHostState != null) {
                             SnackbarHost(
                                 snackbarHostState,
-                                Modifier.align(Alignment.BottomCenter).padding(bottom = clearance)
+                                Modifier.align(Alignment.BottomCenter).padding(bottom = clearance + snackbarLift)
                             )
                         }
                     }

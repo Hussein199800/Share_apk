@@ -17,8 +17,11 @@ import kotlin.math.sin
 /** Two-stop gradient (spec §3.1). `end` is the darker stop, used for shadows and contrast. */
 @Immutable
 data class GradientPair(val start: Color, val end: Color) {
+    // Brushes are cached per angle so recompositions don't allocate new shader brushes.
+    private val cache = java.util.concurrent.ConcurrentHashMap<Float, Brush>()
+
     /** Linear brush at [angleDeg], CSS convention. */
-    fun brush(angleDeg: Float = 145f): Brush = angledBrush(listOf(start, end), angleDeg)
+    fun brush(angleDeg: Float = 145f): Brush = cache.getOrPut(angleDeg) { angledBrush(listOf(start, end), angleDeg) }
 }
 
 /** CSS-style angled gradient (0° = to top, 90° = to right, 135° = to bottom-right) sized to the shape. */
@@ -40,7 +43,7 @@ internal fun angledBrush(colors: List<Color>, angleDeg: Float): Brush = object :
 object ShareApkGradients {
     val primary = GradientPair(Color(0xFF6D72F3), Color(0xFF4338CA))
     val heroColors = listOf(Color(0xFF818CF8), Color(0xFF4F46E5), Color(0xFF7C3AED))
-    val hero: Brush get() = angledBrush(heroColors, 135f)
+    val hero: Brush = angledBrush(heroColors, 135f)
     val heroShadow = Color(0xFF4F46E5)
     /** Brand mark / launcher icon gradient (sky → indigo → violet). */
     val brand: Brush = angledBrush(listOf(Color(0xFF38BDF8), Color(0xFF4F46E5), Color(0xFFA78BFA)), 135f)

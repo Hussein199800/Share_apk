@@ -27,7 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -197,22 +197,19 @@ fun HaloBackground(modifier: Modifier = Modifier, content: @Composable () -> Uni
         modifier = modifier
             .fillMaxSize()
             .background(c.background)
-            .drawBehind {
+            .drawWithCache {
                 fun x(f: Float) = if (rtl) size.width * (1f - f) else size.width * f
-                drawRect(
-                    Brush.radialGradient(
-                        colors = listOf(c.haloA, Color.Transparent),
-                        center = Offset(x(0.95f), -size.height * 0.04f),
-                        radius = size.width * 1.1f
-                    )
+                val a = Brush.radialGradient(
+                    colors = listOf(c.haloA, Color.Transparent),
+                    center = Offset(x(0.95f), -size.height * 0.04f),
+                    radius = size.width * 1.1f
                 )
-                drawRect(
-                    Brush.radialGradient(
-                        colors = listOf(c.haloB, Color.Transparent),
-                        center = Offset(x(-0.12f), size.height * 0.4f),
-                        radius = size.width * 1.0f
-                    )
+                val b = Brush.radialGradient(
+                    colors = listOf(c.haloB, Color.Transparent),
+                    center = Offset(x(-0.12f), size.height * 0.4f),
+                    radius = size.width * 1.0f
                 )
+                onDrawBehind { drawRect(a); drawRect(b) }
             }
     ) { content() }
 }

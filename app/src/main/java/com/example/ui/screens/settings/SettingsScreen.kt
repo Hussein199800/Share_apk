@@ -29,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.data.model.FileNamingFormat
@@ -113,11 +115,19 @@ fun SettingsScreen(
                 LtrBox { Text(FileNameAndHashUtils.formatBytes(cacheSizeBytes), style = MaterialTheme.typography.labelLarge, color = c.primaryText) }
             }) {
                 SecondaryButton(s.clearCacheNowBtn, onClearCacheNow, Modifier.fillMaxWidth(), icon = Icons.Outlined.DeleteSweep)
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Whole row is the toggle, so TalkBack reads the label with the switch.
+                Row(
+                    Modifier.toggleable(
+                        value = prefs.autoClearCacheOnExit,
+                        role = Role.Switch,
+                        onValueChange = onAutoClearCacheChange
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(s.autoClearCacheToggle, style = MaterialTheme.typography.bodyMedium, color = c.onBackground, modifier = Modifier.weight(1f))
                     Switch(
                         checked = prefs.autoClearCacheOnExit,
-                        onCheckedChange = onAutoClearCacheChange,
+                        onCheckedChange = null,
                         colors = SwitchDefaults.colors(checkedTrackColor = c.primary)
                     )
                 }

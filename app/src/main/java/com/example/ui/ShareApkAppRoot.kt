@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.ui.unit.dp
 import android.Manifest
 import android.app.DownloadManager
 import android.content.Intent
@@ -196,7 +197,8 @@ fun ShareApkAppRoot(
     }
     val shareViaLink = {
         val selected = viewModel.getSelectedAppsList()
-        if (selected.isNotEmpty()) viewModel.startWifiShareForApps(selected) else viewModel.selectTab(MainNavTab.APPS)
+        if (selected.isNotEmpty()) viewModel.startWifiShareForApps(selected)
+        else { viewModel.selectTab(MainNavTab.APPS); viewModel.showHint(strings.shareLinkSelectHint) }
     }
 
     // Back order lives in ui/navigation/NavState.kt (selection → More sub-page → Apps → exit).
@@ -211,6 +213,7 @@ fun ShareApkAppRoot(
         currentTab = currentTab,
         onSelectTab = viewModel::selectTab,
         snackbarHostState = snackbarHostState,
+        snackbarLift = if (currentTab == MainNavTab.APPS && selectedPackageNames.isNotEmpty()) 130.dp else 0.dp,
         overlay = if (prefsLoaded && !prefs.onboardingCompleted) {
             { OnboardingPagerDialog(onFinishOnboarding = viewModel::completeOnboarding) }
         } else null

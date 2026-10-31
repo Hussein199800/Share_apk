@@ -124,6 +124,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val manualPeerResult: StateFlow<Boolean?> = _manualPeerResult.asStateFlow()
 
     fun refreshPeers() = receiver.refreshPeers()
+
+    /** Shows a one-off hint in the snackbar. */
+    fun showHint(message: String) { _snackbarMessage.value = message }
     fun cancelSend() = receiver.sender.cancel()
     fun resetSend() = receiver.sender.reset()
 

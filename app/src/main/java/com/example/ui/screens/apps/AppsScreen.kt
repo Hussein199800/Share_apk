@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -118,6 +119,8 @@ fun AppsScreen(
                     Modifier.testTag("toggle_grid_list_button")
                 )
                 SortMenu(selectedSort, onSortChange)
+                // Explicit refresh (pull-to-refresh has no screen-reader action and can't run on an empty list).
+                IconActionButton(Icons.Outlined.Refresh, s.refreshAction, onRefreshApps, Modifier.testTag("refresh_apps_button"))
             }
         }
     ) {
