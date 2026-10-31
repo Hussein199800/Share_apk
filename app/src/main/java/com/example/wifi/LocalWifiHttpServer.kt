@@ -160,18 +160,25 @@ class LocalWifiHttpServer {
         }
     }
 
+    /** Browser page in the app's visual identity (navy/indigo, light & dark, Arabic-first). */
     private fun buildHtmlIndexPage(files: List<HostedWifiFile>): String {
+        val glyph = """<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 6.5l8 4v8L12 22.5l-8-4z"/><path d="M4 10.5l8 4 8-4M12 14.5v8"/><path d="M12 11.5V1.8M8.6 5.2 12 1.8l3.5 3.4"/></svg>"""
         val cardsHtml = files.joinToString("\n") { item ->
-            val badge = if (item.file.name.endsWith(".apks")) "Split APKS Bundle (.apks)" else "Single APK (.apk)"
+            val bundle = item.file.name.endsWith(".apks", ignoreCase = true)
+            val initial = escapeHtml(item.appLabel.trim().take(1).ifEmpty { "?" })
             """
             <div class="card">
-              <div class="info">
-                <h2>${escapeHtml(item.appLabel)}</h2>
-                <p class="ltr">${escapeHtml(item.packageName)} • v${escapeHtml(item.versionName)}</p>
-                <p class="meta"><span class="badge">$badge</span> • <span class="ltr">${item.sizeFormatted}</span></p>
-                <p class="hash ltr">SHA-256: ${item.sha256Short}...</p>
+              <div class="row">
+                <div class="ic">$initial</div>
+                <div class="info">
+                  <h2>${escapeHtml(item.appLabel)}</h2>
+                  <p class="ltr">v${escapeHtml(item.versionName)} · ${item.sizeFormatted}</p>
+                </div>
+                ${if (bundle) "<span class=\"badge\">Split</span>" else ""}
               </div>
-              <a class="btn" href="/download/${item.index}/${item.file.name}">تنزيل / Download</a>
+              <p class="pkg ltr">${escapeHtml(item.packageName)}</p>
+              <p class="pkg ltr">SHA-256 ${item.sha256Short}…</p>
+              <a class="btn" href="/download/${item.index}/${escapeHtml(item.file.name)}">تنزيل</a>
             </div>
             """.trimIndent()
         }
@@ -182,31 +189,44 @@ class LocalWifiHttpServer {
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>شارك أبك | ShareAPK Wi-Fi Transfer</title>
+          <meta name="color-scheme" content="light dark" />
+          <title>شارك أبك</title>
           <style>
-            body { background:#2B1B14; color:#FFF8F0; font-family:system-ui,-apple-system,sans-serif; margin:0; padding:24px; }
-            .container { max-width:680px; margin:0 auto; }
-            header { border-bottom:1px solid rgba(215,204,200,0.25); padding-bottom:16px; margin-bottom:20px; }
-            h1 { color:#C9A227; margin:0 0 6px 0; font-size:1.5rem; }
-            .sub { color:#D7CCC8; font-size:0.9rem; margin:0; }
-            .card { background:#38241C; border:1px solid rgba(201,162,39,0.35); border-radius:16px; padding:16px; margin-bottom:14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
-            h2 { margin:0 0 4px 0; font-size:1.15rem; color:#FFF8F0; }
-            p { margin:2px 0; color:#D7CCC8; font-size:0.86rem; }
-            .ltr { direction:ltr; unicode-bidi:embed; font-family:monospace; }
-            .badge { background:#4E342E; color:#C9A227; padding:2px 8px; border-radius:6px; font-weight:600; }
-            .hash { font-size:0.75rem; opacity:0.8; }
-            .btn { background:#C9A227; color:#2B1B14; text-decoration:none; font-weight:700; padding:10px 18px; border-radius:10px; display:inline-block; }
-            footer { margin-top:28px; text-align:center; color:#D7CCC8; font-size:0.8rem; opacity:0.75; }
+            :root { --bg:#eef1f8; --surface:#ffffff; --line:rgba(15,23,42,.09); --txt:#0f172a; --mute:#5b6577; --pri:#4338ca; --info:#0369a1; }
+            @media (prefers-color-scheme: dark) { :root { --bg:#070d1d; --surface:#111c38; --line:rgba(255,255,255,.08); --txt:#eef2ff; --mute:#9aa6c8; --pri:#a5b4fc; --info:#38bdf8; } }
+            * { box-sizing:border-box; }
+            body { margin:0; background:var(--bg); color:var(--txt); font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; line-height:1.6;
+                   background-image:radial-gradient(520px 360px at 95% -8%, rgba(29,58,138,.33), transparent 62%), radial-gradient(460px 380px at -12% 40%, rgba(91,33,182,.2), transparent 62%); min-height:100vh; }
+            .wrap { max-width:560px; margin:0 auto; padding:28px 16px 40px; }
+            header { text-align:center; margin-bottom:22px; }
+            .brand { width:72px; height:72px; margin:0 auto 10px; border-radius:23px; padding:15px; background:linear-gradient(135deg,#38bdf8,#4f46e5 55%,#a78bfa); box-shadow:0 12px 28px -10px #4f46e5; }
+            h1 { margin:0; font-size:1.5rem; }
+            .sub { margin:4px 0 0; color:var(--mute); font-size:.92rem; }
+            .card { background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:16px; margin-bottom:12px; }
+            .row { display:flex; align-items:center; gap:12px; }
+            .ic { width:46px; height:46px; flex:none; border-radius:14px; display:grid; place-items:center; color:#fff; font-weight:700; font-size:1.2rem; background:linear-gradient(145deg,#818cf8,#4338ca); }
+            .info { flex:1; min-width:0; }
+            h2 { margin:0; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            p { margin:0; color:var(--mute); font-size:.85rem; }
+            .pkg { font-size:.75rem; margin-top:6px; overflow-wrap:anywhere; }
+            .ltr { direction:ltr; unicode-bidi:isolate; text-align:right; }
+            .badge { font-size:.72rem; font-weight:600; color:var(--info); background:color-mix(in srgb, var(--info) 14%, transparent); padding:2px 9px; border-radius:9px; }
+            .btn { display:block; margin-top:14px; text-align:center; text-decoration:none; color:#fff; font-weight:600; padding:13px; border-radius:16px; background:linear-gradient(135deg,#6d72f3,#4338ca); box-shadow:0 8px 20px -8px #4f46e5; }
+            .help { background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:14px 16px; margin-top:18px; color:var(--mute); font-size:.85rem; }
+            .help b { color:var(--txt); }
+            footer { margin-top:22px; text-align:center; color:var(--mute); font-size:.78rem; }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="wrap">
             <header>
-              <h1>شارك أبك | ShareAPK — خادم Wi-Fi المحلي</h1>
-              <p class="sub">100% Offline Local LAN Transfer • المطور: حسين محمد علي الطويل</p>
+              <div class="brand">$glyph</div>
+              <h1>شارك أبك</h1>
+              <p class="sub">تطبيقات مشاركة معك عبر الشبكة المحلية</p>
             </header>
             $cardsHtml
-            <footer>ShareAPK v2.4.0 • Works 100% Offline on Local Wi-Fi / Hotspot</footer>
+            <div class="help"><b>بعد التنزيل:</b> افتح الملف من إشعار التنزيل لتثبيته. قد يطلب الهاتف السماح للمتصفح بتثبيت التطبيقات مرة واحدة. ملفات <span class="ltr">.apks</span> تُثبَّت عبر «شارك أبك».</div>
+            <footer>شارك أبك · يعمل على الواي فاي أو نقطة الاتصال بلا إنترنت</footer>
           </div>
         </body>
         </html>

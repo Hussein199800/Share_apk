@@ -205,7 +205,16 @@ data class AppStrings(
     val vsSame: String,
     val vsOlder: String,
     val deviceNameTitle: String,
-    val deviceNameHint: String
+    val deviceNameHint: String,
+    val evNotApps: String,
+    val evTimedOut: String,
+    val evBusy: String,
+    val helpReceiveTitle: String,
+    val helpReceiveSteps: String,
+    val helpReceiveTips: String,
+    val helpSendTitle: String,
+    val helpSendSteps: String,
+    val helpTipsTitle: String
 )
 
 val ArabicStrings = AppStrings(
@@ -392,7 +401,16 @@ val ArabicStrings = AppStrings(
     vsSame = "نفس الإصدار",
     vsOlder = "أقدم",
     deviceNameTitle = "اسم الجهاز",
-    deviceNameHint = "يظهر للأجهزة القريبة عند الإرسال والاستقبال"
+    deviceNameHint = "يظهر للأجهزة القريبة عند الإرسال والاستقبال",
+    evNotApps = "رُفض طلب من %1\$s تلقائياً لأنه لا يحتوي ملفات تطبيقات (%2\$s).",
+    evTimedOut = "انتهت مهلة الرد على طلب %s.",
+    evBusy = "تجاهلنا طلباً من %s لوجود استلام جارٍ.",
+    helpReceiveTitle = "كيف أستقبل تطبيقاً؟",
+    helpReceiveSteps = "اترك «شارك أبك» مفتوحاً على هذا التبويب والمفتاح مفعّلاً.|على الجهاز الآخر افتح LocalSend (أو «شارك أبك») ثم «إرسال»، واختر «تطبيق» لإرسال تطبيق مثبّت أو «ملف» لإرسال ملف APK.|اختر «%s» من قائمة الأجهزة القريبة.|ستظهر هنا نافذة الطلب، اضغط «قبول واستلام».|بعد الاستلام اضغط «ثبّت الآن».",
+    helpReceiveTips = "يجب أن يكون الجهازان على نفس الواي فاي، أو شغّل نقطة اتصال (Hotspot) من أحدهما.|يعمل مع LocalSend سواء كان «التشفير» مفعّلاً أو مطفأً في إعداداته.|إن لم يظهر جهازك عند المرسل فقد يكون الراوتر يحجب الاكتشاف، فاستخدم نقطة الاتصال.|يُقبل فقط: APK وAPKS وXAPK وAPKM.",
+    helpSendTitle = "طرق المشاركة",
+    helpSendSteps = "إرسال مباشر لجهاز قريب عليه LocalSend أو «شارك أبك»: قادم في التحديث القادم.|مشاركة عبر رابط لأي جهاز بلا تطبيق: حدّد التطبيقات ثم اضغط زر الواي فاي، وامسح رمز QR أو افتح العنوان في متصفح الجهاز الآخر على نفس الشبكة.|المشاركة العادية: زر المشاركة يرسل الملف عبر أي تطبيق (واتساب، Quick Share، بلوتوث…).",
+    helpTipsTitle = "نصائح"
 )
 
 val EnglishStrings = AppStrings(
@@ -579,7 +597,16 @@ val EnglishStrings = AppStrings(
     vsSame = "Same version",
     vsOlder = "Older",
     deviceNameTitle = "Device name",
-    deviceNameHint = "Shown to nearby devices when sending and receiving"
+    deviceNameHint = "Shown to nearby devices when sending and receiving",
+    evNotApps = "Declined %1\$s automatically: no app files (%2\$s).",
+    evTimedOut = "Request from %s timed out.",
+    evBusy = "Ignored %s: another transfer is in progress.",
+    helpReceiveTitle = "How do I receive an app?",
+    helpReceiveSteps = "Keep ShareAPK open on this tab with the switch on.|On the other device open LocalSend (or ShareAPK) → Send, then pick “App” to send an installed app or “File” for an APK file.|Choose “%s” from the nearby devices.|The request appears here — tap Accept.|When it arrives, tap Install.",
+    helpReceiveTips = "Both devices must be on the same Wi-Fi, or use one phone's hotspot.|Works with LocalSend whether its Encryption setting is on or off.|If this device doesn't appear on the sender, the router may block discovery — use a hotspot.|Accepted: APK, APKS, XAPK, APKM.",
+    helpSendTitle = "Ways to share",
+    helpSendSteps = "Direct send to a nearby device with LocalSend or ShareAPK: coming in the next update.|Share via link to any device without an app: select apps, tap the Wi-Fi button, then scan the QR code or open the address in the other device's browser on the same network.|Regular share: the Share button sends the file through any app (WhatsApp, Quick Share, Bluetooth…).",
+    helpTipsTitle = "Tips"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

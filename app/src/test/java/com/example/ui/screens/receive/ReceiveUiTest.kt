@@ -1,6 +1,9 @@
 package com.example.ui.screens.receive
 
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.receive.IncomingRequest
@@ -35,6 +38,7 @@ class ReceiveUiTest {
 
     @Test fun emptyListShowsHint() {
         screen(emptyList())
+        rule.onNode(hasScrollAction()).performScrollToNode(hasText(ArabicStrings.receivedEmpty))
         rule.onNodeWithText(ArabicStrings.receivedEmpty).assertExists()
         rule.onNodeWithText("Pixel 8").assertExists()
     }
@@ -43,6 +47,7 @@ class ReceiveUiTest {
         var installed: ReceivedItem? = null
         val item = ReceivedItem(File("/x/a.apk"), "سكينة", "com.sakina", "1.3.0", 130, VersionStatus.UPDATE, null, 0)
         screen(listOf(item)) { installed = it }
+        rule.onNode(hasScrollAction()).performScrollToNode(hasText(ArabicStrings.installNowShort))
         rule.onNodeWithText(ArabicStrings.vsUpdate).assertExists()
         rule.onNodeWithText(ArabicStrings.installNowShort).performClick()
         assertEquals(item, installed)

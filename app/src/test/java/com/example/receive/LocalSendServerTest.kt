@@ -77,4 +77,12 @@ class LocalSendServerTest {
         assertEquals(400, post("upload", "abc").code)
         assertEquals(200, post("cancel?sessionId=x", "").code)
     }
+
+    @Test fun plainHttpWorksOnSamePort() {
+        // LocalSend with encryption turned off talks plain HTTP to the same port.
+        val plain = okhttp3.OkHttpClient()
+        val res = plain.newCall(Request.Builder().url("http://127.0.0.1:$port/api/localsend/v2/info").build()).execute()
+        assertEquals(200, res.code)
+        assertEquals("Pixel", ProtocolJson.decode<DeviceInfoDto>(res.body!!.string()).alias)
+    }
 }

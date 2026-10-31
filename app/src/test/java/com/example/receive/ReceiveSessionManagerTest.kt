@@ -117,4 +117,13 @@ class ReceiveSessionManagerTest {
         assertFalse(m.sessionDir(sid).exists())
         assertEquals(ReceiveState.Idle, m.state.value)
     }
+
+    @Test fun autoRefusalsAreReportedAsEvents() = runTest {
+        val m = manager(timeout = 1_000)
+        m.prepare(req(file("a", "photo.png")), "ip")
+        assertEquals(ReceiveEvent.NotApps("Desk", listOf("photo.png")), m.lastEvent.value)
+        val r = async { m.prepare(req(file("b", "a.apk")), "ip") }
+        advanceTimeBy(1_500); r.await()
+        assertEquals(ReceiveEvent.TimedOut("Desk"), m.lastEvent.value)
+    }
 }

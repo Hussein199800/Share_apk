@@ -39,6 +39,13 @@ data class FileProgress(val fileId: String, val fileName: String, val size: Long
 
 data class ReceivedFile(val fileName: String, val file: File, val meta: ShareApkMetaDto?)
 
+/** Why a request ended without the user deciding (shown as a hint in the Receive tab). */
+sealed interface ReceiveEvent {
+    data class NotApps(val sender: String, val fileNames: List<String>) : ReceiveEvent
+    data class TimedOut(val sender: String) : ReceiveEvent
+    data class Busy(val sender: String) : ReceiveEvent
+}
+
 sealed interface ReceiveState {
     data object Idle : ReceiveState
     data class AwaitingDecision(val request: IncomingRequest) : ReceiveState
@@ -70,6 +77,9 @@ class ReceiveSessionManager(
     private val _state = MutableStateFlow<ReceiveState>(ReceiveState.Idle)
     val state: StateFlow<ReceiveState> = _state.asStateFlow()
 
+    private val _lastEvent = MutableStateFlow<ReceiveEvent?>(null)
+    val lastEvent: StateFlow<ReceiveEvent?> = _lastEvent.asStateFlow()
+
     private val lock = Any()
     private var pendingDecision: CompletableDeferred<Boolean>? = null
     private var session: Session? = null
@@ -78,16 +88,24 @@ class ReceiveSessionManager(
 
     suspend fun prepare(req: PrepareUploadRequest, senderIp: String): PrepareResult {
         val accepted = req.files.values.filter { isAppPackage(it.fileName) }
-        if (accepted.isEmpty()) return PrepareResult.NothingToAccept
+        if (accepted.isEmpty()) {
+            _lastEvent.value = ReceiveEvent.NotApps(req.info.alias, req.files.values.map { it.fileName })
+            return PrepareResult.NothingToAccept
+        }
         val decision = CompletableDeferred<Boolean>()
         synchronized(lock) {
-            if (pendingDecision != null || session != null) return PrepareResult.Blocked
+            if (pendingDecision != null || session != null) {
+                _lastEvent.value = ReceiveEvent.Busy(req.info.alias)
+                return PrepareResult.Blocked
+            }
             pendingDecision = decision
             _state.value = ReceiveState.AwaitingDecision(
                 IncomingRequest(req.info, senderIp, accepted, req.files.size - accepted.size)
             )
         }
-        val ok = withTimeoutOrNull(decisionTimeoutMs) { decision.await() } ?: false
+        val answer = withTimeoutOrNull(decisionTimeoutMs) { decision.await() }
+        if (answer == null) _lastEvent.value = ReceiveEvent.TimedOut(req.info.alias)
+        val ok = answer ?: false
         synchronized(lock) {
             pendingDecision = null
             if (!ok) {

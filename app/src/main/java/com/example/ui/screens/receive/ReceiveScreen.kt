@@ -28,11 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.receive.ReceiveEvent
 import com.example.receive.ReceiveState
 import com.example.receive.ReceivedItem
 import com.example.receive.ReceiverStatus
 import com.example.ui.components.design.AppIcon
+import com.example.ui.components.design.BadgeTone
 import com.example.ui.components.design.GradientIconBox
+import com.example.ui.components.design.HelpCard
 import com.example.ui.components.design.GradientProgressBar
 import com.example.ui.components.design.HeroCard
 import com.example.ui.components.design.IconActionButton
@@ -59,6 +62,7 @@ fun ReceiveScreen(
     onAcknowledge: () -> Unit,
     onInstall: (ReceivedItem) -> Unit,
     onDelete: (ReceivedItem) -> Unit,
+    lastEvent: ReceiveEvent? = null,
     modifier: Modifier = Modifier
 ) {
     val s = LocalAppStrings.current
@@ -70,6 +74,24 @@ fun ReceiveScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             item { DeviceCard(status, enabled, onToggleEnabled) }
+            if (lastEvent != null && state is ReceiveState.Idle) item {
+                StatusBadge(
+                    when (lastEvent) {
+                        is ReceiveEvent.NotApps -> s.evNotApps.format(lastEvent.sender, lastEvent.fileNames.joinToString("، "))
+                        is ReceiveEvent.TimedOut -> s.evTimedOut.format(lastEvent.sender)
+                        is ReceiveEvent.Busy -> s.evBusy.format(lastEvent.sender)
+                    },
+                    BadgeTone.Warning
+                )
+            }
+            item {
+                HelpCard(
+                    title = s.helpReceiveTitle,
+                    steps = s.helpReceiveSteps.format(status.alias).split('|'),
+                    tips = s.helpReceiveTips.split('|'),
+                    initiallyExpanded = received.isEmpty()
+                )
+            }
 
             when (state) {
                 is ReceiveState.Receiving -> item {

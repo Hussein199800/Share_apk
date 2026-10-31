@@ -166,6 +166,7 @@ fun ShareApkAppRoot(
     val receiveState by viewModel.receiveState.collectAsStateWithLifecycle()
     val receiverStatus by viewModel.receiverStatus.collectAsStateWithLifecycle()
     val receivedItems by viewModel.receivedItems.collectAsStateWithLifecycle()
+    val receiveEvent by viewModel.receiveEvent.collectAsStateWithLifecycle()
     val deviceName = receiverStatus.alias
     val appVersion = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
@@ -258,7 +259,8 @@ fun ShareApkAppRoot(
                 onCancel = viewModel::cancelReceive,
                 onAcknowledge = viewModel::acknowledgeReceive,
                 onInstall = viewModel::installReceived,
-                onDelete = viewModel::deleteReceived
+                onDelete = viewModel::deleteReceived,
+                lastEvent = receiveEvent
             )
 
             MainNavTab.MORE -> when (moreDestination) {

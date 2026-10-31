@@ -142,6 +142,7 @@ dependencies {
   implementation(libs.ktor.server.netty)
   implementation(libs.bouncycastle.pkix)
   implementation(libs.androidx.lifecycle.process)
+  implementation(libs.zxing.core)
   implementation(libs.kotlinx.coroutines.core)
   // implementation(libs.logging.interceptor)
   // implementation(libs.moshi.kotlin)

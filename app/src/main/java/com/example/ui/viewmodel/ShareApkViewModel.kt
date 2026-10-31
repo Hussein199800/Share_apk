@@ -20,6 +20,7 @@ import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
 import com.example.receive.ReceiveController
+import com.example.receive.ReceiveEvent
 import com.example.receive.ReceiveState
 import com.example.receive.ReceivedItem
 import com.example.receive.ReceiverStatus
@@ -93,6 +94,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val receiveState: StateFlow<ReceiveState> = receiver.sessions.state
     val receiverStatus: StateFlow<ReceiverStatus> = receiver.status
     val receivedItems: StateFlow<List<ReceivedItem>> = receiver.received
+    val receiveEvent: StateFlow<ReceiveEvent?> = receiver.sessions.lastEvent
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
     fun cancelReceive() = receiver.sessions.cancelActive()

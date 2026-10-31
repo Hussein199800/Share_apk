@@ -13,7 +13,9 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.engine.sslConnector
+import io.ktor.server.engine.connector
+import io.netty.handler.ssl.OptionalSslHandler
+import io.netty.handler.ssl.SslContextBuilder
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.origin
@@ -27,7 +29,7 @@ import io.ktor.server.routing.routing
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.runBlocking
 
-/** LocalSend v2 receiver (upload API) over HTTPS. */
+/** LocalSend v2 receiver (upload API) over HTTPS or plain HTTP on the same port. */
 class LocalSendServer(
     private val cert: CertificateStore.Loaded,
     private val manager: ReceiveSessionManager,
@@ -42,14 +44,16 @@ class LocalSendServer(
             Netty,
             environment = applicationEnvironment { },
             configure = {
-                sslConnector(
-                    keyStore = cert.keyStore,
-                    keyAlias = CertificateStore.ALIAS,
-                    keyStorePassword = { cert.password },
-                    privateKeyPassword = { cert.password }
-                ) {
+                // One port for both: LocalSend peers with encryption on speak TLS, peers with it
+                // off speak plain HTTP. OptionalSslHandler sniffs the first bytes and adds TLS only
+                // when the client starts a TLS handshake.
+                connector {
                     this.host = "0.0.0.0"
                     this.port = port
+                }
+                val sslContext = SslContextBuilder.forServer(cert.privateKey, cert.certificate).build()
+                channelPipelineConfig = {
+                    addFirst("optional-tls", OptionalSslHandler(sslContext))
                 }
             }
         ) {

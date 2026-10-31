@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.example.data.model.InstalledAppInfo
 import com.example.ui.components.design.AppIcon
 import com.example.ui.components.design.GradientIconBox
+import com.example.ui.components.design.HelpCard
 import com.example.ui.components.design.HeroCard
 import com.example.ui.components.design.PrimaryButton
 import com.example.ui.components.design.ScreenScaffold
@@ -85,6 +86,8 @@ fun SendScreen(
                     }
                 }
             }
+
+            HelpCard(title = s.helpSendTitle, steps = s.helpSendSteps.split('|'))
 
             Text(s.nearbyDevicesTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground)
             SurfaceCard(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
