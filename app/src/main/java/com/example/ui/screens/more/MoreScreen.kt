@@ -115,7 +115,7 @@ fun MoreScreen(
                         trailing = {
                             LtrBox {
                                 Text(
-                                    s.versionLabel.format(appVersion),
+                                    s.appVersionFormat.format(appVersion),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = c.onSurfaceVariant,
                                     modifier = Modifier.padding(end = 4.dp)

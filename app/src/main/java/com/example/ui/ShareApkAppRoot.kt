@@ -59,7 +59,7 @@ import com.example.ui.components.design.NavItem
 import com.example.ui.components.design.ShareApkBottomBar
 import com.example.ui.components.design.ShareApkRail
 import com.example.ui.navigation.MoreDestination
-import com.example.ui.screens.AppsHomeScreen
+import com.example.ui.screens.apps.AppsScreen
 import com.example.ui.screens.BackupRestoreScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.SettingsAndAboutScreen
@@ -221,59 +221,46 @@ fun ShareApkAppRoot(
         snackbarHostState = snackbarHostState
     ) {
         when (currentTab) {
-            MainNavTab.APPS -> AppsHomeScreen(
-                    apps = apps,
-                    isLoading = isLoading,
-                    searchQuery = searchQuery,
-                    selectedFilter = selectedFilter,
-                    selectedSort = selectedSort,
-                    isGridView = isGridView,
-                    isExpandedScreen = isExpandedScreen,
-                    selectedPackageNames = selectedPackageNames,
-                    focusedApp = focusedApp,
-                    computedSha256Map = computedSha256Map,
-                    isComputingSha256 = isComputingSha256,
-                    cacheSizeBytes = cacheSizeBytes,
-                    quickZipProgress = quickZipProgress,
-                    onSearchChange = viewModel::setSearchQuery,
-                    onFilterChange = viewModel::setFilter,
-                    onSortChange = viewModel::setSortOption,
-                    onToggleGridView = viewModel::toggleGridView,
-                    onRefreshApps = viewModel::refreshInstalledApps,
-                    onPickExternalApkToInstall = {
-                        openExternalApkLauncher.launch(
-                            arrayOf(
-                                "application/vnd.android.package-archive",
-                                "application/octet-stream",
-                                "application/zip"
-                            )
-                        )
-                    },
-                    onSelectAppForDetails = viewModel::selectAppForDetails,
-                    onToggleAppMultiSelect = viewModel::toggleAppSelection,
-                    onClearMultiSelect = viewModel::clearSelection,
-                    onShareSingleApp = { app ->
-                        viewModel.requestShareApp(app) { chooser ->
-                            runCatching { context.startActivity(chooser) }
-                        }
-                    },
-                    onSaveSingleAppToDownloads = viewModel::requestSaveAppToDownloads,
-                    onReinstallVerifyApp = viewModel::inspectInstalledAppForReinstall,
-                    onWifiShareApps = viewModel::startWifiShareForApps,
-                    onShareSelectedApps = {
-                        val selectedList = viewModel.getSelectedAppsList()
-                        viewModel.executeShareApps(selectedList) { chooser ->
-                            runCatching { context.startActivity(chooser) }
-                        }
-                    },
-                    onBackupSelectedToZip = {
-                        val selectedList = viewModel.getSelectedAppsList()
-                        viewModel.startQuickMultiAppBackupToDownloads(selectedList)
-                    },
-                    onCancelQuickZipBackup = viewModel::cancelQuickMultiAppBackup,
-                    onToggleFavorite = viewModel::toggleFavorite,
-                    onComputeSha256 = viewModel::computeBaseApkSha256
-                )
+            MainNavTab.APPS -> AppsScreen(
+                apps = apps,
+                isLoading = isLoading,
+                searchQuery = searchQuery,
+                selectedFilter = selectedFilter,
+                selectedSort = selectedSort,
+                isGridView = isGridView,
+                isExpandedScreen = isExpandedScreen,
+                selectedPackageNames = selectedPackageNames,
+                focusedApp = focusedApp,
+                computedSha256Map = computedSha256Map,
+                isComputingSha256 = isComputingSha256,
+                quickZipProgress = quickZipProgress,
+                onSearchChange = viewModel::setSearchQuery,
+                onFilterChange = viewModel::setFilter,
+                onSortChange = viewModel::setSortOption,
+                onToggleGridView = viewModel::toggleGridView,
+                onRefreshApps = viewModel::refreshInstalledApps,
+                onSelectAppForDetails = viewModel::selectAppForDetails,
+                onToggleAppMultiSelect = viewModel::toggleAppSelection,
+                onClearMultiSelect = viewModel::clearSelection,
+                onShareSingleApp = { app ->
+                    viewModel.requestShareApp(app) { chooser -> runCatching { context.startActivity(chooser) } }
+                },
+                onSaveSingleAppToDownloads = viewModel::requestSaveAppToDownloads,
+                onReinstallVerifyApp = viewModel::inspectInstalledAppForReinstall,
+                onWifiShareApps = viewModel::startWifiShareForApps,
+                onShareSelectedApps = {
+                    viewModel.executeShareApps(viewModel.getSelectedAppsList()) { chooser ->
+                        runCatching { context.startActivity(chooser) }
+                    }
+                },
+                onBackupSelectedToZip = {
+                    viewModel.startQuickMultiAppBackupToDownloads(viewModel.getSelectedAppsList())
+                },
+                onCancelQuickZipBackup = viewModel::cancelQuickMultiAppBackup,
+                onToggleFavorite = viewModel::toggleFavorite,
+                onComputeSha256 = viewModel::computeBaseApkSha256,
+                onSendSelected = { viewModel.selectTab(MainNavTab.SEND) }
+            )
 
             MainNavTab.SEND -> SendScreen(
                 selectedApps = remember(selectedPackageNames, apps) { viewModel.getSelectedAppsList() },

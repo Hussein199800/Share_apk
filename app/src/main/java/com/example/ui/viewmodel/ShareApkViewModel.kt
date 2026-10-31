@@ -56,6 +56,15 @@ enum class PendingSplitActionType {
     SAVE_DOWNLOADS
 }
 
+/** Filter predicate for the apps list; `null` matches every app. */
+fun matchesFilter(app: InstalledAppInfo, filter: AppFilter?): Boolean = when (filter) {
+    null -> true
+    AppFilter.USER_APPS -> !app.isSystemApp
+    AppFilter.SYSTEM_APPS -> app.isSystemApp
+    AppFilter.SPLIT_ONLY -> app.isSplitApk
+    AppFilter.FAVORITES -> app.isFavorite
+}
+
 data class QuickZipBackupProgress(
     val isRunning: Boolean = false,
     val currentIndex: Int = 0,
@@ -99,8 +108,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow(AppFilter.USER_APPS)
-    val selectedFilter: StateFlow<AppFilter> = _selectedFilter.asStateFlow()
+    private val _selectedFilter = MutableStateFlow<AppFilter?>(AppFilter.USER_APPS)
+    /** `null` means "all apps". */
+    val selectedFilter: StateFlow<AppFilter?> = _selectedFilter.asStateFlow()
 
     private val _selectedSort = MutableStateFlow(AppSortOption.NAME_ASC)
     val selectedSort: StateFlow<AppSortOption> = _selectedSort.asStateFlow()
@@ -209,12 +219,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         val withFavs = apps.map { it.copy(isFavorite = favSet.contains(it.packageName)) }
 
         val filtered = withFavs.filter { app ->
-            val matchesFilter = when (filter) {
-                AppFilter.USER_APPS -> !app.isSystemApp
-                AppFilter.SYSTEM_APPS -> app.isSystemApp
-                AppFilter.SPLIT_ONLY -> app.isSplitApk
-                AppFilter.FAVORITES -> app.isFavorite
-            }
+            val matchesFilter = matchesFilter(app, filter)
             val matchesSearch = if (query.isBlank()) {
                 true
             } else {
@@ -323,7 +328,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         _searchQuery.value = query
     }
 
-    fun setFilter(filter: AppFilter) {
+    fun setFilter(filter: AppFilter?) {
         _selectedFilter.value = filter
     }
 

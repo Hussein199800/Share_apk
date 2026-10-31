@@ -177,7 +177,12 @@ data class AppStrings(
     val sendDiscoveryComing: String,
     val receiveTitle: String,
     val receiveSubtitle: String,
-    val receiveComing: String
+    val receiveComing: String,
+    val appVersionFormat: String,
+    val filterAll: String,
+    val appsCountFormat: String,
+    val sortAction: String,
+    val toggleViewAction: String
 )
 
 val ArabicStrings = AppStrings(
@@ -336,7 +341,12 @@ val ArabicStrings = AppStrings(
     sendDiscoveryComing = "اكتشاف الأجهزة القريبة والإرسال المباشر قادمان في التحديث القادم. يمكنك الآن المشاركة عبر رابط.",
     receiveTitle = "استقبال",
     receiveSubtitle = "استقبل التطبيقات من الأجهزة القريبة",
-    receiveComing = "الاستقبال المباشر من الأجهزة القريبة قادم في التحديث القادم."
+    receiveComing = "الاستقبال المباشر من الأجهزة القريبة قادم في التحديث القادم.",
+    appVersionFormat = "الإصدار %s",
+    filterAll = "الكل",
+    appsCountFormat = "%d تطبيقاً مثبتاً",
+    sortAction = "ترتيب",
+    toggleViewAction = "تبديل طريقة العرض"
 )
 
 val EnglishStrings = AppStrings(
@@ -495,7 +505,12 @@ val EnglishStrings = AppStrings(
     sendDiscoveryComing = "Nearby discovery and direct sending arrive in the next update. For now, share via link.",
     receiveTitle = "Receive",
     receiveSubtitle = "Receive apps from nearby devices",
-    receiveComing = "Direct receiving from nearby devices arrives in the next update."
+    receiveComing = "Direct receiving from nearby devices arrives in the next update.",
+    appVersionFormat = "Version %s",
+    filterAll = "All",
+    appsCountFormat = "%d installed apps",
+    sortAction = "Sort",
+    toggleViewAction = "Toggle view"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }
