@@ -19,6 +19,13 @@ import com.example.data.model.FileNamingFormat
 import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
+import com.example.receive.ReceiveController
+import com.example.receive.ReceiveState
+import com.example.receive.ReceivedItem
+import com.example.receive.ReceiverStatus
+import com.example.receive.VersionStatus
+import com.example.receive.compareWithInstalled
+import com.example.receive.protocol.FileDto
 import com.example.ui.navigation.BackAction
 import com.example.ui.navigation.MoreDestination
 import com.example.ui.navigation.NavSnapshot
@@ -80,6 +87,38 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val prefsRepository = UserPreferencesRepository(context)
     private val historyRepository = HistoryRepository(AppDatabase.getInstance(context).historyDao())
     val packageInstallerManager = PackageInstallerManager(context, apkRepository)
+
+    // ---- Direct receive (LocalSend-compatible) ----
+    private val receiver = ReceiveController.get(context)
+    val receiveState: StateFlow<ReceiveState> = receiver.sessions.state
+    val receiverStatus: StateFlow<ReceiverStatus> = receiver.status
+    val receivedItems: StateFlow<List<ReceivedItem>> = receiver.received
+
+    fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
+    fun cancelReceive() = receiver.sessions.cancelActive()
+    fun acknowledgeReceive() = receiver.sessions.acknowledge()
+    fun deleteReceived(item: ReceivedItem) = receiver.deleteReceived(item)
+
+    fun setReceiveEnabled(enabled: Boolean) {
+        viewModelScope.launch { prefsRepository.setReceiveEnabled(enabled) }
+    }
+
+    fun setDeviceAlias(alias: String) {
+        viewModelScope.launch { prefsRepository.setDeviceAlias(alias) }
+    }
+
+    /** Opens the existing pre-install sheet for a received package. */
+    fun installReceived(item: ReceivedItem) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", item.file)
+        inspectAndPrepareInstall(uri)
+    }
+
+    /** Installed versionCode of a package, or null if not installed (for pre-accept comparison). */
+    fun incomingStatus(file: FileDto): VersionStatus? {
+        val meta = file.shareApk ?: return null
+        val installed = runCatching { context.packageManager.getPackageInfo(meta.packageName, 0).longVersionCode }.getOrNull()
+        return compareWithInstalled(meta.versionCode, installed)
+    }
     private val preFlashBackupManager = PreFlashBackupManager(context)
     private val wifiHttpServer = LocalWifiHttpServer()
 
@@ -268,6 +307,13 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     )
 
     init {
+        // The receiver lives app-wide; keep it in sync with the user's settings.
+        viewModelScope.launch {
+            userPrefs.collect { p ->
+                receiver.setAlias(p.deviceAlias)
+                receiver.setEnabled(p.receiveEnabled)
+            }
+        }
         refreshInstalledApps()
         refreshCacheSize()
 

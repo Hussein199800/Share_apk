@@ -38,6 +38,8 @@ import com.example.ui.screens.history.HistoryScreen
 import com.example.ui.screens.settings.AboutScreen
 import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.screens.more.MoreScreen
+import com.example.receive.ReceiveState
+import com.example.ui.screens.receive.IncomingRequestSheet
 import com.example.ui.screens.receive.ReceiveScreen
 import com.example.ui.screens.send.SendScreen
 import com.example.ui.theme.LocaleHelper
@@ -161,7 +163,10 @@ fun ShareApkAppRoot(
 
     val moreDestination by viewModel.moreDestination.collectAsStateWithLifecycle()
     val prefsLoaded by viewModel.prefsLoaded.collectAsStateWithLifecycle()
-    val deviceName = remember { Build.MODEL?.takeIf { it.isNotBlank() } ?: "Android" }
+    val receiveState by viewModel.receiveState.collectAsStateWithLifecycle()
+    val receiverStatus by viewModel.receiverStatus.collectAsStateWithLifecycle()
+    val receivedItems by viewModel.receivedItems.collectAsStateWithLifecycle()
+    val deviceName = receiverStatus.alias
     val appVersion = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
     }
@@ -244,7 +249,17 @@ fun ShareApkAppRoot(
                 onShareViaLink = shareViaLink
             )
 
-            MainNavTab.RECEIVE -> ReceiveScreen(deviceName = deviceName)
+            MainNavTab.RECEIVE -> ReceiveScreen(
+                status = receiverStatus,
+                enabled = prefs.receiveEnabled,
+                state = receiveState,
+                received = receivedItems,
+                onToggleEnabled = viewModel::setReceiveEnabled,
+                onCancel = viewModel::cancelReceive,
+                onAcknowledge = viewModel::acknowledgeReceive,
+                onInstall = viewModel::installReceived,
+                onDelete = viewModel::deleteReceived
+            )
 
             MainNavTab.MORE -> when (moreDestination) {
                 MoreDestination.HOME -> MoreScreen(
@@ -319,6 +334,9 @@ fun ShareApkAppRoot(
                     onClearCacheNow = viewModel::clearSharedCacheNow,
                     onAutoClearCacheChange = viewModel::setAutoClearCacheOnExit,
                     onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    deviceAlias = prefs.deviceAlias.orEmpty(),
+                    deviceAliasPlaceholder = Build.MODEL.orEmpty(),
+                    onDeviceAliasChange = viewModel::setDeviceAlias,
                     modifier = Modifier.testTag("more_SETTINGS")
                 )
 
@@ -331,6 +349,9 @@ fun ShareApkAppRoot(
         }
 
         // Dialogs & Sheets
+        (receiveState as? ReceiveState.AwaitingDecision)?.let { pending ->
+            IncomingRequestSheet(pending.request, viewModel::incomingStatus, viewModel::decideIncoming)
+        }
                         pendingSplitAction?.let { (splitApp, _) ->
                             SplitApkWarningDialog(
                                 appLabel = splitApp.label,

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.Icon
@@ -21,6 +22,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,6 +39,7 @@ import com.example.ui.components.design.ChoiceChipRow
 import com.example.ui.components.design.ScreenScaffold
 import com.example.ui.components.design.SecondaryButton
 import com.example.ui.components.design.SurfaceCard
+import com.example.ui.components.design.TextInputField
 import com.example.ui.theme.LocalAppStrings
 import com.example.ui.theme.LtrBox
 import com.example.ui.theme.ShareApkTheme
@@ -49,6 +56,9 @@ fun SettingsScreen(
     onClearCacheNow: () -> Unit,
     onAutoClearCacheChange: (Boolean) -> Unit,
     onBack: () -> Unit,
+    deviceAlias: String = "",
+    deviceAliasPlaceholder: String = "",
+    onDeviceAliasChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val s = LocalAppStrings.current
@@ -61,6 +71,14 @@ fun SettingsScreen(
                 .padding(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap)
         ) {
+            Section(Icons.Outlined.Smartphone, s.deviceNameTitle) {
+                // Local text is the source of truth while typing (the saved value is trimmed);
+                // only adopt the stored alias when it first loads.
+                var alias by remember { mutableStateOf(deviceAlias) }
+                LaunchedEffect(deviceAlias) { if (alias.isEmpty()) alias = deviceAlias }
+                TextInputField(alias, { alias = it.take(40); onDeviceAliasChange(alias) }, deviceAliasPlaceholder)
+                Text(s.deviceNameHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+            }
             Section(Icons.Outlined.Palette, s.themeSectionTitle) {
                 ChoiceChipRow(
                     listOf(

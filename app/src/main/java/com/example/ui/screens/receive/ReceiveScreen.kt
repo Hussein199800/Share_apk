@@ -1,55 +1,170 @@
 package com.example.ui.screens.receive
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.InstallMobile
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.receive.ReceiveState
+import com.example.receive.ReceivedItem
+import com.example.receive.ReceiverStatus
+import com.example.ui.components.design.AppIcon
 import com.example.ui.components.design.GradientIconBox
+import com.example.ui.components.design.GradientProgressBar
 import com.example.ui.components.design.HeroCard
+import com.example.ui.components.design.IconActionButton
+import com.example.ui.components.design.PrimaryButton
 import com.example.ui.components.design.ScreenScaffold
+import com.example.ui.components.design.SecondaryButton
+import com.example.ui.components.design.StatusBadge
 import com.example.ui.components.design.SurfaceCard
 import com.example.ui.theme.LocalAppStrings
+import com.example.ui.theme.LtrBox
 import com.example.ui.theme.ShareApkGradients
 import com.example.ui.theme.ShareApkTheme
 import com.example.ui.theme.ShareApkTokens
+import com.example.util.FileNameAndHashUtils
 
-/** Receive tab. Direct receiving arrives in phase 2. */
 @Composable
-fun ReceiveScreen(deviceName: String, modifier: Modifier = Modifier) {
+fun ReceiveScreen(
+    status: ReceiverStatus,
+    enabled: Boolean,
+    state: ReceiveState,
+    received: List<ReceivedItem>,
+    onToggleEnabled: (Boolean) -> Unit,
+    onCancel: () -> Unit,
+    onAcknowledge: () -> Unit,
+    onInstall: (ReceivedItem) -> Unit,
+    onDelete: (ReceivedItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     ScreenScaffold(title = s.receiveTitle, subtitle = s.receiveSubtitle, modifier = modifier) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.SectionGap)
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            modifier = Modifier.fillMaxSize()
         ) {
-            HeroCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GradientIconBox(ShareApkGradients.green, size = 64.dp) { Icon(Icons.Outlined.Wifi, null, Modifier.size(28.dp)) }
-                    Text(deviceName, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            item { DeviceCard(status, enabled, onToggleEnabled) }
+
+            when (state) {
+                is ReceiveState.Receiving -> item {
+                    SurfaceCard(Modifier.fillMaxWidth()) {
+                        Text(s.receivingFrom.format(state.sender.alias), style = MaterialTheme.typography.titleSmall, color = c.onBackground)
+                        val total = state.totalBytes.coerceAtLeast(1)
+                        GradientProgressBar(state.receivedBytes.toFloat() / total)
+                        LtrBox {
+                            Text(
+                                "${FileNameAndHashUtils.formatBytes(state.receivedBytes)} / ${FileNameAndHashUtils.formatBytes(state.totalBytes)}",
+                                style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant
+                            )
+                        }
+                        state.files.forEach { f ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(f.fileName, style = MaterialTheme.typography.bodySmall, color = c.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                if (f.done) Icon(Icons.Outlined.CheckCircle, null, tint = c.success, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        SecondaryButton(s.cancelBtn, onCancel, Modifier.fillMaxWidth())
+                    }
+                }
+                is ReceiveState.Done -> item {
+                    SurfaceCard(Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            GradientIconBox(ShareApkGradients.green, size = 40.dp) { Icon(Icons.Outlined.CheckCircle, null, Modifier.size(22.dp)) }
+                            Text(s.receivedFrom.format(state.sender.alias), style = MaterialTheme.typography.titleSmall, color = c.onBackground, modifier = Modifier.weight(1f))
+                            SecondaryButton(s.doneBtn, onAcknowledge)
+                        }
+                    }
+                }
+                else -> Unit
+            }
+
+            item { Text(s.receivedTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
+            if (received.isEmpty()) {
+                item {
+                    SurfaceCard(Modifier.fillMaxWidth()) {
+                        Text(s.receivedEmpty, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
-            SurfaceCard(Modifier.fillMaxWidth()) {
-                Text(
-                    s.receiveComing,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            items(received, key = { it.file.path }) { item -> ReceivedRow(item, onInstall, onDelete) }
+        }
+    }
+}
+
+@Composable
+private fun DeviceCard(status: ReceiverStatus, enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    val s = LocalAppStrings.current
+    HeroCard(Modifier.fillMaxWidth()) {
+        GradientIconBox(if (status.running) ShareApkGradients.green else ShareApkGradients.rose, size = 52.dp) {
+            Icon(if (status.running) Icons.Outlined.Wifi else Icons.Outlined.WifiOff, null, Modifier.size(26.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(if (enabled) s.receiveVisibleAs else s.receiveOff, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+            Text(status.alias, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            when {
+                status.error != null && enabled -> Text(s.receiveStartFailed.format(status.error), style = MaterialTheme.typography.bodySmall)
+                status.running && status.ip != null -> LtrBox {
+                    Text("${status.ip}:${status.port}", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                }
             }
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(checkedTrackColor = Color.White.copy(alpha = 0.35f), checkedThumbColor = Color.White)
+        )
+    }
+}
+
+@Composable
+private fun ReceivedRow(item: ReceivedItem, onInstall: (ReceivedItem) -> Unit, onDelete: (ReceivedItem) -> Unit) {
+    val s = LocalAppStrings.current
+    val c = ShareApkTheme.colors
+    SurfaceCard(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppIcon(item.label, item.icon)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(item.label, style = MaterialTheme.typography.bodyLarge, color = c.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    item.status?.let { VersionBadge(it) }
+                    LtrBox {
+                        Text(
+                            listOfNotNull(item.versionName?.let { "v$it" }, FileNameAndHashUtils.formatBytes(item.file.length())).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            PrimaryButton(s.installNowShort, { onInstall(item) }, Modifier.weight(1f), icon = Icons.Outlined.InstallMobile)
+            IconActionButton(Icons.Outlined.DeleteOutline, s.deleteItemAction, { onDelete(item) })
         }
     }
 }

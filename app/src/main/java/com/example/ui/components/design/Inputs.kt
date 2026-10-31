@@ -85,6 +85,40 @@ fun SearchField(
     )
 }
 
+/** Plain single-line text field in the ShareAPK style. */
+@Composable
+fun TextInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier
+) {
+    val c = ShareApkTheme.colors
+    val shape = RoundedCornerShape(ShareApkTokens.ButtonRadius)
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = c.onBackground),
+        cursorBrush = SolidColor(c.primaryText),
+        modifier = modifier.fillMaxWidth(),
+        decorationBox = { inner ->
+            Box(
+                Modifier
+                    .height(ShareApkTokens.ButtonHeight)
+                    .clip(shape)
+                    .background(c.input)
+                    .border(ShareApkTokens.Hairline, c.outline, shape)
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (value.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, maxLines = 1)
+                inner()
+            }
+        }
+    )
+}
+
 /**
  * Horizontally scrolling chip row. The leading "all" chip maps to `null`.
  */

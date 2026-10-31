@@ -184,7 +184,28 @@ data class AppStrings(
     val aboutLibrariesLabel: String,
     val aboutLibrariesValue: String,
     val aboutFontLabel: String,
-    val aboutFontValue: String
+    val aboutFontValue: String,
+    val receiveVisibleAs: String,
+    val receiveOff: String,
+    val receiveToggle: String,
+    val receiveStartFailed: String,
+    val receivedTitle: String,
+    val receivedEmpty: String,
+    val installNowShort: String,
+    val receivingFrom: String,
+    val receivedFrom: String,
+    val doneBtn: String,
+    val incomingTitle: String,
+    val incomingRejectedFiles: String,
+    val incomingOlderWarning: String,
+    val acceptReceiveBtn: String,
+    val rejectBtn: String,
+    val vsNew: String,
+    val vsUpdate: String,
+    val vsSame: String,
+    val vsOlder: String,
+    val deviceNameTitle: String,
+    val deviceNameHint: String
 )
 
 val ArabicStrings = AppStrings(
@@ -350,7 +371,28 @@ val ArabicStrings = AppStrings(
     aboutLibrariesLabel = "المكتبات",
     aboutLibrariesValue = "Jetpack · Room · DataStore (Apache 2.0)",
     aboutFontLabel = "الخط",
-    aboutFontValue = "IBM Plex Sans Arabic · OFL 1.1"
+    aboutFontValue = "IBM Plex Sans Arabic · OFL 1.1",
+    receiveVisibleAs = "ظاهر للأجهزة القريبة باسم",
+    receiveOff = "الاستقبال متوقف",
+    receiveToggle = "الاستقبال",
+    receiveStartFailed = "تعذّر تشغيل الاستقبال: %s",
+    receivedTitle = "المستلَمة",
+    receivedEmpty = "لا توجد تطبيقات مستلمة بعد. افتح «شارك أبك» أو LocalSend على جهاز آخر في نفس الشبكة واختر هذا الجهاز.",
+    installNowShort = "ثبّت الآن",
+    receivingFrom = "جارٍ الاستلام من %s",
+    receivedFrom = "تم الاستلام من %s",
+    doneBtn = "تم",
+    incomingTitle = "%1\$s يريد إرسال %2\$d تطبيقات",
+    incomingRejectedFiles = "سيُتجاهل %d ملفاً ليس تطبيقاً.",
+    incomingOlderWarning = "بعض الإصدارات أقدم من المثبّتة عندك، وتثبيتها يتطلب حذف النسخة الحالية.",
+    acceptReceiveBtn = "قبول واستلام",
+    rejectBtn = "رفض",
+    vsNew = "جديد",
+    vsUpdate = "تحديث",
+    vsSame = "نفس الإصدار",
+    vsOlder = "أقدم",
+    deviceNameTitle = "اسم الجهاز",
+    deviceNameHint = "يظهر للأجهزة القريبة عند الإرسال والاستقبال"
 )
 
 val EnglishStrings = AppStrings(
@@ -516,7 +558,28 @@ val EnglishStrings = AppStrings(
     aboutLibrariesLabel = "Libraries",
     aboutLibrariesValue = "Jetpack · Room · DataStore (Apache 2.0)",
     aboutFontLabel = "Font",
-    aboutFontValue = "IBM Plex Sans Arabic · OFL 1.1"
+    aboutFontValue = "IBM Plex Sans Arabic · OFL 1.1",
+    receiveVisibleAs = "Visible to nearby devices as",
+    receiveOff = "Receiving is off",
+    receiveToggle = "Receiving",
+    receiveStartFailed = "Couldn't start receiving: %s",
+    receivedTitle = "Received",
+    receivedEmpty = "Nothing received yet. Open ShareAPK or LocalSend on another device on the same network and pick this device.",
+    installNowShort = "Install",
+    receivingFrom = "Receiving from %s",
+    receivedFrom = "Received from %s",
+    doneBtn = "Done",
+    incomingTitle = "%1\$s wants to send %2\$d apps",
+    incomingRejectedFiles = "%d non-app files will be skipped.",
+    incomingOlderWarning = "Some versions are older than what you have installed; installing them requires uninstalling first.",
+    acceptReceiveBtn = "Accept",
+    rejectBtn = "Decline",
+    vsNew = "New",
+    vsUpdate = "Update",
+    vsSame = "Same version",
+    vsOlder = "Older",
+    deviceNameTitle = "Device name",
+    deviceNameHint = "Shown to nearby devices when sending and receiving"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }
