@@ -260,8 +260,7 @@ fun ShareApkAppRoot(
         LocalLayoutDirection provides layoutDirection
     ) {
         ShareAPKTheme(
-            darkTheme = isDarkTheme,
-            dynamicColor = prefs.dynamicColorEnabled
+            darkTheme = isDarkTheme
         ) {
             Scaffold(
                 contentWindowInsets = WindowInsets.safeDrawing,

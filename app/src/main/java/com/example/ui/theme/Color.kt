@@ -1,26 +1,103 @@
 package com.example.ui.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
-// Warm Brown & Burnished Gold Material 3 Palette
-val DarkEspressoSurface = Color(0xFF2B1B14)
-val DarkElevatedCardSurface = Color(0xFF38241C)
-val PrimaryCocoaBrown = Color(0xFF4E342E)
-val SecondaryWarmCinnamon = Color(0xFF6D4C41)
-val WarmCreamLightBackground = Color(0xFFFFF8F0)
-val LightCardSurface = Color(0xFFF6ECE2)
-val WarmSandAccent = Color(0xFFD7CCC8)
-val BurnishedGold = Color(0xFFC9A227)
-val BurnishedGoldLight = Color(0xFFE5C148)
-val BurnishedGoldContainerDark = Color(0xFF4A3810)
-val BurnishedGoldContainerLight = Color(0xFFFAEAB9)
-val DeepEspressoText = Color(0xFF23150F)
-val CreamTextOnDark = Color(0xFFF7EFE8)
-val MutedSandOnDark = Color(0xFFCBB9AE)
-val MutedCocoaOnLight = Color(0xFF65493E)
-val EmeraldVerified = Color(0xFF2E7D32)
-val EmeraldVerifiedDark = Color(0xFF66BB6A)
-val AmberWarning = Color(0xFFE65100)
-val AmberWarningDark = Color(0xFFFFB74D)
-val RubyError = Color(0xFFC62828)
-val RubyErrorDark = Color(0xFFEF5350)
+/** ShareAPK colour roles (spec §3.1). Hex values live only in ui/theme. */
+@Immutable
+data class ShareApkColors(
+    val background: Color,
+    val surface: Color,
+    val surfaceElevated: Color,
+    val input: Color,
+    val outline: Color,
+    val onBackground: Color,
+    val onSurfaceVariant: Color,
+    val primary: Color,
+    val primaryText: Color,
+    val success: Color,
+    val warning: Color,
+    val info: Color,
+    val error: Color,
+    val haloA: Color,
+    val haloB: Color,
+    val isDark: Boolean
+)
+
+val DarkShareApkColors = ShareApkColors(
+    background = Color(0xFF070D1D),
+    surface = Color(0xFF111C38),
+    surfaceElevated = Color(0xFF1A2648),
+    input = Color(0xFF0A1328),
+    outline = Color.White.copy(alpha = 0.08f),
+    onBackground = Color(0xFFEEF2FF),
+    onSurfaceVariant = Color(0xFF9AA6C8),
+    primary = Color(0xFF4F46E5),
+    primaryText = Color(0xFFA5B4FC),
+    success = Color(0xFF34D399),
+    warning = Color(0xFFFBBF24),
+    info = Color(0xFF38BDF8),
+    error = Color(0xFFF87171),
+    haloA = Color(0xFF6366F1).copy(alpha = 0.24f),
+    haloB = Color(0xFF38BDF8).copy(alpha = 0.12f),
+    isDark = true
+)
+
+val LightShareApkColors = ShareApkColors(
+    background = Color(0xFFEEF1F8),
+    surface = Color(0xFFFFFFFF),
+    surfaceElevated = Color(0xFFF1F4FA),
+    input = Color(0xFFFFFFFF),
+    outline = Color(0xFF0F172A).copy(alpha = 0.09f),
+    onBackground = Color(0xFF0F172A),
+    onSurfaceVariant = Color(0xFF5B6577),
+    primary = Color(0xFF4F46E5),
+    primaryText = Color(0xFF4338CA),
+    success = Color(0xFF047857),
+    warning = Color(0xFF9A4508),
+    info = Color(0xFF0369A1),
+    error = Color(0xFFB91C1C),
+    haloA = Color(0xFF6366F1).copy(alpha = 0.16f),
+    haloB = Color(0xFF38BDF8).copy(alpha = 0.12f),
+    isDark = false
+)
+
+/** WCAG 2.x contrast ratio between two opaque colours. */
+fun contrastRatio(fg: Color, bg: Color): Double {
+    fun channel(c: Float): Double {
+        val v = c.toDouble()
+        return if (v <= 0.03928) v / 12.92 else ((v + 0.055) / 1.055).pow(2.4)
+    }
+    fun luminance(c: Color) = 0.2126 * channel(c.red) + 0.7152 * channel(c.green) + 0.0722 * channel(c.blue)
+    val a = luminance(fg)
+    val b = luminance(bg)
+    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+}
+
+// ---- Legacy palette names: temporary aliases so un-migrated screens keep building. ----
+private const val LEGACY = "Phase1: remove in Task 9"
+
+@Deprecated(LEGACY) val DarkEspressoSurface = DarkShareApkColors.background
+@Deprecated(LEGACY) val DarkElevatedCardSurface = DarkShareApkColors.surface
+@Deprecated(LEGACY) val PrimaryCocoaBrown = DarkShareApkColors.primary
+@Deprecated(LEGACY) val SecondaryWarmCinnamon = Color(0xFF7C3AED)
+@Deprecated(LEGACY) val WarmCreamLightBackground = LightShareApkColors.background
+@Deprecated(LEGACY) val LightCardSurface = LightShareApkColors.surfaceElevated
+@Deprecated(LEGACY) val WarmSandAccent = LightShareApkColors.onSurfaceVariant
+@Deprecated(LEGACY) val BurnishedGold = Color(0xFF6366F1)
+@Deprecated(LEGACY) val BurnishedGoldLight = DarkShareApkColors.primaryText
+@Deprecated(LEGACY) val BurnishedGoldContainerDark = DarkShareApkColors.surfaceElevated
+@Deprecated(LEGACY) val BurnishedGoldContainerLight = LightShareApkColors.surfaceElevated
+@Deprecated(LEGACY) val DeepEspressoText = LightShareApkColors.onBackground
+@Deprecated(LEGACY) val CreamTextOnDark = DarkShareApkColors.onBackground
+@Deprecated(LEGACY) val MutedSandOnDark = DarkShareApkColors.onSurfaceVariant
+@Deprecated(LEGACY) val MutedCocoaOnLight = LightShareApkColors.onSurfaceVariant
+@Deprecated(LEGACY) val EmeraldVerified = LightShareApkColors.success
+@Deprecated(LEGACY) val EmeraldVerifiedDark = DarkShareApkColors.success
+@Deprecated(LEGACY) val AmberWarning = LightShareApkColors.warning
+@Deprecated(LEGACY) val AmberWarningDark = DarkShareApkColors.warning
+@Deprecated(LEGACY) val RubyError = LightShareApkColors.error
+@Deprecated(LEGACY) val RubyErrorDark = DarkShareApkColors.error
