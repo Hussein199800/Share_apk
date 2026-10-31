@@ -60,7 +60,7 @@ import com.example.ui.components.design.ShareApkBottomBar
 import com.example.ui.components.design.ShareApkRail
 import com.example.ui.navigation.MoreDestination
 import com.example.ui.screens.apps.AppsScreen
-import com.example.ui.screens.BackupRestoreScreen
+import com.example.ui.screens.backup.BackupScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.SettingsAndAboutScreen
 import com.example.ui.screens.more.MoreScreen
@@ -280,7 +280,7 @@ fun ShareApkAppRoot(
                 )
 
                 MoreDestination.BACKUP -> Box(Modifier.testTag("more_BACKUP")) {
-                    BackupRestoreScreen(
+                    BackupScreen(
                         candidateApps = backupCandidates,
                         selectedPackageNames = backupSelectedPackages,
                         includeSystemApps = backupIncludeSystem,
@@ -321,7 +321,8 @@ fun ShareApkAppRoot(
                         onToggleRestoreCandidate = viewModel::toggleRestoreCandidate,
                         onStartSequentialRestore = viewModel::startSequentialBatchRestore,
                         onSkipCurrentRestoreApp = viewModel::skipCurrentBatchRestoreItem,
-                        onCancelBatchRestore = viewModel::cancelBatchRestore
+                        onCancelBatchRestore = viewModel::cancelBatchRestore,
+                        onBack = { viewModel.openMore(MoreDestination.HOME) }
                     )
                 }
 
