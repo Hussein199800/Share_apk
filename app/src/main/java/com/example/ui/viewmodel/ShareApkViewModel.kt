@@ -19,6 +19,10 @@ import com.example.data.model.FileNamingFormat
 import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
+import com.example.ui.navigation.BackAction
+import com.example.ui.navigation.MoreDestination
+import com.example.ui.navigation.NavSnapshot
+import com.example.ui.navigation.resolveBack
 import com.example.data.model.PreInstallValidationInfo
 import com.example.data.model.RestoreAppStatus
 import com.example.data.model.RestoreCandidateApp
@@ -269,10 +273,30 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val _moreDestination = MutableStateFlow(MoreDestination.HOME)
+    val moreDestination: StateFlow<MoreDestination> = _moreDestination.asStateFlow()
+
     fun selectTab(tab: MainNavTab) {
         _currentTab.value = tab
-        if (tab == MainNavTab.SETTINGS) {
+    }
+
+    /** Opens a More sub-page (switching to the More tab). */
+    fun openMore(dest: MoreDestination) {
+        _currentTab.value = MainNavTab.MORE
+        _moreDestination.value = dest
+        if (dest == MoreDestination.SETTINGS) {
             refreshCacheSize()
+        }
+    }
+
+    /** Applies the back policy. Returns false when the app should close. */
+    fun onBack(): Boolean {
+        val snapshot = NavSnapshot(_currentTab.value, _moreDestination.value, _selectedPackageNames.value.isNotEmpty())
+        return when (resolveBack(snapshot)) {
+            BackAction.ClearSelection -> { clearSelection(); true }
+            BackAction.MoreHome -> { _moreDestination.value = MoreDestination.HOME; true }
+            BackAction.GoApps -> { _currentTab.value = MainNavTab.APPS; true }
+            BackAction.Exit -> false
         }
     }
 
