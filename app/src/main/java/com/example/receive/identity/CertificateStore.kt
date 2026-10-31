@@ -20,12 +20,15 @@ class CertificateStore(private val dir: File) {
 
     class Loaded(
         val keyStore: KeyStore,
-        val password: CharArray,
+        /** Fresh copy on every call: consumers (e.g. Ktor) may wipe the array after use. */
+        private val passwordText: String,
         val privateKey: PrivateKey,
         val certificate: X509Certificate,
         /** LocalSend fingerprint: lowercase hex SHA-256 of the DER certificate. */
         val fingerprint: String
-    )
+    ) {
+        val password: CharArray get() = passwordText.toCharArray()
+    }
 
     private val file get() = File(dir, "localsend.p12")
 
@@ -33,10 +36,10 @@ class CertificateStore(private val dir: File) {
     fun load(): Loaded {
         val ks = KeyStore.getInstance("PKCS12")
         if (file.exists()) {
-            runCatching { file.inputStream().use { ks.load(it, PASSWORD) } }
+            runCatching { file.inputStream().use { ks.load(it, password()) } }
                 .onSuccess { return wrap(ks) }
         }
-        ks.load(null, PASSWORD)
+        ks.load(null, password())
         val kp = KeyPairGenerator.getInstance("RSA").apply { initialize(2048, SecureRandom()) }.generateKeyPair()
         val now = System.currentTimeMillis()
         val name = X500Name("CN=ShareAPK")
@@ -45,22 +48,23 @@ class CertificateStore(private val dir: File) {
             Date(now + TimeUnit.DAYS.toMillis(3650)), name, kp.public
         ).build(JcaContentSignerBuilder("SHA256withRSA").build(kp.private))
         val cert = JcaX509CertificateConverter().getCertificate(holder)
-        ks.setKeyEntry(ALIAS, kp.private, PASSWORD, arrayOf(cert))
+        ks.setKeyEntry(ALIAS, kp.private, password(), arrayOf(cert))
         dir.mkdirs()
-        file.outputStream().use { ks.store(it, PASSWORD) }
+        file.outputStream().use { ks.store(it, password()) }
         return wrap(ks)
     }
 
     private fun wrap(ks: KeyStore): Loaded {
         val cert = ks.getCertificate(ALIAS) as X509Certificate
-        val key = ks.getKey(ALIAS, PASSWORD) as PrivateKey
+        val key = ks.getKey(ALIAS, password()) as PrivateKey
         val fp = MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString("") { "%02x".format(it) }
-        return Loaded(ks, PASSWORD, key, cert, fp)
+        return Loaded(ks, PASSWORD_TEXT, key, cert, fp)
     }
 
     companion object {
         const val ALIAS = "shareapk"
         // Protects only the on-device file (app-private storage); not a secret boundary.
-        private val PASSWORD = "shareapk-localsend".toCharArray()
+        private const val PASSWORD_TEXT = "shareapk-localsend"
+        private fun password() = PASSWORD_TEXT.toCharArray()
     }
 }
