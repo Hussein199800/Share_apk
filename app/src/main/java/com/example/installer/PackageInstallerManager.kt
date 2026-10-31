@@ -129,9 +129,7 @@ class PackageInstallerManager(
         // 3. Extract base.apk (if .apks bundle) or use rawTempFile (if single .apk) for getPackageArchiveInfo
         val baseApkForParsing = if (isApksBundle) {
             val extractedBase = File(tempInspectDir, "extracted_base.apk")
-            val targetEntryName = apkEntries.firstOrNull {
-                it.equals("base.apk", ignoreCase = true) || it.endsWith("/base.apk", ignoreCase = true)
-            } ?: apkEntries.first()
+            val targetEntryName = pickBaseApkEntry(apkEntries)
 
             ZipInputStream(BufferedInputStream(FileInputStream(rawTempFile))).use { zis ->
                 var e = zis.nextEntry
@@ -342,7 +340,7 @@ class PackageInstallerManager(
     ) = PreInstallValidationInfo(
         uri = uri,
         fileName = fileName,
-        isApksBundle = fileName.lowercase().endsWith(".apks") || fileName.lowercase().endsWith(".zip"),
+        isApksBundle = fileName.substringAfterLast('.', "").lowercase() in setOf("apks", "xapk", "apkm", "zip"),
         appLabel = fileName,
         packageName = "unknown",
         versionName = "-",
@@ -356,4 +354,17 @@ class PackageInstallerManager(
         isValid = false,
         securityWarning = reason
     )
+
+    companion object {
+        /**
+         * Base APK inside a bundle: `base.apk` (.apks/.apkm), otherwise the first entry that is not a
+         * config/split APK (XAPK names its base after the package, e.g. `com.app.apk`).
+         */
+        fun pickBaseApkEntry(apkEntries: List<String>): String {
+            fun leaf(n: String) = n.substringAfterLast('/').lowercase()
+            return apkEntries.firstOrNull { leaf(it) == "base.apk" }
+                ?: apkEntries.firstOrNull { !leaf(it).startsWith("config.") && !leaf(it).startsWith("split") }
+                ?: apkEntries.first()
+        }
+    }
 }
