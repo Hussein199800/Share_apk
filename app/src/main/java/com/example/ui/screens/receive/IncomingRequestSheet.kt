@@ -23,7 +23,7 @@ import com.example.receive.VersionStatus
 import com.example.receive.protocol.FileDto
 import com.example.ui.components.design.BadgeTone
 import com.example.ui.components.design.GradientIconBox
-import com.example.ui.components.design.LetterIconBox
+import com.example.ui.components.design.FileTypeIcon
 import com.example.ui.components.design.PrimaryButton
 import com.example.ui.components.design.SecondaryButton
 import com.example.ui.components.design.ShareApkBottomSheet
@@ -62,7 +62,7 @@ fun IncomingRequestSheet(
             GradientIconBox(ShareApkGradients.sky) { Icon(Icons.Outlined.PhoneAndroid, null, Modifier.size(24.dp)) }
             Column(Modifier.weight(1f)) {
                 Text(
-                    s.incomingTitle.format(request.sender.alias, request.files.size),
+                    s.incomingTitle.format(request.sender.alias, request.files.size + request.messages.size),
                     style = MaterialTheme.typography.titleMedium, color = c.onBackground
                 )
                 LtrBox {
@@ -73,7 +73,7 @@ fun IncomingRequestSheet(
         request.files.forEach { f ->
             SurfaceCard(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    LetterIconBox(f.fileName, size = 42.dp)
+                    FileTypeIcon(f.fileName, f.fileType)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(f.fileName, style = MaterialTheme.typography.titleSmall, color = c.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         f.shareApk?.versionName?.let { v ->
@@ -87,8 +87,10 @@ fun IncomingRequestSheet(
         if (statuses.values.any { it == VersionStatus.OLDER }) {
             StatusBadge(s.incomingOlderWarning, BadgeTone.Warning, icon = Icons.Outlined.WarningAmber)
         }
-        if (request.rejectedCount > 0) {
-            StatusBadge(s.incomingRejectedFiles.format(request.rejectedCount), BadgeTone.Info, icon = Icons.Outlined.Info)
+        request.messages.forEach { msg ->
+            SurfaceCard(Modifier.fillMaxWidth()) {
+                Text(msg, style = MaterialTheme.typography.bodyMedium, color = c.onBackground, maxLines = 8, overflow = TextOverflow.Ellipsis)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SecondaryButton(s.rejectBtn, { onDecide(false) }, Modifier.weight(1f), height = ShareApkTokens.SheetButtonHeight)

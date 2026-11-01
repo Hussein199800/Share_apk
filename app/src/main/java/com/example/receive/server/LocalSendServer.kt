@@ -77,7 +77,8 @@ class LocalSendServer(
                     when (val r = manager.prepare(req, call.request.origin.remoteAddress)) {
                         is PrepareResult.Accepted -> call.respondJson(ProtocolJson.encode(r.response))
                         PrepareResult.Blocked -> call.respond(HttpStatusCode.Conflict)
-                        PrepareResult.Rejected, PrepareResult.NothingToAccept -> call.respond(HttpStatusCode.Forbidden)
+                        PrepareResult.NoTransfer -> call.respond(HttpStatusCode.NoContent)
+                        PrepareResult.Rejected -> call.respond(HttpStatusCode.Forbidden)
                     }
                 }
                 post("$BASE/upload") {

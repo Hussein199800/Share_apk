@@ -57,15 +57,18 @@ class LocalSendServerTest {
         val prep = post("prepare-upload", prepareBody)
         assertEquals(200, prep.code)
         val resp = ProtocolJson.decode<PrepareUploadResponse>(prep.body!!.string())
-        assertEquals(setOf("b"), resp.files.keys)
-        val up = client.newCall(
-            Request.Builder()
-                .url(url("upload?sessionId=${resp.sessionId}&fileId=b&token=${resp.files["b"]}"))
-                .post(byteArrayOf(1, 2, 3, 4, 5).toRequestBody("application/octet-stream".toMediaType()))
-                .build()
-        ).execute()
-        assertEquals(200, up.code)
-        assertEquals(5L, (manager.state.value as ReceiveState.Done).files.single().file.length())
+        // Every file type is accepted (apps are installable, others go to Downloads).
+        assertEquals(setOf("b", "p"), resp.files.keys)
+        for (id in listOf("b", "p")) {
+            val up = client.newCall(
+                Request.Builder()
+                    .url(url("upload?sessionId=${resp.sessionId}&fileId=$id&token=${resp.files[id]}"))
+                    .post(byteArrayOf(1, 2, 3, 4, 5).toRequestBody("application/octet-stream".toMediaType()))
+                    .build()
+            ).execute()
+            assertEquals(200, up.code)
+        }
+        assertEquals(listOf(5L, 5L), (manager.state.value as ReceiveState.Done).files.map { it.file.length() })
     }
 
     @Test fun errorCodes() {

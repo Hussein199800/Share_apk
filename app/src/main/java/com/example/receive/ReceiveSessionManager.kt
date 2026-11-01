@@ -22,7 +22,8 @@ sealed interface PrepareResult {
     data class Accepted(val response: PrepareUploadResponse) : PrepareResult
     data object Rejected : PrepareResult
     data object Blocked : PrepareResult
-    data object NothingToAccept : PrepareResult
+    /** Only text messages: nothing to upload (HTTP 204). */
+    data object NoTransfer : PrepareResult
 }
 
 sealed interface UploadResult {
@@ -32,16 +33,18 @@ sealed interface UploadResult {
     data class Error(val message: String) : UploadResult
 }
 
-/** A request waiting for the user. [files] holds only app packages; [rejectedCount] other files. */
-data class IncomingRequest(val sender: DeviceInfoDto, val senderIp: String, val files: List<FileDto>, val rejectedCount: Int)
+/** A request waiting for the user: files to upload plus text messages (shown inline). */
+data class IncomingRequest(val sender: DeviceInfoDto, val senderIp: String, val files: List<FileDto>, val messages: List<String> = emptyList())
 
 data class FileProgress(val fileId: String, val fileName: String, val size: Long, val received: Long, val done: Boolean)
 
-data class ReceivedFile(val fileName: String, val file: File, val meta: ShareApkMetaDto?)
+/** A received file. [relativeDir] is the sender's folder path (sanitized), "" for single files. */
+data class ReceivedFile(val fileName: String, val file: File, val meta: ShareApkMetaDto?, val relativeDir: String = "", val mimeType: String? = null) {
+    val isApp get() = ReceiveSessionManager.isAppPackage(fileName)
+}
 
 /** Why a request ended without the user deciding (shown as a hint in the Receive tab). */
 sealed interface ReceiveEvent {
-    data class NotApps(val sender: String, val fileNames: List<String>) : ReceiveEvent
     data class TimedOut(val sender: String) : ReceiveEvent
     data class Busy(val sender: String) : ReceiveEvent
 }
@@ -53,7 +56,7 @@ sealed interface ReceiveState {
         val totalBytes get() = files.sumOf { it.size }
         val receivedBytes get() = files.sumOf { it.received }
     }
-    data class Done(val sender: DeviceInfoDto, val files: List<ReceivedFile>) : ReceiveState
+    data class Done(val sender: DeviceInfoDto, val files: List<ReceivedFile>, val messages: List<String> = emptyList()) : ReceiveState
 }
 
 /**
@@ -83,17 +86,17 @@ class ReceiveSessionManager(
     private val lock = Any()
     private var pendingDecision: CompletableDeferred<Boolean>? = null
     private var session: Session? = null
+    private var pendingMessages: List<String> = emptyList()
     @Volatile private var lastActivity = 0L
     private val usedTokens = mutableSetOf<String>()
 
     fun sessionDir(sessionId: String) = File(destRoot, sessionId.replace(Regex("[^A-Za-z0-9_-]"), "_"))
 
     suspend fun prepare(req: PrepareUploadRequest, senderIp: String): PrepareResult {
-        val accepted = req.files.values.filter { isAppPackage(it.fileName) }
-        if (accepted.isEmpty()) {
-            _lastEvent.value = ReceiveEvent.NotApps(req.info.alias, req.files.values.map { it.fileName })
-            return PrepareResult.NothingToAccept
-        }
+        // LocalSend sends text as a "file" with the text in `preview`: show it, don't upload it.
+        val messages = req.files.values.filter(::isMessage).mapNotNull { it.preview }
+        val accepted = req.files.values.filterNot(::isMessage)
+        if (accepted.isEmpty() && messages.isEmpty()) return PrepareResult.Rejected
         val decision = CompletableDeferred<Boolean>()
         synchronized(lock) {
             if (pendingDecision != null || session != null) {
@@ -102,7 +105,7 @@ class ReceiveSessionManager(
             }
             pendingDecision = decision
             _state.value = ReceiveState.AwaitingDecision(
-                IncomingRequest(req.info, senderIp, accepted, req.files.size - accepted.size)
+                IncomingRequest(req.info, senderIp, accepted, messages)
             )
         }
         val answer = try {
@@ -125,7 +128,12 @@ class ReceiveSessionManager(
                 _state.value = ReceiveState.Idle
                 return PrepareResult.Rejected
             }
+            if (accepted.isEmpty()) {
+                _state.value = ReceiveState.Done(req.info, emptyList(), messages)
+                return PrepareResult.NoTransfer
+            }
             val id = newId()
+            pendingMessages = messages
             val tokens = accepted.associate { it.id to newId() }
             session = Session(id, req.info, senderIp, accepted.associateBy { it.id }, tokens)
             lastActivity = System.currentTimeMillis()
@@ -237,7 +245,10 @@ class ReceiveSessionManager(
             usedTokens.clear()
             _state.value = ReceiveState.Done(
                 s.sender,
-                s.files.values.mapNotNull { dto -> s.written[dto.id]?.let { ReceivedFile(it.name, it, dto.shareApk) } }
+                s.files.values.mapNotNull { dto ->
+                    s.written[dto.id]?.let { ReceivedFile(it.name, it, dto.shareApk, relativeDirOf(dto.fileName), dto.fileType) }
+                },
+                pendingMessages
             )
         }
     }
@@ -260,6 +271,15 @@ class ReceiveSessionManager(
         val APP_EXTENSIONS = setOf("apk", "apks", "xapk", "apkm")
 
         fun isAppPackage(fileName: String) = fileName.substringAfterLast('.', "").lowercase() in APP_EXTENSIONS
+
+        fun isMessage(f: FileDto) = f.preview != null && f.fileType?.startsWith("text/") == true && f.size <= 64 * 1024
+
+        /** Folder part of a sender path ("Trip/Day 1/a.jpg" → "Trip/Day 1"), without "..", "." or empty segments. */
+        fun relativeDirOf(name: String): String =
+            name.replace('\\', '/').split('/').dropLast(1)
+                .map { it.replace(Regex("[:*?\"<>|\\u0000-\\u001f]"), "_").trim() }
+                .filter { it.isNotEmpty() && it != "." && it != ".." }
+                .joinToString("/")
 
         /** Keeps only the last path segment and strips characters unsafe in file names. */
         fun sanitizeFileName(name: String): String {

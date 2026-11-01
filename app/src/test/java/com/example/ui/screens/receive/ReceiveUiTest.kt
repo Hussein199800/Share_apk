@@ -57,7 +57,7 @@ class ReceiveUiTest {
         var accepted: Boolean? = null
         val req = IncomingRequest(
             DeviceInfoDto(alias = "هاتف أحمد", fingerprint = "f"), "10.0.0.2",
-            listOf(FileDto("a", "Taqati.apk", 10, shareApk = ShareApkMetaDto("com.taqati", "2.0.1", 201))), rejectedCount = 1
+            listOf(FileDto("a", "Taqati.apk", 10, shareApk = ShareApkMetaDto("com.taqati", "2.0.1", 201))), messages = listOf("مرحبا")
         )
         rule.setContent {
             ShareAPKTheme(darkTheme = true) {
@@ -66,7 +66,7 @@ class ReceiveUiTest {
         }
         rule.onNodeWithText(ArabicStrings.vsOlder).assertExists()
         rule.onNodeWithText(ArabicStrings.incomingOlderWarning).assertExists()
-        rule.onNodeWithText(ArabicStrings.incomingRejectedFiles.format(1)).assertExists()
+        rule.onNodeWithText("مرحبا").assertExists()
         rule.onNodeWithText(ArabicStrings.acceptReceiveBtn).performClick()
         assertEquals(true, accepted)
     }

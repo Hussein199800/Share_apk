@@ -27,21 +27,24 @@ class ReceiveSessionManagerTest {
     private fun manager(timeout: Long = 60_000) = ReceiveSessionManager(tmp.newFolder(), timeout) { "S" + (++n) }
     private var n = 0
 
-    @Test fun nonAppFilesAreNotOffered() = runTest {
-        val r = manager().prepare(req(file("a", "photo.png")), "10.0.0.2")
-        assertEquals(PrepareResult.NothingToAccept, r)
+    @Test fun messageOnlyRequestNeedsNoTransfer() = runTest {
+        val m = manager()
+        val msg = FileDto(id = "t", fileName = "msg.txt", size = 5, fileType = "text/plain", preview = "hello")
+        val r = async { m.prepare(req(msg), "10.0.0.2") }
+        runCurrent(); m.decide(true)
+        assertEquals(PrepareResult.NoTransfer, r.await())
+        assertEquals(listOf("hello"), (m.state.value as ReceiveState.Done).messages)
     }
 
-    @Test fun mixedRequestIsPartiallyAccepted() = runTest {
+    @Test fun allFileTypesAreAccepted() = runTest {
         val m = manager()
         val r = async { m.prepare(req(file("a", "photo.png"), file("b", "Sakina.apk"), file("c", "x.XAPK")), "10.0.0.2") }
         runCurrent()
         val pending = (m.state.value as ReceiveState.AwaitingDecision).request
-        assertEquals(listOf("Sakina.apk", "x.XAPK"), pending.files.map { it.fileName })
-        assertEquals(1, pending.rejectedCount)
+        assertEquals(3, pending.files.size)
         m.decide(true)
         val ok = r.await() as PrepareResult.Accepted
-        assertEquals(setOf("b", "c"), ok.response.files.keys)
+        assertEquals(setOf("a", "b", "c"), ok.response.files.keys)
     }
 
     @Test fun rejectAndTimeoutBothReject() = runTest {
@@ -106,6 +109,8 @@ class ReceiveSessionManagerTest {
         val names = (m.state.value as ReceiveState.Done).files.map { it.file }
         assertTrue(names.all { it.parentFile == m.sessionDir(sid) })
         assertEquals(2, names.map { it.name }.toSet().size)
+        // Folder structure from the sender is kept (sanitized) for saving into Downloads.
+        assertEquals(listOf("", ""), (m.state.value as ReceiveState.Done).files.map { it.relativeDir })
     }
 
     @Test fun cancelDeletesPartialFilesAndResets() = runTest {
@@ -120,8 +125,6 @@ class ReceiveSessionManagerTest {
 
     @Test fun autoRefusalsAreReportedAsEvents() = runTest {
         val m = manager(timeout = 1_000)
-        m.prepare(req(file("a", "photo.png")), "ip")
-        assertEquals(ReceiveEvent.NotApps("Desk", listOf("photo.png")), m.lastEvent.value)
         val r = async { m.prepare(req(file("b", "a.apk")), "ip") }
         advanceTimeBy(1_500); r.await()
         assertEquals(ReceiveEvent.TimedOut("Desk"), m.lastEvent.value)
@@ -162,5 +165,11 @@ class ReceiveSessionManagerTest {
         val ok = accepted(m, file("b", "a.apk", ByteArray(10)))
         val res = m.receive(ok.response.sessionId, "b", ok.response.files.getValue("b"), "ip", ByteArray(5000).inputStream())
         assertTrue(res is UploadResult.Error)
+    }
+
+    @Test fun folderPathsAreKeptSanitized() {
+        assertEquals("Trip/Day 1", ReceiveSessionManager.relativeDirOf("Trip/Day 1/a.jpg"))
+        assertEquals("x", ReceiveSessionManager.relativeDirOf("../../x/a.jpg"))
+        assertEquals("", ReceiveSessionManager.relativeDirOf("a.jpg"))
     }
 }

@@ -57,6 +57,15 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     private val _received = MutableStateFlow<List<ReceivedItem>>(emptyList())
     val received: StateFlow<List<ReceivedItem>> = _received.asStateFlow()
 
+    private val filesIndex = ReceivedFilesIndex(app)
+    private val _receivedOther = MutableStateFlow<List<ReceivedEntry>>(emptyList())
+    /** Received non-app files and text messages, newest first. */
+    val receivedOther: StateFlow<List<ReceivedEntry>> = _receivedOther.asStateFlow()
+
+    fun removeReceivedEntry(entry: ReceivedEntry) {
+        scope.launch(Dispatchers.IO) { _receivedOther.value = filesIndex.remove(entry) }
+    }
+
     @Volatile private var fingerprint = ""
     val peers = PeerRegistry({ fingerprint })
     val sender = SendController(scope, ::identity, onBusyChanged = { refreshService() }, history = history, client = com.example.send.SendClient(com.example.send.PrefsPins(app)))
@@ -117,7 +126,10 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     suspend fun addManualPeer(address: String): NearbyDevice? = sender.probeAddress(address)?.also { peers.seen(it.info, it.ip) }
 
     fun refreshReceived() {
-        scope.launch(Dispatchers.IO) { _received.value = library.list() }
+        scope.launch(Dispatchers.IO) {
+            _received.value = library.list()
+            _receivedOther.value = filesIndex.load()
+        }
     }
 
     fun deleteReceived(item: ReceivedItem) {
@@ -224,7 +236,24 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
 
     private fun onDone(done: ReceiveState.Done) {
         scope.launch(Dispatchers.IO) {
-            done.files.forEach { rf ->
+            val others = mutableListOf<ReceivedEntry>()
+            done.messages.forEach { others += ReceivedEntry(name = "", text = it) }
+            done.files.filterNot { it.isApp }.forEach { rf ->
+                // Non-app files go to Download/ShareAPK so the gallery and file managers see them.
+                val mime = DownloadsSaver.mimeFor(rf.fileName, rf.mimeType)
+                val size = rf.file.length()
+                val uri = DownloadsSaver.save(app, rf.file, rf.fileName, mime, rf.relativeDir)
+                if (uri != null) {
+                    rf.file.delete()
+                    others += ReceivedEntry(rf.fileName, uri.toString(), mime, size)
+                    runCatching {
+                        history.logOperation("RECEIVE", rf.fileName, "", "", ".${rf.file.extension}", size, "")
+                    }
+                }
+                rf.file.parentFile?.takeIf { it.listFiles().isNullOrEmpty() }?.delete()
+            }
+            if (others.isNotEmpty()) _receivedOther.value = filesIndex.add(others)
+            done.files.filter { it.isApp }.forEach { rf ->
                 rf.meta?.let { library.saveMeta(rf.file, it) }
                 val item = library.inspect(rf.file)
                 history.logOperation(

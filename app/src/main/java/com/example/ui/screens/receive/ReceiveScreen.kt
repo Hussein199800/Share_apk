@@ -77,7 +77,6 @@ fun ReceiveScreen(
             if (lastEvent != null && state is ReceiveState.Idle) item {
                 StatusBadge(
                     when (lastEvent) {
-                        is ReceiveEvent.NotApps -> s.evNotApps.format(lastEvent.sender, lastEvent.fileNames.joinToString("، "))
                         is ReceiveEvent.TimedOut -> s.evTimedOut.format(lastEvent.sender)
                         is ReceiveEvent.Busy -> s.evBusy.format(lastEvent.sender)
                     },
