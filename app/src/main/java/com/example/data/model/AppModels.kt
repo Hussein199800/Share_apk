@@ -37,9 +37,9 @@ enum class LanguagePreference {
 
 enum class MainNavTab {
     APPS,
-    BACKUP_RESTORE,
-    HISTORY,
-    SETTINGS
+    FILES,
+    RECEIVE,
+    MORE
 }
 
 data class InstalledAppInfo(

@@ -19,6 +19,26 @@ import com.example.data.model.FileNamingFormat
 import com.example.data.model.InstalledAppInfo
 import com.example.data.model.LanguagePreference
 import com.example.data.model.MainNavTab
+import com.example.receive.ReceiveController
+import com.example.update.ReleaseInfo
+import com.example.update.UpdateState
+import com.example.update.Updater
+import com.example.receive.discovery.NearbyDevice
+import com.example.receive.protocol.ShareApkMetaDto
+import com.example.send.OutgoingFile
+import com.example.send.PickedItem
+import com.example.send.SendState
+import com.example.receive.ReceiveEvent
+import com.example.receive.ReceiveState
+import com.example.receive.ReceivedItem
+import com.example.receive.ReceiverStatus
+import com.example.receive.VersionStatus
+import com.example.receive.compareWithInstalled
+import com.example.receive.protocol.FileDto
+import com.example.ui.navigation.BackAction
+import com.example.ui.navigation.MoreDestination
+import com.example.ui.navigation.NavSnapshot
+import com.example.ui.navigation.resolveBack
 import com.example.data.model.PreInstallValidationInfo
 import com.example.data.model.RestoreAppStatus
 import com.example.data.model.RestoreCandidateApp
@@ -42,6 +62,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,6 +71,15 @@ import java.io.File
 enum class PendingSplitActionType {
     SHARE,
     SAVE_DOWNLOADS
+}
+
+/** Filter predicate for the apps list; `null` matches every app. */
+fun matchesFilter(app: InstalledAppInfo, filter: AppFilter?): Boolean = when (filter) {
+    null -> true
+    AppFilter.USER_APPS -> !app.isSystemApp
+    AppFilter.SYSTEM_APPS -> app.isSystemApp
+    AppFilter.SPLIT_ONLY -> app.isSplitApk
+    AppFilter.FAVORITES -> app.isFavorite
 }
 
 data class QuickZipBackupProgress(
@@ -66,6 +96,175 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val prefsRepository = UserPreferencesRepository(context)
     private val historyRepository = HistoryRepository(AppDatabase.getInstance(context).historyDao())
     val packageInstallerManager = PackageInstallerManager(context, apkRepository)
+
+    // ---- Direct receive (LocalSend-compatible) ----
+    private val receiver = ReceiveController.get(context)
+    val receiveState: StateFlow<ReceiveState> = receiver.sessions.state
+    val receiverStatus: StateFlow<ReceiverStatus> = receiver.status
+    val receivedItems: StateFlow<List<ReceivedItem>> = receiver.received
+    val receiveEvent: StateFlow<ReceiveEvent?> = receiver.sessions.lastEvent
+
+    fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
+
+    // ---- In-app updates (GitHub releases) ----
+    private val updater = Updater(context)
+    val updateState: StateFlow<UpdateState> = updater.state
+    fun checkForUpdates() { viewModelScope.launch { updater.check() } }
+    fun downloadUpdate(release: ReleaseInfo) { viewModelScope.launch { updater.download(release) } }
+    fun dismissUpdate() = updater.dismiss()
+    fun installUpdate(ready: UpdateState.Ready) {
+        inspectAndPrepareInstall(androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", ready.apk))
+    }
+
+    // ---- Direct send ----
+    val sendState: StateFlow<SendState> = receiver.sender.state
+    val nearbyPeers: StateFlow<List<NearbyDevice>> = receiver.peers.peers
+    val scanningPeers: StateFlow<Boolean> = receiver.sender.scanning
+    private val _manualPeerResult = MutableStateFlow<Boolean?>(null)
+    /** null = idle, true = device found, false = nothing answered. */
+    val manualPeerResult: StateFlow<Boolean?> = _manualPeerResult.asStateFlow()
+
+    fun refreshPeers() = receiver.refreshPeers()
+
+    /** Shows a one-off hint in the snackbar. */
+    fun showHint(message: String) { _snackbarMessage.value = message }
+    fun cancelSend() = receiver.sender.cancel()
+    fun resetSend() = receiver.sender.reset()
+
+    fun addManualPeer(address: String) {
+        _manualPeerResult.value = null
+        viewModelScope.launch { _manualPeerResult.value = receiver.addManualPeer(address) != null }
+    }
+
+    // ---- Device picker (sending from the Apps or Files tab) ----
+    enum class SendTarget { APPS, FILES }
+    private val _pickerTarget = MutableStateFlow<SendTarget?>(null)
+    val pickerTarget: StateFlow<SendTarget?> = _pickerTarget.asStateFlow()
+
+    fun openDevicePicker(target: SendTarget) {
+        if (!receiver.sender.isBusy()) receiver.sender.reset()
+        _pickerTarget.value = target
+        if (receiver.peers.peers.value.isEmpty()) refreshPeers()
+    }
+
+    fun closeDevicePicker() { _pickerTarget.value = null }
+
+    /** Sends the current selection (apps or picked files) to [peer]. */
+    fun sendToPeer(peer: NearbyDevice) {
+        when (_pickerTarget.value) {
+            SendTarget.FILES -> {
+                val items = _pickedFiles.value
+                if (items.isEmpty()) return
+                receiver.sender.send(peer) { items.map(::toOutgoing) }
+            }
+            else -> {
+                val apps = getSelectedAppsList()
+                if (apps.isEmpty()) return
+                val format = userPrefs.value.fileNamingFormat
+                receiver.sender.send(peer) {
+                    apps.map { app ->
+                        val file = apkRepository.prepareAppInCache(app, format)
+                        OutgoingFile(file, file.name, ShareApkMetaDto(app.packageName, app.versionName, app.versionCode), app.label)
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- Files tab ----
+    private val _pickedFiles = MutableStateFlow<List<PickedItem>>(emptyList())
+    val pickedFiles: StateFlow<List<PickedItem>> = _pickedFiles.asStateFlow()
+    private var pickedSeq = 0L
+
+    fun addPickedUris(uris: List<Uri>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val added = uris.mapNotNull { uri -> describe(uri, null) }
+            _pickedFiles.value = _pickedFiles.value + added
+        }
+    }
+
+    /** Adds every file in a picked folder; names keep the folder path so the receiver recreates it. */
+    fun addPickedFolder(tree: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val root = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, tree) ?: return@launch
+            val found = mutableListOf<PickedItem>()
+            fun walk(dir: androidx.documentfile.provider.DocumentFile, path: String) {
+                dir.listFiles().forEach { f ->
+                    val name = f.name ?: return@forEach
+                    if (f.isDirectory) walk(f, "$path/$name")
+                    else if (found.size < 2_000) found += PickedItem(++pickedSeq, "$path/$name", f.length(), f.type, f.uri)
+                }
+            }
+            walk(root, root.name ?: "folder")
+            _pickedFiles.value = _pickedFiles.value + found
+        }
+    }
+
+    fun addPickedText(text: String) {
+        if (text.isBlank()) return
+        _pickedFiles.value = _pickedFiles.value + PickedItem(++pickedSeq, "", text.toByteArray().size.toLong(), "text/plain", text = text)
+    }
+
+    /** Adds the clipboard text; returns false when the clipboard has no text. */
+    fun pastePickedText(): Boolean {
+        val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+        val text = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
+        if (text.isNullOrBlank()) return false
+        addPickedText(text)
+        return true
+    }
+
+    fun removePicked(item: PickedItem) { _pickedFiles.value = _pickedFiles.value - item }
+    fun clearPicked() { _pickedFiles.value = emptyList() }
+
+    private fun describe(uri: Uri, nameOverride: String?): PickedItem? = runCatching {
+        var name = nameOverride
+        var size = -1L
+        context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE), null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                if (name == null) name = c.getString(0)
+                if (!c.isNull(1)) size = c.getLong(1)
+            }
+        }
+        PickedItem(++pickedSeq, name ?: uri.lastPathSegment ?: "file", size.coerceAtLeast(0), context.contentResolver.getType(uri), uri)
+    }.getOrNull()
+
+    private fun toOutgoing(item: PickedItem): OutgoingFile =
+        if (item.text != null) OutgoingFile.text(item.text)
+        else OutgoingFile(
+            fileName = item.name,
+            size = item.size,
+            mimeType = item.mimeType ?: "application/octet-stream",
+            open = { context.contentResolver.openInputStream(item.uri!!) ?: error("cannot open ${item.name}") }
+        )
+
+    // ---- Received non-app files and messages ----
+    val receivedOther: StateFlow<List<com.example.receive.ReceivedEntry>> = receiver.receivedOther
+    fun removeReceivedEntry(entry: com.example.receive.ReceivedEntry) = receiver.removeReceivedEntry(entry)
+    fun cancelReceive() = receiver.sessions.cancelActive()
+    fun acknowledgeReceive() = receiver.sessions.acknowledge()
+    fun deleteReceived(item: ReceivedItem) = receiver.deleteReceived(item)
+
+    fun setReceiveEnabled(enabled: Boolean) {
+        viewModelScope.launch { prefsRepository.setReceiveEnabled(enabled) }
+    }
+
+    fun setDeviceAlias(alias: String) {
+        viewModelScope.launch { prefsRepository.setDeviceAlias(alias) }
+    }
+
+    /** Opens the existing pre-install sheet for a received package. */
+    fun installReceived(item: ReceivedItem) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", item.file)
+        inspectAndPrepareInstall(uri)
+    }
+
+    /** Installed versionCode of a package, or null if not installed (for pre-accept comparison). */
+    fun incomingStatus(file: FileDto): VersionStatus? {
+        val meta = file.shareApk ?: return null
+        val installed = runCatching { context.packageManager.getPackageInfo(meta.packageName, 0).longVersionCode }.getOrNull()
+        return compareWithInstalled(meta.versionCode, installed)
+    }
     private val preFlashBackupManager = PreFlashBackupManager(context)
     private val wifiHttpServer = LocalWifiHttpServer()
 
@@ -73,6 +272,13 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = UserPreferencesState()
+    )
+
+    /** True once DataStore has emitted, so first-run UI doesn't flash for returning users. */
+    val prefsLoaded: StateFlow<Boolean> = prefsRepository.preferencesFlow.map { true }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = false
     )
 
     val historyItems: StateFlow<List<HistoryEntity>> = historyRepository.allHistory.stateIn(
@@ -95,8 +301,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow(AppFilter.USER_APPS)
-    val selectedFilter: StateFlow<AppFilter> = _selectedFilter.asStateFlow()
+    private val _selectedFilter = MutableStateFlow<AppFilter?>(AppFilter.USER_APPS)
+    /** `null` means "all apps". */
+    val selectedFilter: StateFlow<AppFilter?> = _selectedFilter.asStateFlow()
 
     private val _selectedSort = MutableStateFlow(AppSortOption.NAME_ASC)
     val selectedSort: StateFlow<AppSortOption> = _selectedSort.asStateFlow()
@@ -205,12 +412,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         val withFavs = apps.map { it.copy(isFavorite = favSet.contains(it.packageName)) }
 
         val filtered = withFavs.filter { app ->
-            val matchesFilter = when (filter) {
-                AppFilter.USER_APPS -> !app.isSystemApp
-                AppFilter.SYSTEM_APPS -> app.isSystemApp
-                AppFilter.SPLIT_ONLY -> app.isSplitApk
-                AppFilter.FAVORITES -> app.isFavorite
-            }
+            val matchesFilter = matchesFilter(app, filter)
             val matchesSearch = if (query.isBlank()) {
                 true
             } else {
@@ -251,6 +453,15 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     )
 
     init {
+        viewModelScope.launch { updater.autoCheck() }
+        // The receiver lives app-wide; keep it in sync with the user's settings.
+        viewModelScope.launch {
+            // The repository flow (not userPrefs) so the receiver never sees the pre-load defaults.
+            prefsRepository.preferencesFlow.collect { p ->
+                receiver.setAlias(p.deviceAlias)
+                receiver.setEnabled(p.receiveEnabled)
+            }
+        }
         refreshInstalledApps()
         refreshCacheSize()
 
@@ -269,10 +480,30 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val _moreDestination = MutableStateFlow(MoreDestination.HOME)
+    val moreDestination: StateFlow<MoreDestination> = _moreDestination.asStateFlow()
+
     fun selectTab(tab: MainNavTab) {
         _currentTab.value = tab
-        if (tab == MainNavTab.SETTINGS) {
+    }
+
+    /** Opens a More sub-page (switching to the More tab). */
+    fun openMore(dest: MoreDestination) {
+        _currentTab.value = MainNavTab.MORE
+        _moreDestination.value = dest
+        if (dest == MoreDestination.SETTINGS) {
             refreshCacheSize()
+        }
+    }
+
+    /** Applies the back policy. Returns false when the app should close. */
+    fun onBack(): Boolean {
+        val snapshot = NavSnapshot(_currentTab.value, _moreDestination.value, _selectedPackageNames.value.isNotEmpty())
+        return when (resolveBack(snapshot)) {
+            BackAction.ClearSelection -> { clearSelection(); true }
+            BackAction.MoreHome -> { _moreDestination.value = MoreDestination.HOME; true }
+            BackAction.GoApps -> { _currentTab.value = MainNavTab.APPS; true }
+            BackAction.Exit -> false
         }
     }
 
@@ -299,7 +530,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         _searchQuery.value = query
     }
 
-    fun setFilter(filter: AppFilter) {
+    fun setFilter(filter: AppFilter?) {
         _selectedFilter.value = filter
     }
 
@@ -831,9 +1062,6 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { prefsRepository.setThemePreference(theme) }
     }
 
-    fun setDynamicColorEnabled(enabled: Boolean) {
-        viewModelScope.launch { prefsRepository.setDynamicColorEnabled(enabled) }
-    }
 
     fun setLanguagePreference(language: LanguagePreference) {
         viewModelScope.launch {

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Only the folders the app actually shares; never all of filesDir (TLS key, database). -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path
         name="shared_apks"
         path="shared/" />
     <cache-path
-        name="root_cache"
-        path="." />
+        name="update"
+        path="update/" />
     <files-path
-        name="internal_files"
-        path="." />
+        name="received"
+        path="received/" />
 </paths>

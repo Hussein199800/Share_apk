@@ -1,6 +1,0 @@
-{
-  "name": "شارك أبك | ShareAPK",
-  "description": "Offline APK & Split APKS extractor, sharer, package installer, Wi-Fi HTTP transfer, and full Pre-Flash Backup & Restore tool.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

@@ -144,98 +144,26 @@ object FileNameAndHashUtils {
  * Encodes URL bytes + finder patterns + timing grid so users have an instant visual matrix
  * alongside the one-tap copyable URL.
  */
+/** Real QR codes via ZXing (the previous hand-written encoder produced unreadable codes). */
 object QrCodeGenerator {
+    fun matrix(content: String, sizePx: Int): com.google.zxing.common.BitMatrix =
+        com.google.zxing.qrcode.QRCodeWriter().encode(
+            content,
+            com.google.zxing.BarcodeFormat.QR_CODE,
+            sizePx,
+            sizePx,
+            mapOf(
+                com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M,
+                com.google.zxing.EncodeHintType.MARGIN to 2,
+                com.google.zxing.EncodeHintType.CHARACTER_SET to "UTF-8"
+            )
+        )
+
     fun generateQrBitmap(content: String, sizePx: Int = 512): Bitmap {
-        val gridSize = 29 // Version 3 QR dimensions (29x29 modules)
-        val matrix = Array(gridSize) { BooleanArray(gridSize) }
-        val reserved = Array(gridSize) { BooleanArray(gridSize) }
-
-        fun placeFinderPattern(startRow: Int, startCol: Int) {
-            for (r in -1..7) {
-                for (c in -1..7) {
-                    val rr = startRow + r
-                    val cc = startCol + c
-                    if (rr in 0 until gridSize && cc in 0 until gridSize) {
-                        reserved[rr][cc] = true
-                        val inOuter = r in 0..6 && c in 0..6 && (r == 0 || r == 6 || c == 0 || c == 6)
-                        val inInner = r in 2..4 && c in 2..4
-                        matrix[rr][cc] = inOuter || inInner
-                    }
-                }
-            }
+        val m = matrix(content, sizePx)
+        val pixels = IntArray(m.width * m.height) { i ->
+            if (m.get(i % m.width, i / m.width)) 0xFF0F172A.toInt() else 0xFFFFFFFF.toInt()
         }
-
-        placeFinderPattern(0, 0)
-        placeFinderPattern(0, gridSize - 7)
-        placeFinderPattern(gridSize - 7, 0)
-
-        // Timing patterns
-        for (i in 8 until gridSize - 8) {
-            reserved[6][i] = true
-            matrix[6][i] = (i % 2 == 0)
-            reserved[i][6] = true
-            matrix[i][6] = (i % 2 == 0)
-        }
-
-        // Alignment pattern at (20, 20)
-        for (r in 20..24) {
-            for (c in 20..24) {
-                reserved[r][c] = true
-                val border = (r == 20 || r == 24 || c == 20 || c == 24)
-                val center = (r == 22 && c == 22)
-                matrix[r][c] = border || center
-            }
-        }
-
-        // Deterministic bit stream from content bytes + SHA-256 error correction stream
-        val payloadBytes = content.toByteArray(Charsets.UTF_8)
-        val digest = MessageDigest.getInstance("SHA-256").digest(payloadBytes)
-        val combined = payloadBytes + digest + payloadBytes
-
-        var bitIndex = 0
-        for (r in 0 until gridSize) {
-            for (c in 0 until gridSize) {
-                if (!reserved[r][c]) {
-                    val byteVal = combined[(bitIndex / 8) % combined.size].toInt() and 0xFF
-                    val bit = ((byteVal ushr (7 - (bitIndex % 8))) and 1) == 1
-                    val mask = ((r + c) % 2 == 0)
-                    matrix[r][c] = bit xor mask
-                    bitIndex++
-                }
-            }
-        }
-
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FFF8F0") }
-        val fgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#2B1B14") }
-        val goldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#C9A227") }
-
-        canvas.drawRect(0f, 0f, sizePx.toFloat(), sizePx.toFloat(), bgPaint)
-
-        val quietZone = 3
-        val totalModules = gridSize + quietZone * 2
-        val modulePx = sizePx.toFloat() / totalModules
-
-        for (r in 0 until gridSize) {
-            for (c in 0 until gridSize) {
-                if (matrix[r][c]) {
-                    val left = (c + quietZone) * modulePx
-                    val top = (r + quietZone) * modulePx
-                    val isFinderInner = (r in 2..4 && c in 2..4) ||
-                        (r in 2..4 && c in (gridSize - 5)..(gridSize - 3)) ||
-                        (r in (gridSize - 5)..(gridSize - 3) && c in 2..4)
-                    val paint = if (isFinderInner) goldPaint else fgPaint
-                    canvas.drawRoundRect(
-                        RectF(left, top, left + modulePx * 0.94f, top + modulePx * 0.94f),
-                        modulePx * 0.2f,
-                        modulePx * 0.2f,
-                        paint
-                    )
-                }
-            }
-        }
-
-        return bitmap
+        return Bitmap.createBitmap(pixels, m.width, m.height, Bitmap.Config.ARGB_8888)
     }
 }

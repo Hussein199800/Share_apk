@@ -14,17 +14,20 @@ import com.example.data.model.ThemePreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "shareapk_user_prefs")
+internal val Context.shareApkDataStore: DataStore<Preferences> by preferencesDataStore(name = "shareapk_user_prefs")
 
 data class UserPreferencesState(
-    val themePreference: ThemePreference = ThemePreference.DARK,
+    val themePreference: ThemePreference = ThemePreference.SYSTEM,
     val dynamicColorEnabled: Boolean = false,
     val languagePreference: LanguagePreference = LanguagePreference.ARABIC,
     val fileNamingFormat: FileNamingFormat = FileNamingFormat.ORIGINAL_NAME,
     val autoClearCacheOnExit: Boolean = false,
     val onboardingCompleted: Boolean = false,
     val favoritePackages: Set<String> = emptySet(),
-    val lastBackupTreeUri: String? = null
+    val lastBackupTreeUri: String? = null,
+    /** Name shown to nearby devices; null = device model. */
+    val deviceAlias: String? = null,
+    val receiveEnabled: Boolean = true
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -38,13 +41,15 @@ class UserPreferencesRepository(private val context: Context) {
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_completed")
         val FAVORITES = stringSetPreferencesKey("favorite_packages")
         val LAST_BACKUP_URI = stringPreferencesKey("last_backup_tree_uri")
+        val DEVICE_ALIAS = stringPreferencesKey("device_alias")
+        val RECEIVE_ENABLED = booleanPreferencesKey("receive_enabled")
     }
 
-    val preferencesFlow: Flow<UserPreferencesState> = context.dataStore.data.map { prefs ->
+    val preferencesFlow: Flow<UserPreferencesState> = context.shareApkDataStore.data.map { prefs ->
         UserPreferencesState(
             themePreference = prefs[Keys.THEME]?.let {
                 runCatching { ThemePreference.valueOf(it) }.getOrNull()
-            } ?: ThemePreference.DARK,
+            } ?: ThemePreference.SYSTEM,
             dynamicColorEnabled = prefs[Keys.DYNAMIC_COLOR] ?: false,
             languagePreference = prefs[Keys.LANGUAGE]?.let {
                 runCatching { LanguagePreference.valueOf(it) }.getOrNull()
@@ -55,36 +60,38 @@ class UserPreferencesRepository(private val context: Context) {
             autoClearCacheOnExit = prefs[Keys.AUTO_CLEAR_CACHE] ?: false,
             onboardingCompleted = prefs[Keys.ONBOARDING_DONE] ?: false,
             favoritePackages = prefs[Keys.FAVORITES] ?: emptySet(),
-            lastBackupTreeUri = prefs[Keys.LAST_BACKUP_URI]
+            lastBackupTreeUri = prefs[Keys.LAST_BACKUP_URI],
+            deviceAlias = prefs[Keys.DEVICE_ALIAS],
+            receiveEnabled = prefs[Keys.RECEIVE_ENABLED] ?: true
         )
     }
 
     suspend fun setThemePreference(theme: ThemePreference) {
-        context.dataStore.edit { it[Keys.THEME] = theme.name }
+        context.shareApkDataStore.edit { it[Keys.THEME] = theme.name }
     }
 
     suspend fun setDynamicColorEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.DYNAMIC_COLOR] = enabled }
+        context.shareApkDataStore.edit { it[Keys.DYNAMIC_COLOR] = enabled }
     }
 
     suspend fun setLanguagePreference(language: LanguagePreference) {
-        context.dataStore.edit { it[Keys.LANGUAGE] = language.name }
+        context.shareApkDataStore.edit { it[Keys.LANGUAGE] = language.name }
     }
 
     suspend fun setFileNamingFormat(format: FileNamingFormat) {
-        context.dataStore.edit { it[Keys.FILE_NAMING] = format.name }
+        context.shareApkDataStore.edit { it[Keys.FILE_NAMING] = format.name }
     }
 
     suspend fun setAutoClearCacheOnExit(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.AUTO_CLEAR_CACHE] = enabled }
+        context.shareApkDataStore.edit { it[Keys.AUTO_CLEAR_CACHE] = enabled }
     }
 
     suspend fun setOnboardingCompleted(completed: Boolean) {
-        context.dataStore.edit { it[Keys.ONBOARDING_DONE] = completed }
+        context.shareApkDataStore.edit { it[Keys.ONBOARDING_DONE] = completed }
     }
 
     suspend fun toggleFavorite(packageName: String) {
-        context.dataStore.edit { prefs ->
+        context.shareApkDataStore.edit { prefs ->
             val current = prefs[Keys.FAVORITES]?.toMutableSet() ?: mutableSetOf()
             if (current.contains(packageName)) {
                 current.remove(packageName)
@@ -96,12 +103,23 @@ class UserPreferencesRepository(private val context: Context) {
     }
 
     suspend fun setLastBackupTreeUri(uriString: String?) {
-        context.dataStore.edit { prefs ->
+        context.shareApkDataStore.edit { prefs ->
             if (uriString == null) {
                 prefs.remove(Keys.LAST_BACKUP_URI)
             } else {
                 prefs[Keys.LAST_BACKUP_URI] = uriString
             }
         }
+    }
+
+    suspend fun setDeviceAlias(alias: String?) {
+        context.shareApkDataStore.edit { prefs ->
+            val clean = alias?.trim()?.take(40)
+            if (clean.isNullOrEmpty()) prefs.remove(Keys.DEVICE_ALIAS) else prefs[Keys.DEVICE_ALIAS] = clean
+        }
+    }
+
+    suspend fun setReceiveEnabled(enabled: Boolean) {
+        context.shareApkDataStore.edit { it[Keys.RECEIVE_ENABLED] = enabled }
     }
 }
