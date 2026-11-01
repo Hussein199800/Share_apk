@@ -15,11 +15,11 @@ sealed interface BackAction {
 }
 
 /**
- * Back order: clear a *visible* selection (Apps/Send) → leave a More sub-page → return to Apps → exit.
+ * Back order: clear a *visible* selection (Apps) → leave a More sub-page → return to Apps → exit.
  * A selection hidden behind another tab is kept and never swallows a back press.
  */
 fun resolveBack(s: NavSnapshot): BackAction = when {
-    s.hasSelection && (s.tab == MainNavTab.APPS || s.tab == MainNavTab.SEND) -> BackAction.ClearSelection
+    s.hasSelection && s.tab == MainNavTab.APPS -> BackAction.ClearSelection
     s.tab == MainNavTab.MORE && s.more != MoreDestination.HOME -> BackAction.MoreHome
     s.tab != MainNavTab.APPS -> BackAction.GoApps
     else -> BackAction.Exit

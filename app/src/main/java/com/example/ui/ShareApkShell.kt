@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.FolderCopy
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -68,7 +68,7 @@ fun ShareApkShell(
         ShareAPKTheme(darkTheme = darkTheme) {
             val items = listOf(
                 NavItem(MainNavTab.APPS, strings.navApps, Icons.Outlined.Apps),
-                NavItem(MainNavTab.SEND, strings.navSend, Icons.AutoMirrored.Outlined.Send),
+                NavItem(MainNavTab.FILES, strings.navFiles, Icons.Outlined.FolderCopy),
                 NavItem(MainNavTab.RECEIVE, strings.navReceive, Icons.Outlined.Download),
                 NavItem(MainNavTab.MORE, strings.navMore, Icons.Outlined.MoreHoriz)
             )

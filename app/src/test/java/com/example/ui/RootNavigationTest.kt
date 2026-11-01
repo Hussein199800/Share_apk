@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.model.MainNavTab
-import com.example.ui.screens.send.SendScreen
 import com.example.ui.theme.ArabicStrings
 import com.example.ui.theme.EnglishStrings
 import com.example.ui.theme.ShareAPKTheme
@@ -35,7 +34,7 @@ class RootNavigationTest {
         vm.completeOnboarding()
         rule.setContent { ShareApkAppRoot(viewModel = vm, isExpandedScreen = false) }
 
-        listOf("APPS", "SEND", "RECEIVE", "MORE").forEach { rule.onNodeWithTag("nav_$it").assertExists() }
+        listOf("APPS", "FILES", "RECEIVE", "MORE").forEach { rule.onNodeWithTag("nav_$it").assertExists() }
 
         rule.onNodeWithTag("nav_MORE").performClick()
         rule.onNodeWithText(ArabicStrings.tileSettingsTitle).performClick()
@@ -77,16 +76,4 @@ class RootNavigationTest {
         assertTrue("apps=$apps more=$more", apps > more)
     }
 
-    @Test
-    fun sendWithoutSelectionInvitesToPickApps() {
-        var picked = false
-        rule.setContent {
-            ShareAPKTheme(darkTheme = true) {
-                SendScreen(selectedApps = emptyList(), onPickApps = { picked = true }, onShareViaLink = {})
-            }
-        }
-        rule.onNodeWithText(ArabicStrings.sendPickAppsTitle).assertExists()
-        rule.onNodeWithText(ArabicStrings.sendPickAppsBtn).performClick()
-        assertTrue(picked)
-    }
 }

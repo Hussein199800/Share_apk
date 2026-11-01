@@ -37,7 +37,7 @@ enum class LanguagePreference {
 
 enum class MainNavTab {
     APPS,
-    SEND,
+    FILES,
     RECEIVE,
     MORE
 }

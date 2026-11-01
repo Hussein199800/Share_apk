@@ -38,7 +38,7 @@ class DesignComponentsTest {
 
     private val items = listOf(
         NavItem(MainNavTab.APPS, "التطبيقات", Icons.Outlined.Apps),
-        NavItem(MainNavTab.SEND, "إرسال", Icons.Outlined.Send),
+        NavItem(MainNavTab.FILES, "إرسال", Icons.Outlined.Send),
         NavItem(MainNavTab.RECEIVE, "استقبال", Icons.Outlined.Download),
         NavItem(MainNavTab.MORE, "المزيد", Icons.Outlined.MoreHoriz)
     )
@@ -51,8 +51,8 @@ class DesignComponentsTest {
                 ShareApkBottomBar(items = items, current = MainNavTab.APPS, onSelect = { picked = it })
             }
         }
-        rule.onNodeWithTag("nav_SEND").performClick()
-        assertEquals(MainNavTab.SEND, picked)
+        rule.onNodeWithTag("nav_FILES").performClick()
+        assertEquals(MainNavTab.FILES, picked)
     }
 
     @Test

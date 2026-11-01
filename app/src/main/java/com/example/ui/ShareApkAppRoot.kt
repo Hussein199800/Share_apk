@@ -46,9 +46,10 @@ import com.example.update.UpdateSheet
 import com.example.update.UpdateState
 import com.example.ui.screens.receive.IncomingRequestSheet
 import com.example.ui.screens.receive.ReceiveScreen
-import com.example.ui.screens.send.SendScreen
-import com.example.ui.theme.LocaleHelper
+import com.example.ui.screens.files.FilesScreen
+import com.example.ui.screens.send.DevicePickerSheet
 import com.example.ui.viewmodel.ShareApkViewModel
+import com.example.ui.theme.LocaleHelper
 
 
 @Composable
@@ -179,8 +180,17 @@ fun ShareApkAppRoot(
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     var showUpdateSheet by remember { mutableStateOf(false) }
     // Look for devices when the Send tab opens with an empty list.
-    LaunchedEffect(currentTab) {
-        if (currentTab == MainNavTab.SEND && viewModel.nearbyPeers.value.isEmpty()) viewModel.refreshPeers()
+    val pickerTarget by viewModel.pickerTarget.collectAsStateWithLifecycle()
+    val pickedFiles by viewModel.pickedFiles.collectAsStateWithLifecycle()
+    val receivedOther by viewModel.receivedOther.collectAsStateWithLifecycle()
+    val pickFilesLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) viewModel.addPickedUris(uris)
+    }
+    val pickMediaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+        if (uris.isNotEmpty()) viewModel.addPickedUris(uris)
+    }
+    val pickFolderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+        if (tree != null) viewModel.addPickedFolder(tree)
     }
     val deviceName = receiverStatus.alias
     val appVersion = remember {
@@ -258,22 +268,23 @@ fun ShareApkAppRoot(
                 onCancelQuickZipBackup = viewModel::cancelQuickMultiAppBackup,
                 onToggleFavorite = viewModel::toggleFavorite,
                 onComputeSha256 = viewModel::computeBaseApkSha256,
-                onSendSelected = { viewModel.selectTab(MainNavTab.SEND) }
+                onSendSelected = { viewModel.openDevicePicker(ShareApkViewModel.SendTarget.APPS) }
             )
 
-            MainNavTab.SEND -> SendScreen(
-                selectedApps = remember(selectedPackageNames, apps) { viewModel.getSelectedAppsList() },
-                onPickApps = { viewModel.selectTab(MainNavTab.APPS) },
-                onShareViaLink = shareViaLink,
-                peers = nearbyPeers,
-                scanning = scanningPeers,
-                sendState = sendState,
-                manualResult = manualPeerResult,
-                onSendTo = viewModel::sendToPeer,
-                onRefresh = viewModel::refreshPeers,
-                onAddManual = viewModel::addManualPeer,
-                onCancel = viewModel::cancelSend,
-                onReset = viewModel::resetSend
+            MainNavTab.FILES -> FilesScreen(
+                items = pickedFiles,
+                onPickFile = { pickFilesLauncher.launch(arrayOf("*/*")) },
+                onPickMedia = {
+                    pickMediaLauncher.launch(
+                        androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                    )
+                },
+                onPickFolder = { pickFolderLauncher.launch(null) },
+                onAddText = viewModel::addPickedText,
+                onPaste = { if (!viewModel.pastePickedText()) viewModel.showHint(strings.clipboardEmpty) },
+                onRemove = viewModel::removePicked,
+                onClear = viewModel::clearPicked,
+                onSend = { viewModel.openDevicePicker(ShareApkViewModel.SendTarget.FILES) }
             )
 
             MainNavTab.RECEIVE -> ReceiveScreen(
@@ -286,6 +297,17 @@ fun ShareApkAppRoot(
                 onAcknowledge = viewModel::acknowledgeReceive,
                 onInstall = viewModel::installReceived,
                 onDelete = viewModel::deleteReceived,
+                receivedOther = receivedOther,
+                onOpenEntry = { entry ->
+                    entry.uri?.let { u ->
+                        val view = android.content.Intent(android.content.Intent.ACTION_VIEW)
+                            .setDataAndType(android.net.Uri.parse(u), entry.mimeType)
+                            .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        runCatching { context.startActivity(android.content.Intent.createChooser(view, entry.name).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    }
+                },
+                onCopyEntry = { entry -> entry.text?.let { com.example.ui.components.copyToClipboard(context, "text", it, strings.copiedToast) } },
+                onRemoveEntry = viewModel::removeReceivedEntry,
                 lastEvent = receiveEvent
             )
 
@@ -379,6 +401,29 @@ fun ShareApkAppRoot(
         }
 
         // Dialogs & Sheets
+        pickerTarget?.let { target ->
+            val (count, bytes) = when (target) {
+                ShareApkViewModel.SendTarget.FILES -> pickedFiles.size to pickedFiles.sumOf { it.size }
+                ShareApkViewModel.SendTarget.APPS -> {
+                    val sel = apps.filter { it.packageName in selectedPackageNames }
+                    selectedPackageNames.size to sel.sumOf { it.totalSizeBytes }
+                }
+            }
+            DevicePickerSheet(
+                itemsCount = count,
+                itemsBytes = bytes,
+                peers = nearbyPeers,
+                scanning = scanningPeers,
+                sendState = sendState,
+                manualResult = manualPeerResult,
+                onSendTo = viewModel::sendToPeer,
+                onRefresh = viewModel::refreshPeers,
+                onAddManual = viewModel::addManualPeer,
+                onCancel = viewModel::cancelSend,
+                onReset = viewModel::resetSend,
+                onDismiss = viewModel::closeDevicePicker
+            )
+        }
         if (showUpdateSheet) {
             UpdateSheet(
                 state = updateState,

@@ -26,6 +26,7 @@ import com.example.update.Updater
 import com.example.receive.discovery.NearbyDevice
 import com.example.receive.protocol.ShareApkMetaDto
 import com.example.send.OutgoingFile
+import com.example.send.PickedItem
 import com.example.send.SendState
 import com.example.receive.ReceiveEvent
 import com.example.receive.ReceiveState
@@ -135,18 +136,111 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { _manualPeerResult.value = receiver.addManualPeer(address) != null }
     }
 
-    /** Extracts the selected apps (as .apk/.apks) and sends them to [peer]. */
+    // ---- Device picker (sending from the Apps or Files tab) ----
+    enum class SendTarget { APPS, FILES }
+    private val _pickerTarget = MutableStateFlow<SendTarget?>(null)
+    val pickerTarget: StateFlow<SendTarget?> = _pickerTarget.asStateFlow()
+
+    fun openDevicePicker(target: SendTarget) {
+        if (!receiver.sender.isBusy()) receiver.sender.reset()
+        _pickerTarget.value = target
+        if (receiver.peers.peers.value.isEmpty()) refreshPeers()
+    }
+
+    fun closeDevicePicker() { _pickerTarget.value = null }
+
+    /** Sends the current selection (apps or picked files) to [peer]. */
     fun sendToPeer(peer: NearbyDevice) {
-        val apps = getSelectedAppsList()
-        if (apps.isEmpty()) return
-        val format = userPrefs.value.fileNamingFormat
-        receiver.sender.send(peer) {
-            apps.map { app ->
-                val file = apkRepository.prepareAppInCache(app, format)
-                OutgoingFile(file, file.name, ShareApkMetaDto(app.packageName, app.versionName, app.versionCode), app.label)
+        when (_pickerTarget.value) {
+            SendTarget.FILES -> {
+                val items = _pickedFiles.value
+                if (items.isEmpty()) return
+                receiver.sender.send(peer) { items.map(::toOutgoing) }
+            }
+            else -> {
+                val apps = getSelectedAppsList()
+                if (apps.isEmpty()) return
+                val format = userPrefs.value.fileNamingFormat
+                receiver.sender.send(peer) {
+                    apps.map { app ->
+                        val file = apkRepository.prepareAppInCache(app, format)
+                        OutgoingFile(file, file.name, ShareApkMetaDto(app.packageName, app.versionName, app.versionCode), app.label)
+                    }
+                }
             }
         }
     }
+
+    // ---- Files tab ----
+    private val _pickedFiles = MutableStateFlow<List<PickedItem>>(emptyList())
+    val pickedFiles: StateFlow<List<PickedItem>> = _pickedFiles.asStateFlow()
+    private var pickedSeq = 0L
+
+    fun addPickedUris(uris: List<Uri>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val added = uris.mapNotNull { uri -> describe(uri, null) }
+            _pickedFiles.value = _pickedFiles.value + added
+        }
+    }
+
+    /** Adds every file in a picked folder; names keep the folder path so the receiver recreates it. */
+    fun addPickedFolder(tree: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val root = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, tree) ?: return@launch
+            val found = mutableListOf<PickedItem>()
+            fun walk(dir: androidx.documentfile.provider.DocumentFile, path: String) {
+                dir.listFiles().forEach { f ->
+                    val name = f.name ?: return@forEach
+                    if (f.isDirectory) walk(f, "$path/$name")
+                    else if (found.size < 2_000) found += PickedItem(++pickedSeq, "$path/$name", f.length(), f.type, f.uri)
+                }
+            }
+            walk(root, root.name ?: "folder")
+            _pickedFiles.value = _pickedFiles.value + found
+        }
+    }
+
+    fun addPickedText(text: String) {
+        if (text.isBlank()) return
+        _pickedFiles.value = _pickedFiles.value + PickedItem(++pickedSeq, "", text.toByteArray().size.toLong(), "text/plain", text = text)
+    }
+
+    /** Adds the clipboard text; returns false when the clipboard has no text. */
+    fun pastePickedText(): Boolean {
+        val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+        val text = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
+        if (text.isNullOrBlank()) return false
+        addPickedText(text)
+        return true
+    }
+
+    fun removePicked(item: PickedItem) { _pickedFiles.value = _pickedFiles.value - item }
+    fun clearPicked() { _pickedFiles.value = emptyList() }
+
+    private fun describe(uri: Uri, nameOverride: String?): PickedItem? = runCatching {
+        var name = nameOverride
+        var size = -1L
+        context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE), null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                if (name == null) name = c.getString(0)
+                if (!c.isNull(1)) size = c.getLong(1)
+            }
+        }
+        PickedItem(++pickedSeq, name ?: uri.lastPathSegment ?: "file", size.coerceAtLeast(0), context.contentResolver.getType(uri), uri)
+    }.getOrNull()
+
+    private fun toOutgoing(item: PickedItem): OutgoingFile =
+        if (item.text != null) OutgoingFile.text(item.text)
+        else OutgoingFile(
+            fileName = item.name,
+            size = item.size,
+            mimeType = item.mimeType ?: "application/octet-stream",
+            open = { context.contentResolver.openInputStream(item.uri!!) ?: error("cannot open ${item.name}") }
+        )
+
+    // ---- Received non-app files and messages ----
+    val receivedOther: StateFlow<List<com.example.receive.ReceivedEntry>> = receiver.receivedOther
+    fun removeReceivedEntry(entry: com.example.receive.ReceivedEntry) = receiver.removeReceivedEntry(entry)
     fun cancelReceive() = receiver.sessions.cancelActive()
     fun acknowledgeReceive() = receiver.sessions.acknowledge()
     fun deleteReceived(item: ReceivedItem) = receiver.deleteReceived(item)

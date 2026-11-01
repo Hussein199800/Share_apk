@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.InstallMobile
 import androidx.compose.material.icons.outlined.Wifi
@@ -29,11 +32,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.receive.ReceiveEvent
+import com.example.receive.ReceivedEntry
 import com.example.receive.ReceiveState
 import com.example.receive.ReceivedItem
 import com.example.receive.ReceiverStatus
 import com.example.ui.components.design.AppIcon
 import com.example.ui.components.design.BadgeTone
+import com.example.ui.components.design.FileTypeIcon
 import com.example.ui.components.design.GradientIconBox
 import com.example.ui.components.design.HelpCard
 import com.example.ui.components.design.GradientProgressBar
@@ -63,6 +68,10 @@ fun ReceiveScreen(
     onInstall: (ReceivedItem) -> Unit,
     onDelete: (ReceivedItem) -> Unit,
     lastEvent: ReceiveEvent? = null,
+    receivedOther: List<ReceivedEntry> = emptyList(),
+    onOpenEntry: (ReceivedEntry) -> Unit = {},
+    onCopyEntry: (ReceivedEntry) -> Unit = {},
+    onRemoveEntry: (ReceivedEntry) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val s = LocalAppStrings.current
@@ -134,6 +143,26 @@ fun ReceiveScreen(
                 }
             }
             items(received, key = { it.file.path }) { item -> ReceivedRow(item, onInstall, onDelete) }
+            if (receivedOther.isNotEmpty()) {
+                item { Text(s.receivedFilesTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
+                items(receivedOther, key = { it.receivedAt.toString() + it.name + (it.text?.hashCode() ?: 0) }) { e ->
+                    SurfaceCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            FileTypeIcon(if (e.isText) "x.txt" else e.name, e.mimeType, size = 40.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(e.text ?: e.name, style = MaterialTheme.typography.bodyLarge, color = c.onBackground, maxLines = if (e.isText) 3 else 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    if (e.isText) s.textMessageLabel else FileNameAndHashUtils.formatBytes(e.size),
+                                    style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant
+                                )
+                            }
+                            if (e.isText) IconActionButton(Icons.Outlined.ContentCopy, s.copyBtn, { onCopyEntry(e) })
+                            else IconActionButton(Icons.Outlined.OpenInNew, s.openBtn, { onOpenEntry(e) })
+                            IconActionButton(Icons.Outlined.Close, s.deleteItemAction, { onRemoveEntry(e) })
+                        }
+                    }
+                }
+            }
         }
     }
 }

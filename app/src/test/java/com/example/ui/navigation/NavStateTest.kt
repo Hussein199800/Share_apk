@@ -33,7 +33,7 @@ class NavStateTest {
 
     @Test fun otherTabGoesToApps() = assertEquals(
         BackAction.GoApps,
-        resolveBack(NavSnapshot(MainNavTab.SEND, MoreDestination.HOME, hasSelection = false))
+        resolveBack(NavSnapshot(MainNavTab.FILES, MoreDestination.HOME, hasSelection = false))
     )
 
     @Test fun appsTabExits() = assertEquals(

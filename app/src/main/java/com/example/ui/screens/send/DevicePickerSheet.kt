@@ -1,6 +1,9 @@
 package com.example.ui.screens.send
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,7 +39,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.model.InstalledAppInfo
 import com.example.receive.discovery.NearbyDevice
 import com.example.send.SendState
 import com.example.ui.components.design.AppIcon
@@ -60,107 +62,61 @@ import com.example.ui.theme.ShareApkTheme
 import com.example.ui.theme.ShareApkTokens
 import com.example.util.FileNameAndHashUtils
 
+
+/** "Choose a device" sheet used by the Apps and Files tabs. */
 @Composable
-fun SendScreen(
-    selectedApps: List<InstalledAppInfo>,
-    onPickApps: () -> Unit,
-    onShareViaLink: () -> Unit,
-    modifier: Modifier = Modifier,
-    peers: List<NearbyDevice> = emptyList(),
-    scanning: Boolean = false,
-    sendState: SendState = SendState.Idle,
-    manualResult: Boolean? = null,
-    onSendTo: (NearbyDevice) -> Unit = {},
-    onRefresh: () -> Unit = {},
-    onAddManual: (String) -> Unit = {},
-    onCancel: () -> Unit = {},
-    onReset: () -> Unit = {}
+fun DevicePickerSheet(
+    itemsCount: Int,
+    itemsBytes: Long,
+    peers: List<NearbyDevice>,
+    scanning: Boolean,
+    sendState: SendState,
+    manualResult: Boolean?,
+    onSendTo: (NearbyDevice) -> Unit,
+    onRefresh: () -> Unit,
+    onAddManual: (String) -> Unit,
+    onCancel: () -> Unit,
+    onReset: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     var showManual by remember { mutableStateOf(false) }
+    var address by remember { mutableStateOf("") }
     LaunchedEffect(manualResult) { if (manualResult == true) showManual = false }
-    ScreenScaffold(
-        title = s.sendTitle,
-        subtitle = s.sendSubtitle,
-        modifier = modifier,
-        action = { IconActionButton(Icons.Outlined.Refresh, s.refreshAction, onRefresh, Modifier.testTag("send_refresh")) }
-    ) {
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            item { SelectionCard(selectedApps, onPickApps) }
-            if (sendState !is SendState.Idle) item { SendStatusCard(sendState, onCancel, onReset) }
-
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(s.nearbyDevicesTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground, modifier = Modifier.weight(1f))
-                    if (scanning) Text(s.scanningNetwork, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
-                }
-            }
-            if (scanning) item { GradientProgressBar(progress = null, height = 4.dp) }
-            if (peers.isEmpty()) {
-                item {
-                    SurfaceCard(Modifier.fillMaxWidth()) {
-                        Text(s.nearbyEmpty, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                    }
-                }
-            }
-            items(peers, key = { it.info.fingerprint + it.ip }) { peer ->
-                DeviceRow(peer, enabled = selectedApps.isNotEmpty()) { onSendTo(peer) }
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SecondaryButton(s.manualAddressBtn, { showManual = true }, Modifier.weight(1f))
-                    SecondaryButton(s.tileLinkTitle, onShareViaLink, Modifier.weight(1f))
-                }
-            }
-            item {
-                HelpCard(
-                    title = s.helpSendTitle,
-                    steps = s.helpSendDirectSteps.split('|'),
-                    tips = s.helpSendOtherSteps.split('|'),
-                    initiallyExpanded = peers.isEmpty()
-                )
-            }
-        }
-    }
-
-    if (showManual) {
-        ManualAddressSheet(notFound = manualResult == false, onAdd = onAddManual, onDismiss = { showManual = false })
-    }
-}
-
-@Composable
-private fun SelectionCard(selectedApps: List<InstalledAppInfo>, onPickApps: () -> Unit) {
-    val s = LocalAppStrings.current
-    val c = ShareApkTheme.colors
-    if (selectedApps.isEmpty()) {
-        SurfaceCard(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GradientIconBox(ShareApkGradients.indigo) { Icon(Icons.Outlined.Apps, null, Modifier.size(24.dp)) }
-                Column(Modifier.weight(1f)) {
-                    Text(s.sendPickAppsTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground)
-                    Text(s.sendPickAppsBody, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
-                }
-            }
-            PrimaryButton(s.sendPickAppsBtn, onPickApps, Modifier.fillMaxWidth())
-        }
-    } else {
-        HeroCard(Modifier.fillMaxWidth(), onClick = onPickApps) {
-            Row(horizontalArrangement = Arrangement.spacedBy((-14).dp)) {
-                selectedApps.take(3).forEach { AppIcon(it.label, it.iconBitmap, size = 40.dp) }
-            }
+    ShareApkBottomSheet(onDismiss = onDismiss) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
-                Text(selectedApps.joinToString("، ") { it.label }, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(s.pickerTitle, style = MaterialTheme.typography.titleLarge, color = c.onBackground)
+                LtrBox {
+                    Text(s.itemsSummary.format(itemsCount, FileNameAndHashUtils.formatBytes(itemsBytes)), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                }
+            }
+            IconActionButton(Icons.Outlined.Refresh, s.refreshAction, onRefresh, Modifier.testTag("send_refresh"))
+        }
+        if (sendState !is SendState.Idle) SendStatusCard(sendState, onCancel, onReset)
+        if (scanning) GradientProgressBar(progress = null, height = 4.dp)
+        Column(
+            Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap)
+        ) {
+            if (peers.isEmpty()) {
                 Text(
-                    s.sendSelectedSummary.format(selectedApps.size, FileNameAndHashUtils.formatBytes(selectedApps.sumOf { it.totalSizeBytes })),
-                    style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f)
+                    if (scanning) s.scanningNetwork else s.nearbyEmpty,
+                    style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
                 )
             }
+            peers.forEach { peer -> DeviceRow(peer, enabled = itemsCount > 0 && sendState !is SendState.Sending) { onSendTo(peer) } }
         }
+        if (showManual) {
+            LtrBox { TextInputField(address, { address = it.trim() }, s.manualAddressHint) }
+            if (manualResult == false) StatusBadge(s.manualAddressNotFound, BadgeTone.Warning)
+            PrimaryButton(s.addBtn, { onAddManual(address) }, Modifier.fillMaxWidth(), enabled = address.isNotBlank())
+        } else {
+            SecondaryButton(s.manualAddressBtn, { showManual = true }, Modifier.fillMaxWidth())
+        }
+        Text(s.pickerTip, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
     }
 }
 
@@ -237,15 +193,3 @@ private fun ResultRow(icon: androidx.compose.ui.graphics.vector.ImageVector, gra
     }
 }
 
-@Composable
-private fun ManualAddressSheet(notFound: Boolean, onAdd: (String) -> Unit, onDismiss: () -> Unit) {
-    val s = LocalAppStrings.current
-    val c = ShareApkTheme.colors
-    var address by remember { mutableStateOf("") }
-    ShareApkBottomSheet(onDismiss = onDismiss) {
-        Text(s.manualAddressTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground)
-        Box { LtrBox { TextInputField(address, { address = it.trim() }, s.manualAddressHint) } }
-        if (notFound) StatusBadge(s.manualAddressNotFound, BadgeTone.Warning)
-        PrimaryButton(s.addBtn, { onAdd(address) }, Modifier.fillMaxWidth(), enabled = address.isNotBlank(), height = ShareApkTokens.SheetButtonHeight)
-    }
-}
