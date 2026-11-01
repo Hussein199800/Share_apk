@@ -91,8 +91,8 @@ class SendController(
                         appLabel = f.label,
                         packageName = f.meta?.packageName.orEmpty(),
                         versionName = f.meta?.versionName.orEmpty(),
-                        fileFormat = ".${f.file.extension}",
-                        fileSizeBytes = f.file.length(),
+                        fileFormat = ".${f.fileName.substringAfterLast('.', "")}",
+                        fileSizeBytes = f.size,
                         sha256Hash = ""
                     )
                 }

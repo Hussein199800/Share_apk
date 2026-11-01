@@ -38,7 +38,40 @@ import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-data class OutgoingFile(val file: File, val fileName: String, val meta: ShareApkMetaDto?, val label: String = fileName)
+/** Something to send: an extracted app, a picked file/URI, or a text message ([preview]). */
+class OutgoingFile(
+    val fileName: String,
+    val size: Long,
+    val mimeType: String,
+    val open: () -> java.io.InputStream,
+    val meta: ShareApkMetaDto? = null,
+    val label: String = fileName,
+    val preview: String? = null,
+    val sha256: String? = null
+) {
+    /** An app package on disk (checksum included so the receiver can verify it). */
+    constructor(file: File, fileName: String, meta: ShareApkMetaDto?, label: String = fileName) : this(
+        fileName, file.length(), "application/vnd.android.package-archive", { file.inputStream() }, meta, label,
+        sha256 = sha256Of(file)
+    )
+
+    companion object {
+        /** LocalSend-style text message: the text travels in `preview`, nothing is uploaded. */
+        fun text(text: String): OutgoingFile {
+            val bytes = text.toByteArray()
+            return OutgoingFile("${System.currentTimeMillis()}.txt", bytes.size.toLong(), "text/plain", { bytes.inputStream() }, preview = text)
+        }
+
+        fun sha256Of(file: File): String {
+            val md = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buf = ByteArray(64 * 1024)
+                while (true) { val n = input.read(buf); if (n < 0) break; md.update(buf, 0, n) }
+            }
+            return md.digest().joinToString("") { "%02x".format(it) }
+        }
+    }
+}
 
 sealed interface SendResult {
     data object Sent : SendResult
@@ -106,9 +139,10 @@ class SendClient(private val pins: PinStore = InMemoryPins()) {
             FileDto(
                 id = "f$i",
                 fileName = f.fileName,
-                size = f.file.length(),
-                fileType = "application/vnd.android.package-archive",
-                sha256 = sha256(f.file),
+                size = f.size,
+                fileType = f.mimeType,
+                sha256 = f.sha256,
+                preview = f.preview,
                 shareApk = f.meta
             )
         }
@@ -133,7 +167,7 @@ class SendClient(private val pins: PinStore = InMemoryPins()) {
             }
         }
 
-        val total = files.sumOf { it.file.length() }
+        val total = files.filter { it.preview == null }.sumOf { it.size }
         var sentBefore = 0L
         try {
             files.forEachIndexed { i, f ->
@@ -143,11 +177,11 @@ class SendClient(private val pins: PinStore = InMemoryPins()) {
                 val offset = sentBefore
                 val req = Request.Builder()
                     .url(url("upload", "sessionId" to response.sessionId, "fileId" to id, "token" to token))
-                    .post(ProgressBody(f.file) { n -> onProgress(offset + n, total) })
+                    .post(ProgressBody(f.size, f.open) { n -> onProgress(offset + n, total) })
                     .build()
                 val code = uploadClient.newCall(req).await().use { it.code }
                 if (code != 200) return@withContext SendResult.Failed("upload HTTP $code")
-                sentBefore += f.file.length()
+                sentBefore += f.size
             }
         } catch (e: Exception) {
             runCatching {
@@ -184,20 +218,11 @@ class SendClient(private val pins: PinStore = InMemoryPins()) {
         return client to { seen }
     }
 
-    private fun sha256(file: File): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        file.inputStream().use { input ->
-            val buf = ByteArray(64 * 1024)
-            while (true) { val n = input.read(buf); if (n < 0) break; md.update(buf, 0, n) }
-        }
-        return md.digest().joinToString("") { "%02x".format(it) }
-    }
-
-    private class ProgressBody(private val file: File, private val onBytes: (Long) -> Unit) : RequestBody() {
+    private class ProgressBody(private val size: Long, private val open: () -> java.io.InputStream, private val onBytes: (Long) -> Unit) : RequestBody() {
         override fun contentType(): MediaType = "application/octet-stream".toMediaType()
-        override fun contentLength() = file.length()
+        override fun contentLength() = size
         override fun writeTo(sink: BufferedSink) {
-            file.inputStream().use { input ->
+            open().use { input ->
                 val buf = ByteArray(64 * 1024)
                 var done = 0L
                 var last = 0L

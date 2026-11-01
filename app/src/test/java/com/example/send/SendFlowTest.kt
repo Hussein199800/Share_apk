@@ -109,4 +109,20 @@ class SendFlowTest {
         val r = SendClient(pins).send(peer(), me, listOf(OutgoingFile(src, "a.apk", null))) { _, _ -> }
         assertTrue(r is SendResult.Failed)
     }
+
+    @Test fun textMessageNeedsNoUpload() = runBlocking {
+        autoDecide(true)
+        assertEquals(SendResult.Sent, SendClient().send(peer(), me, listOf(OutgoingFile.text("مرحبا"))) { _, _ -> })
+        assertEquals(listOf("مرحبا"), (receiver.state.value as ReceiveState.Done).messages)
+    }
+
+    @Test fun streamSourceWithoutChecksumIsDelivered() = runBlocking {
+        val bytes = "photo-bytes".toByteArray()
+        autoDecide(true)
+        val src = OutgoingFile("Trip/a.jpg", bytes.size.toLong(), "image/jpeg", { bytes.inputStream() })
+        assertEquals(SendResult.Sent, SendClient().send(peer(), me, listOf(src)) { _, _ -> })
+        val got = (receiver.state.value as ReceiveState.Done).files.single()
+        assertArrayEquals(bytes, got.file.readBytes())
+        assertEquals("Trip", got.relativeDir)
+    }
 }
