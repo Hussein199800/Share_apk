@@ -50,4 +50,4 @@ keytool -genkeypair -keystore debug.keystore -storepass android -alias androidde
 | `update/` | التحديث من إصدارات GitHub |
 | `installer/`، `backup/`، `wifi/` | المثبّت، والنسخ الاحتياطي، والمشاركة عبر رابط |
 
-تطوير: حسين محمد علي الطويل.
+تطوير: حسين محمد علي الطويل · الرخصة: GPL-3.0 (انظر `LICENSE`).
