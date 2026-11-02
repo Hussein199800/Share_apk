@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
@@ -68,7 +69,8 @@ fun AppDetailPanel(
     onReinstallVerify: () -> Unit,
     onWifiShare: () -> Unit,
     onComputeSha256: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSendToDevice: (() -> Unit)? = null
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -120,9 +122,12 @@ fun AppDetailPanel(
             }
         }
 
-        // Primary actions
+        // Primary actions: direct send to a nearby LocalSend / ShareAPK device first.
+        if (onSendToDevice != null) {
+            PrimaryButton(s.sendToDeviceBtn, onSendToDevice, Modifier.fillMaxWidth().testTag("detail_send_device_button"), icon = Icons.AutoMirrored.Outlined.Send)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PrimaryButton(s.shareAction, onShareApp, Modifier.weight(1f).testTag("detail_share_button"), icon = Icons.Outlined.Share)
+            SecondaryButton(s.shareAction, onShareApp, Modifier.weight(1f).testTag("detail_share_button"), icon = Icons.Outlined.Share)
             SecondaryButton(s.saveDownloadsAction, onSaveToDownloads, Modifier.weight(1f).testTag("detail_save_downloads_button"), icon = Icons.Outlined.Download)
         }
 

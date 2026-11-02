@@ -268,7 +268,8 @@ fun ShareApkAppRoot(
                 onCancelQuickZipBackup = viewModel::cancelQuickMultiAppBackup,
                 onToggleFavorite = viewModel::toggleFavorite,
                 onComputeSha256 = viewModel::computeBaseApkSha256,
-                onSendSelected = { viewModel.openDevicePicker(ShareApkViewModel.SendTarget.APPS) }
+                onSendSelected = { viewModel.openDevicePicker(ShareApkViewModel.SendTarget.APPS) },
+                onSendSingleApp = viewModel::sendAppToDevice
             )
 
             MainNavTab.FILES -> FilesScreen(
