@@ -48,7 +48,7 @@ jobs:
           # The debug signing config must exist for Gradle to configure; it is not used here.
           keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey \
             -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          ./gradlew testReleaseUnitTest assembleRelease --console=plain
+          ./gradlew testDebugUnitTest assembleRelease --console=plain
 
       - name: Publish release (once per version)
         if: steps.sign.outputs.path != ''
