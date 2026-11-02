@@ -149,6 +149,14 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     fun closeDevicePicker() { _pickerTarget.value = null }
 
+    /** From an app's details: send just that app (it becomes the selection) to a nearby device. */
+    fun sendAppToDevice(app: InstalledAppInfo) {
+        clearSelection()
+        toggleAppSelection(app.packageName)
+        selectAppForDetails(null)
+        openDevicePicker(SendTarget.APPS)
+    }
+
     /** Sends the current selection (apps or picked files) to [peer]. */
     fun sendToPeer(peer: NearbyDevice) {
         when (_pickerTarget.value) {

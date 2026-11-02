@@ -87,6 +87,7 @@ fun AppsScreen(
     onToggleFavorite: (String) -> Unit,
     onComputeSha256: (InstalledAppInfo) -> Unit,
     onSendSelected: () -> Unit,
+    onSendSingleApp: (InstalledAppInfo) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val s = LocalAppStrings.current
@@ -102,7 +103,8 @@ fun AppsScreen(
             onSaveToDownloads = { onSaveSingleAppToDownloads(app) },
             onReinstallVerify = { onReinstallVerifyApp(app) },
             onWifiShare = { onWifiShareApps(listOf(app)) },
-            onComputeSha256 = { onComputeSha256(app) }
+            onComputeSha256 = { onComputeSha256(app) },
+            onSendToDevice = { onSendSingleApp(app) }
         )
     }
 
