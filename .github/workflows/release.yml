@@ -56,9 +56,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          cp app/build/outputs/apk/release/app-release.apk "shareapk-$VER.apk"
+          # Stable name for .../releases/latest/download/shareapk.apk (website download button).
+          cp app/build/outputs/apk/release/app-release.apk shareapk.apk
           if gh release view "v$VER" >/dev/null 2>&1; then
-            echo "v$VER already published"
+            echo "v$VER already published; ensuring stable asset"
+            gh release upload "v$VER" shareapk.apk || echo "shareapk.apk already attached"
           else
-            cp app/build/outputs/apk/release/app-release.apk "shareapk-$VER.apk"
-            gh release create "v$VER" "shareapk-$VER.apk" --title "شارك أبك $VER" --notes-file release-notes.md --target "$GITHUB_SHA"
+            gh release create "v$VER" "shareapk-$VER.apk" shareapk.apk --title "شارك أبك $VER" --notes-file release-notes.md --target "$GITHUB_SHA"
           fi
