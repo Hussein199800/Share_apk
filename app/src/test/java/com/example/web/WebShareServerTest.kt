@@ -24,6 +24,20 @@ class PinGateTest {
         assertTrue(!gate.isValid("nope") && !gate.isValid(null))
     }
 
+    @Test fun pinUsesAsciiDigitsEvenInArabicLocale() {
+        val old = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("ar-EG"))
+            val gate = PinGate()
+            assertTrue(gate.pin.all { it in '0'..'9' })
+            val arabic = gate.pin.map { '\u0660' + (it - '0') }.joinToString("")
+            assertNotNull(gate.login(arabic))
+            assertNotNull(gate.login(gate.pin))
+        } finally {
+            java.util.Locale.setDefault(old)
+        }
+    }
+
     @Test fun pinRotatesAfterFiveWrongTries() {
         var changed: String? = null
         val gate = PinGate(onPinChanged = { changed = it })

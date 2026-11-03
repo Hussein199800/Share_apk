@@ -2,6 +2,7 @@ package com.example.web
 
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,7 +23,7 @@ class PinGate(
     /** Returns a session token for the right PIN, or null. */
     @Synchronized
     fun login(candidate: String): String? {
-        val ok = MessageDigest.isEqual(candidate.trim().toByteArray(), pin.toByteArray())
+        val ok = MessageDigest.isEqual(asciiDigits(candidate.trim()).toByteArray(), pin.toByteArray())
         if (ok) {
             fails = 0
             return newToken().also(tokens::add)
@@ -37,10 +38,24 @@ class PinGate(
 
     fun isValid(token: String?): Boolean = token != null && token in tokens
 
-    private fun newPin() = "%04d".format(random.nextInt(10_000))
+    // Locale.ROOT: in an Arabic locale "%04d" would yield Arabic-Indic digits that never match what's typed.
+    private fun newPin() = String.format(Locale.ROOT, "%04d", random.nextInt(10_000))
 
     private fun newToken(): String {
         val b = ByteArray(16).also(random::nextBytes)
-        return b.joinToString("") { "%02x".format(it) }
+        return b.joinToString("") { String.format(Locale.ROOT, "%02x", it) }
+    }
+
+    companion object {
+        /** Maps Arabic-Indic (٠-٩) and Persian (۰-۹) digits to ASCII so either keyboard works. */
+        fun asciiDigits(s: String): String = buildString(s.length) {
+            for (ch in s) append(
+                when (ch) {
+                    in '\u0660'..'\u0669' -> '0' + (ch - '\u0660')
+                    in '\u06F0'..'\u06F9' -> '0' + (ch - '\u06F0')
+                    else -> ch
+                }
+            )
+        }
     }
 }
