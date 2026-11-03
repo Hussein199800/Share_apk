@@ -106,6 +106,14 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
 
+    // ---- "From browser" page ----
+    val webShare: StateFlow<com.example.web.WebShareState> = receiver.web.state
+    fun startWebShare() {
+        receiver.web.installedApps = { _allApps.value }
+        receiver.web.start()
+    }
+    fun stopWebShare() = receiver.web.stop()
+
     // ---- In-app updates (GitHub releases) ----
     private val updater = Updater(context)
     val updateState: StateFlow<UpdateState> = updater.state

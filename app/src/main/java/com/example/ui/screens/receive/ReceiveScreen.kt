@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,6 +74,7 @@ fun ReceiveScreen(
     onOpenEntry: (ReceivedEntry) -> Unit = {},
     onCopyEntry: (ReceivedEntry) -> Unit = {},
     onRemoveEntry: (ReceivedEntry) -> Unit = {},
+    onOpenWebShare: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val s = LocalAppStrings.current
@@ -83,6 +86,15 @@ fun ReceiveScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             item { DeviceCard(status, enabled, onToggleEnabled) }
+            item {
+                SurfaceCard(Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        GradientIconBox(ShareApkGradients.violet, size = 40.dp) { Icon(Icons.Outlined.Computer, null, Modifier.size(22.dp)) }
+                        Text(s.webShareBtnHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        SecondaryButton(s.webShareBtn, onOpenWebShare, Modifier.testTag("web_share_button"))
+                    }
+                }
+            }
             if (lastEvent != null && state is ReceiveState.Idle) item {
                 StatusBadge(
                     when (lastEvent) {

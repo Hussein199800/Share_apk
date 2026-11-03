@@ -4,6 +4,7 @@
 - **الألوان والأبعاد:** تُكتب في `ui/theme/` فقط (`Color.kt`، `Gradients.kt`، `ShareApkTokens.kt`). لا يُكتب `Color(0x…)` خارجها. المكوّنات المشتركة في `ui/components/design/`.
 - **الأرقام وأسماء الحزم والإصدارات والعناوين:** تُعرض داخل `LtrBox`.
 - **التبويبات:** `APPS · FILES · RECEIVE · MORE` (`MainNavTab`). الإرسال نافذة `DevicePickerSheet` تُفتح من التطبيقات أو الملفات. ترتيب زر الرجوع في `ui/navigation/NavState.kt`.
+- **من المتصفح:** `web/` خادم HTTP على المنفذ 53320 يحميه رمز من 4 أرقام (`PinGate`). نصوص الصفحة داخل `WebPage.kt` لأنها تُعرض في متصفح الحاسوب.
 - **الشبكة:**
   - متوافقة مع LocalSend v2 (`receive/`، `send/`).
   - المنفذ 53317 يخدم HTTPS وHTTP معاً عبر `OptionalSslHandler`، فلا تُرجعه إلى HTTPS فقط، لأن LocalSend بلا تشفير يتوقف عن العمل.

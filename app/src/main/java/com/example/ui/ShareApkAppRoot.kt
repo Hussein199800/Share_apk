@@ -76,6 +76,14 @@ fun ShareApkAppRoot(
     val pendingSplitAction by viewModel.pendingSplitAction.collectAsStateWithLifecycle()
     val quickZipProgress by viewModel.quickZipProgress.collectAsStateWithLifecycle()
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
+    val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
+    var showWebShare by remember { mutableStateOf(false) }
+    // The page stops by itself after a long idle spell: close the sheet with it.
+    var webWasRunning by remember { mutableStateOf(false) }
+    LaunchedEffect(webShareState.running) {
+        if (webShareState.running) webWasRunning = true
+        else if (webWasRunning) { webWasRunning = false; showWebShare = false }
+    }
     val wifiServerState by viewModel.wifiServerState.collectAsStateWithLifecycle()
     val preInstallValidation by viewModel.preInstallValidation.collectAsStateWithLifecycle()
     val isCommittingInstall by viewModel.isCommittingInstall.collectAsStateWithLifecycle()
@@ -309,6 +317,7 @@ fun ShareApkAppRoot(
                 },
                 onCopyEntry = { entry -> entry.text?.let { com.example.ui.components.copyToClipboard(context, "text", it, strings.copiedToast) } },
                 onRemoveEntry = viewModel::removeReceivedEntry,
+                onOpenWebShare = { showWebShare = true; viewModel.startWebShare() },
                 lastEvent = receiveEvent
             )
 
@@ -484,6 +493,13 @@ fun ShareApkAppRoot(
                             WifiShareServerDialog(
                                 state = wifiServerState,
                                 onStopServer = viewModel::stopWifiShareServer
+                            )
+                        }
+
+                        if (showWebShare) {
+                            com.example.ui.components.sheets.WebShareSheet(
+                                state = webShareState,
+                                onStop = { showWebShare = false; viewModel.stopWebShare() }
                             )
                         }
 
