@@ -39,11 +39,13 @@ class WebItem(
     val mimeType: String,
     val fileName: String,
     val hasIcon: Boolean = false,
+    /** A text snippet shown (and copyable) in the page instead of a download. */
+    val text: String? = null,
     /** Writes the content; used for streamed bundles whose size isn't known up front. */
     val write: ((OutputStream) -> Unit)? = null,
     val open: (() -> InputStream?)? = null
 ) {
-    enum class Kind { APP, RECEIVED_APP, FILE }
+    enum class Kind { APP, RECEIVED_APP, FILE, TEXT }
 }
 
 /** What the phone offers and where uploads go. */
@@ -56,7 +58,7 @@ interface WebShareSource {
 }
 
 @Serializable
-internal data class WebItemDto(val id: String, val kind: String, val name: String, val subtitle: String, val size: Long, val icon: Boolean)
+internal data class WebItemDto(val id: String, val kind: String, val name: String, val subtitle: String, val size: Long, val icon: Boolean, val text: String? = null)
 
 /** Plain-HTTP server for the browser page (desktop browsers reject self-signed HTTPS loudly). */
 class WebShareServer(
@@ -89,7 +91,7 @@ class WebShareServer(
                 }
                 get("/api/items") {
                     if (!authorized()) return@get
-                    val dtos = source.items().map { WebItemDto(it.id, it.kind.name.lowercase(), it.name, it.subtitle, it.size, it.hasIcon) }
+                    val dtos = source.items().map { WebItemDto(it.id, it.kind.name.lowercase(), it.name, it.subtitle, it.size, it.hasIcon, it.text) }
                     call.respondText(json.encodeToString(kotlinx.serialization.builtins.ListSerializer(WebItemDto.serializer()), dtos), ContentType.Application.Json)
                 }
                 get("/icon/{id}") {

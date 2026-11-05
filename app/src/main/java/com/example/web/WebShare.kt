@@ -7,6 +7,7 @@ import com.example.data.model.InstalledAppInfo
 import com.example.receive.ReceivedEntry
 import com.example.receive.ReceivedItem
 import com.example.receive.localLanIpv4
+import com.example.send.PickedItem
 import com.example.util.QrCodeGenerator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +51,9 @@ class WebShare(
 ) {
     /** Installed apps, supplied by the app list screen once it has loaded them. */
     @Volatile var installedApps: () -> List<InstalledAppInfo> = { emptyList() }
+
+    /** Files, folders and texts chosen in the Files tab (or from the sheet), offered to the browser. */
+    @Volatile var pickedFiles: () -> List<PickedItem> = { emptyList() }
 
     private val _state = MutableStateFlow(WebShareState())
     val state: StateFlow<WebShareState> = _state.asStateFlow()
@@ -107,7 +111,7 @@ class WebShare(
     private val source = object : WebShareSource {
         override fun items(): List<WebItem> {
             val now = System.currentTimeMillis()
-            if (now - snapshotAt < 5_000 && snapshot.isNotEmpty()) return snapshot
+            if (now - snapshotAt < 2_000 && snapshot.isNotEmpty()) return snapshot
             return build().also { snapshot = it; snapshotAt = now }
         }
 
@@ -130,6 +134,17 @@ class WebShare(
 
     private fun build(): List<WebItem> {
         val out = mutableListOf<WebItem>()
+        pickedFiles().forEach { p ->
+            val id = "p-${p.id}"
+            out += if (p.isText) {
+                WebItem(id, WebItem.Kind.TEXT, p.text!!.lineSequence().first().take(80), "", 0, "text/plain", "text.txt", text = p.text)
+            } else {
+                val leaf = p.name.substringAfterLast('/')
+                WebItem(id, WebItem.Kind.FILE, leaf, p.name.substringBeforeLast('/', "").ifEmpty { p.mimeType.orEmpty() }, p.size,
+                    p.mimeType ?: "application/octet-stream", leaf,
+                    open = { p.uri?.let { u -> runCatching { context.contentResolver.openInputStream(u) }.getOrNull() } })
+            }
+        }
         installedApps().filterNot { it.isSystemApp }.sortedBy { it.label.lowercase() }.forEach { app ->
             val id = "a-${app.packageName}"
             app.iconBitmap?.let { icons[id] = it }

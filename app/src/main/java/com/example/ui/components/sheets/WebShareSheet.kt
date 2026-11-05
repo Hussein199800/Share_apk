@@ -1,5 +1,8 @@
 package com.example.ui.components.sheets
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.StopCircle
@@ -35,6 +39,7 @@ import com.example.ui.components.design.GradientIconBox
 import com.example.ui.components.design.GradientProgressBar
 import com.example.ui.components.design.IconActionButton
 import com.example.ui.components.design.PrimaryButton
+import com.example.ui.components.design.SecondaryButton
 import com.example.ui.components.design.ShareApkBottomSheet
 import com.example.ui.components.design.StatusBadge
 import com.example.ui.components.design.SurfaceCard
@@ -47,10 +52,13 @@ import com.example.web.WebShareState
 
 /** "From browser" sheet: link, QR and PIN for the computer; closing it stops the page. */
 @Composable
-fun WebShareSheet(state: WebShareState, onStop: () -> Unit) {
+fun WebShareSheet(state: WebShareState, pickedCount: Int, onPickFiles: (List<Uri>) -> Unit, onStop: () -> Unit) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     val context = LocalContext.current
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) onPickFiles(uris)
+    }
 
     ShareApkBottomSheet(onDismiss = onStop, allowSwipeDismiss = false) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -93,6 +101,8 @@ fun WebShareSheet(state: WebShareState, onStop: () -> Unit) {
                         }
                     }
                 }
+                SecondaryButton(s.webSharePickFiles, { picker.launch(arrayOf("*/*")) }, Modifier.fillMaxWidth(), icon = Icons.Outlined.AttachFile)
+                if (pickedCount > 0) Text(s.webSharePickedFormat.format(pickedCount), style = MaterialTheme.typography.bodySmall, color = c.primaryText)
                 if (state.transfers > 0) {
                     Text(s.webShareTransferring, style = MaterialTheme.typography.bodySmall, color = c.primaryText)
                     GradientProgressBar(progress = null, height = 6.dp)

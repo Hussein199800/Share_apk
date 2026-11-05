@@ -77,6 +77,7 @@ fun ShareApkAppRoot(
     val quickZipProgress by viewModel.quickZipProgress.collectAsStateWithLifecycle()
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
+    val pickedFilesForWeb by viewModel.pickedFiles.collectAsStateWithLifecycle()
     var showWebShare by remember { mutableStateOf(false) }
     // The page stops by itself after a long idle spell: close the sheet with it.
     var webWasRunning by remember { mutableStateOf(false) }
@@ -499,6 +500,8 @@ fun ShareApkAppRoot(
                         if (showWebShare) {
                             com.example.ui.components.sheets.WebShareSheet(
                                 state = webShareState,
+                                pickedCount = pickedFilesForWeb.count { !it.isText },
+                                onPickFiles = viewModel::addPickedUris,
                                 onStop = { showWebShare = false; viewModel.stopWebShare() }
                             )
                         }

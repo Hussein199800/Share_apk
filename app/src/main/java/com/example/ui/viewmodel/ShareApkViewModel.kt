@@ -110,6 +110,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     val webShare: StateFlow<com.example.web.WebShareState> = receiver.web.state
     fun startWebShare() {
         receiver.web.installedApps = { _allApps.value }
+        receiver.web.pickedFiles = { _pickedFiles.value }
         receiver.web.start()
     }
     fun stopWebShare() = receiver.web.stop()

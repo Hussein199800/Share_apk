@@ -50,6 +50,9 @@ h1{margin:0;font-size:1.35rem}
 .info span{display:block;color:var(--mute);font-size:.8rem;direction:ltr;unicode-bidi:isolate;text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dl{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--chip);color:var(--pri);text-decoration:none;font-size:1.15rem}
 .empty{color:var(--mute);text-align:center;padding:30px}
+.hint{color:var(--mute);font-size:.85rem;background:var(--chip);border-radius:14px;padding:10px 14px;margin:12px 0 0}
+.ic.text{background:linear-gradient(145deg,#34d399,#047857)}
+button.dl{border:0;cursor:pointer;font:inherit;font-size:.8rem;width:auto;padding:0 12px}
 .drop{border:2px dashed var(--line);border-radius:22px;padding:34px 16px;text-align:center;color:var(--mute);cursor:pointer;transition:.15s}
 .drop.over{border-color:var(--pri);background:var(--chip)}
 .drop b{display:block;color:var(--txt);font-size:1.05rem;margin-bottom:4px}
@@ -96,6 +99,7 @@ footer{margin-top:26px;text-align:center;color:var(--mute);font-size:.78rem}
       </div>
       <div class="grid" id="list"></div>
       <div class="empty hidden" id="empty" data-t="empty"></div>
+      <p class="hint" id="filesHint" data-t="filesHint"></p>
     </div>
 
     <div id="to" class="hidden">
@@ -114,12 +118,12 @@ footer{margin-top:26px;text-align:center;color:var(--mute);font-size:.78rem}
 <script>
 var AR = {title:"شارك أبك",sub:"نقل الملفات بين هذا الحاسوب والهاتف عبر الشبكة المحلية",pinTitle:"أدخل الرمز",pinHint:"الرمز المكوّن من 4 أرقام يظهر على شاشة الهاتف",enter:"دخول",
  pinBad:"الرمز غير صحيح. بعد 5 محاولات خاطئة يتغيّر الرمز على الهاتف.",tabFrom:"من الهاتف",tabTo:"إلى الهاتف",search:"ابحث…",kAll:"الكل",kApps:"التطبيقات المثبتة",kReceived:"المستلمة",kFiles:"الملفات",
- empty:"لا شيء هنا",dropTitle:"اسحب الملفات إلى هنا",dropHint:"أو انقر للاختيار. التطبيقات تُحفظ في «شارك أبك» والباقي في Download/ShareAPK",
+ empty:"لا شيء هنا",filesHint:"لإرسال صور أو ملفات أو نصوص إلى هذا الحاسوب: اخترها في تبويب «الملفات» في التطبيق، أو من زر «اختر ملفات» في نافذة المتصفح على الهاتف، وستظهر هنا تلقائياً.",copy:"نسخ",copied:"نُسخ ✓",dropTitle:"اسحب الملفات إلى هنا",dropHint:"أو انقر للاختيار. التطبيقات تُحفظ في «شارك أبك» والباقي في Download/ShareAPK",
  textTitle:"إرسال نص",textHint:"اكتب أو الصق نصاً ليظهر على الهاتف",sendText:"إرسال",sent:"وصل ✓",failed:"فشل",waiting:"بالانتظار",download:"تنزيل",
  footer:"شارك أبك · الصفحة تعمل ما دامت نافذة «من المتصفح» مفتوحة على الهاتف",lost:"انتهت الجلسة، أدخل الرمز من جديد"};
 var EN = {title:"ShareAPK",sub:"Move files between this computer and the phone over the local network",pinTitle:"Enter the code",pinHint:"The 4-digit code is shown on the phone",enter:"Enter",
  pinBad:"Wrong code. After 5 wrong tries the phone shows a new one.",tabFrom:"From phone",tabTo:"To phone",search:"Search…",kAll:"All",kApps:"Installed apps",kReceived:"Received",kFiles:"Files",
- empty:"Nothing here",dropTitle:"Drop files here",dropHint:"or click to choose. Apps go to ShareAPK, everything else to Download/ShareAPK",
+ empty:"Nothing here",filesHint:"To send photos, files or text to this computer, pick them in the app's Files tab or with “Choose files” in the phone's browser sheet. They show up here automatically.",copy:"Copy",copied:"Copied ✓",dropTitle:"Drop files here",dropHint:"or click to choose. Apps go to ShareAPK, everything else to Download/ShareAPK",
  textTitle:"Send text",textHint:"Type or paste text to show on the phone",sendText:"Send",sent:"Delivered ✓",failed:"Failed",waiting:"Waiting",download:"Download",
  footer:"ShareAPK · this page works while “From browser” is open on the phone",lost:"Session ended, enter the code again"};
 var ar = (navigator.language || "").toLowerCase().indexOf("ar") === 0;
@@ -141,30 +145,47 @@ el("pinBtn").onclick = login;
 el("pin").addEventListener("keydown", function(e){ if (e.key === "Enter") login(); });
 el("pin").addEventListener("input", function(){ if (el("pin").value.length === 4) login(); });
 
-var items = [], kind = "all";
+var items = [], kind = "all", lastJson = "";
+function copyText(t, btn){
+  // navigator.clipboard needs HTTPS; this page is plain HTTP on the LAN, so use the old path.
+  var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); btn.textContent = T.copied; } catch (e) {} document.body.removeChild(ta);
+}
 function load(){
   fetch("/api/items").then(function(r){
     if (r.status === 401) { show("login"); return null; }
     return r.json();
-  }).then(function(data){ if (!data) return; items = data; show("main"); render(); });
+  }).then(function(data){
+    if (!data) return;
+    var j = JSON.stringify(data);
+    if (j !== lastJson || el("main").classList.contains("hidden")) { lastJson = j; items = data; show("main"); render(); }
+  });
 }
 function render(){
   var q = el("q").value.trim().toLowerCase(), list = el("list");
   list.innerHTML = "";
-  var shown = items.filter(function(it){ return (kind === "all" || it.kind === kind) && (!q || (it.name + " " + it.subtitle).toLowerCase().indexOf(q) >= 0); });
+  var shown = items.filter(function(it){ return (kind === "all" || it.kind === kind || (kind === "file" && it.kind === "text")) && (!q || (it.name + " " + it.subtitle).toLowerCase().indexOf(q) >= 0); });
   shown.forEach(function(it){
     var row = document.createElement("div"); row.className = "item";
-    var ic = document.createElement("div"); ic.className = "ic" + (it.kind === "file" ? " file" : "");
+    var ic = document.createElement("div"); ic.className = "ic" + (it.kind === "file" ? " file" : it.kind === "text" ? " text" : "");
     if (it.icon) { var img = document.createElement("img"); img.loading = "lazy"; img.src = "/icon/" + encodeURIComponent(it.id); ic.appendChild(img); }
     else ic.textContent = (it.name.trim()[0] || "?").toUpperCase();
     var info = document.createElement("div"); info.className = "info";
     var b = document.createElement("b"); b.textContent = it.name;
     var s = document.createElement("span"); s.textContent = [it.subtitle, fmt(it.size)].filter(Boolean).join(" · ");
     info.appendChild(b); info.appendChild(s);
-    var a = document.createElement("a"); a.className = "dl"; a.href = "/dl/" + encodeURIComponent(it.id); a.title = T.download; a.textContent = "↓";
+    var a;
+    if (it.kind === "text") {
+      a = document.createElement("button"); a.className = "dl"; a.textContent = T.copy; info.title = it.text;
+      (function(t, btn){ btn.onclick = function(){ copyText(t, btn); }; })(it.text, a);
+    } else {
+      a = document.createElement("a"); a.className = "dl"; a.href = "/dl/" + encodeURIComponent(it.id); a.title = T.download; a.textContent = "↓";
+    }
     row.appendChild(ic); row.appendChild(info); row.appendChild(a); list.appendChild(row);
   });
   el("empty").classList.toggle("hidden", shown.length > 0);
+  var hasFiles = items.some(function(it){ return it.kind === "file" || it.kind === "text"; });
+  el("filesHint").classList.toggle("hidden", hasFiles && kind !== "file");
 }
 el("q").addEventListener("input", render);
 document.querySelectorAll(".chip").forEach(function(c){ c.onclick = function(){
@@ -212,6 +233,8 @@ el("txtBtn").onclick = function(){
     el("txtMsg").textContent = r.ok ? T.sent : T.failed; if (r.ok) el("txt").value = "";
   });
 };
+// New picks on the phone appear without reloading the page.
+setInterval(function(){ if (!el("main").classList.contains("hidden") && !el("from").classList.contains("hidden") && !document.hidden) load(); }, 4000);
 load();
 </script>
 </body>
