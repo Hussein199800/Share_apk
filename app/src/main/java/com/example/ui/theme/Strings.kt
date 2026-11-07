@@ -15,8 +15,41 @@ import androidx.core.os.LocaleListCompat
 import com.example.data.model.LanguagePreference
 import java.util.Locale
 
+data class ExtraStrings(
+    val webShareBtn: String,
+    val webShareBtnHint: String,
+    val webShareTitle: String,
+    val webShareSubtitle: String,
+    val webSharePinLabel: String,
+    val webShareStarting: String,
+    val webShareTransferring: String,
+    val webShareReceivedFormat: String,
+    val webShareAutoStop: String,
+    val webSharePickFiles: String,
+    val webSharePickedFormat: String,
+    val appForms: com.example.util.ArabicText.Forms,
+    val whatsNewTitle: String,
+    val whatsNewVersionFormat: String,
+    val whatsNewTour: String,
+    val whatsNewDone: String,
+    val tileWhatsNewTitle: String,
+    val tileWhatsNewSub: String,
+    val tileTourTitle: String,
+    val tileTourSub: String,
+    val tileDiagTitle: String,
+    val tileDiagSub: String,
+    val diagTitle: String,
+    val diagHint: String,
+    val diagEmpty: String,
+    val diagCopy: String,
+    val diagClear: String,
+    val errorReasons: Map<com.example.util.ErrorKind, String>
+)
+
 data class AppStrings(
     val isArabic: Boolean,
+    /** Newer strings, split out: a JVM constructor takes at most 255 parameters. */
+    val x: ExtraStrings,
     val appName: String,
     val navApps: String,
     val searchHint: String,
@@ -71,17 +104,6 @@ data class AppStrings(
     val installingProgress: String,
     // Wi-Fi Share
     val wifiServerTitle: String,
-    val webShareBtn: String,
-    val webShareBtnHint: String,
-    val webShareTitle: String,
-    val webShareSubtitle: String,
-    val webSharePinLabel: String,
-    val webShareStarting: String,
-    val webShareTransferring: String,
-    val webShareReceivedFormat: String,
-    val webShareAutoStop: String,
-    val webSharePickFiles: String,
-    val webSharePickedFormat: String,
     val wifiServerSubtitle: String,
     val stopServerBtn: String,
     val autoStopCountdown: String,
@@ -255,9 +277,78 @@ data class AppStrings(
     val copyBtn: String,
     val textMessageLabel: String,
     val pickerTip: String
-)
+) {
+    val webShareBtn get() = x.webShareBtn
+    val webShareBtnHint get() = x.webShareBtnHint
+    val webShareTitle get() = x.webShareTitle
+    val webShareSubtitle get() = x.webShareSubtitle
+    val webSharePinLabel get() = x.webSharePinLabel
+    val webShareStarting get() = x.webShareStarting
+    val webShareTransferring get() = x.webShareTransferring
+    val webShareReceivedFormat get() = x.webShareReceivedFormat
+    val webShareAutoStop get() = x.webShareAutoStop
+    val webSharePickFiles get() = x.webSharePickFiles
+    val webSharePickedFormat get() = x.webSharePickedFormat
+    val appForms get() = x.appForms
+    val whatsNewTitle get() = x.whatsNewTitle
+    val whatsNewVersionFormat get() = x.whatsNewVersionFormat
+    val whatsNewTour get() = x.whatsNewTour
+    val whatsNewDone get() = x.whatsNewDone
+    val tileWhatsNewTitle get() = x.tileWhatsNewTitle
+    val tileWhatsNewSub get() = x.tileWhatsNewSub
+    val tileTourTitle get() = x.tileTourTitle
+    val tileTourSub get() = x.tileTourSub
+    val tileDiagTitle get() = x.tileDiagTitle
+    val tileDiagSub get() = x.tileDiagSub
+    val diagTitle get() = x.diagTitle
+    val diagHint get() = x.diagHint
+    val diagEmpty get() = x.diagEmpty
+    val diagCopy get() = x.diagCopy
+    val diagClear get() = x.diagClear
+    val errorReasons get() = x.errorReasons
+}
 
 val ArabicStrings = AppStrings(
+    x = ExtraStrings(
+        webShareBtn = "من المتصفح",
+        webShareBtnHint = "انقل الملفات مع حاسوب ويندوز أو ماك من المتصفح، بلا تثبيت",
+        webShareTitle = "النقل عبر المتصفح",
+        webShareSubtitle = "افتح الرابط في متصفح حاسوب على نفس الشبكة، ثم أدخل الرمز",
+        webSharePinLabel = "الرمز",
+        webShareStarting = "جارٍ التشغيل…",
+        webShareTransferring = "يجري النقل الآن…",
+        webShareReceivedFormat = "وصل من المتصفح: %d",
+        webShareAutoStop = "يتوقف عند إغلاق هذه النافذة أو بعد 15 دقيقة بلا نشاط",
+        webSharePickFiles = "اختر ملفات للحاسوب",
+        webSharePickedFormat = "معروض للحاسوب من الملفات المختارة: %d",
+        appForms = com.example.util.ArabicText.Forms("تطبيق واحد", "تطبيقان", "تطبيقات", "تطبيقاً", "تطبيق"),
+        whatsNewTitle = "ما الجديد",
+        whatsNewVersionFormat = "الإصدار %s",
+        whatsNewTour = "جولة في التطبيق",
+        whatsNewDone = "تم",
+        tileWhatsNewTitle = "ما الجديد",
+        tileWhatsNewSub = "كل الإصدارات وما تغيّر فيها",
+        tileTourTitle = "جولة في التطبيق",
+        tileTourSub = "شرح سريع للتبويبات",
+        tileDiagTitle = "سجل التشخيص",
+        tileDiagSub = "آخر الأخطاء لإرسالها للمطوّر",
+        diagTitle = "سجل التشخيص",
+        diagHint = "آخر 50 خطأ مع وقتها ومكانها. العناوين والرموز مخفية. انسخ السجل وأرسله للمطوّر إن واجهتك مشكلة.",
+        diagEmpty = "لا أخطاء مسجلة",
+        diagCopy = "نسخ السجل",
+        diagClear = "مسح السجل",
+        errorReasons = mapOf(
+            com.example.util.ErrorKind.TIMEOUT to "الجهاز لم يردّ في الوقت المحدد. تأكد أنه مفتوح وعلى نفس الشبكة ثم أعد المحاولة.",
+            com.example.util.ErrorKind.UNREACHABLE to "تعذّر الوصول إلى الجهاز. تأكد أن الاستقبال مفعّل عليه وأنكما على نفس شبكة الواي فاي.",
+            com.example.util.ErrorKind.NO_NETWORK to "لا اتصال بالشبكة. اتصل بالواي فاي أو نقطة الاتصال ثم أعد المحاولة.",
+            com.example.util.ErrorKind.IDENTITY_CHANGED to "هوية الجهاز تغيّرت منذ آخر اتصال، فأوقفنا الإرسال حمايةً لك. إن أعدت تثبيت التطبيق عليه فأعد المحاولة من قائمة الأجهزة.",
+            com.example.util.ErrorKind.REJECTED_BY_SERVER to "الجهاز الآخر رفض الطلب. أعد المحاولة، وإن تكرر فحدّث التطبيق عليه.",
+            com.example.util.ErrorKind.STORAGE_FULL to "لا توجد مساحة كافية. احذف بعض الملفات ثم أعد المحاولة.",
+            com.example.util.ErrorKind.RATE_LIMITED to "الخادم مشغول الآن. أعد المحاولة بعد قليل.",
+            com.example.util.ErrorKind.NOT_FOUND to "لم يُعثر على المطلوب.",
+            com.example.util.ErrorKind.UNKNOWN to "حدث خطأ غير متوقع. أعد المحاولة، وإن تكرر فانسخ «سجل التشخيص» من «المزيد» وأرسله للمطوّر."
+        )
+    ),
     isArabic = true,
     appName = "شارك أبك | ShareAPK",
     navApps = "التطبيقات",
@@ -285,7 +376,7 @@ val ArabicStrings = AppStrings(
     splitWarningBody = "يتكون هذا التطبيق من حزمة أساسية (base.apk) وملفات تقسيم إضافية. سيتم دمجها تلقائياً في أرشيف (.apks) واحد. يحتاج جهاز المستلم إلى مثبت \"شارك أبك\" المدمج أو تطبيق SAI لتثبيت الحزمة.",
     continueBtn = "متابعة",
     cancelBtn = "إلغاء",
-    selectedCountFormat = "تم تحديد %d تطبيق (%s)",
+    selectedCountFormat = "المحدد: %s (%s)",
     shareSelectedBtn = "مشاركة المحدد",
     backupSelectedZipBtn = "نسخ (.zip) للتنزيلات",
     clearSelectionBtn = "إلغاء التحديد",
@@ -311,17 +402,6 @@ val ArabicStrings = AppStrings(
     installNowBtn = "تثبيت الحزمة الآن",
     installingProgress = "جاري كتابة الجلسة إلى PackageInstaller...",
     wifiServerTitle = "خادم المشاركة المحلي عبر Wi-Fi",
-    webShareBtn = "من المتصفح",
-    webShareBtnHint = "انقل الملفات مع حاسوب ويندوز أو ماك من المتصفح، بلا تثبيت",
-    webShareTitle = "النقل عبر المتصفح",
-    webShareSubtitle = "افتح الرابط في متصفح حاسوب على نفس الشبكة، ثم أدخل الرمز",
-    webSharePinLabel = "الرمز",
-    webShareStarting = "جارٍ التشغيل…",
-    webShareTransferring = "يجري النقل الآن…",
-    webShareReceivedFormat = "وصل من المتصفح: %d",
-    webShareAutoStop = "يتوقف عند إغلاق هذه النافذة أو بعد 15 دقيقة بلا نشاط",
-    webSharePickFiles = "اختر ملفات للحاسوب",
-    webSharePickedFormat = "معروض للحاسوب من الملفات المختارة: %d",
     wifiServerSubtitle = "امسح رمز QR أو افتح الرابط في المتصفح على أي جهاز متصل بنفس الشبكة أو نقطة الاتصال",
     stopServerBtn = "إيقاف الخادم فوراً",
     autoStopCountdown = "يتوقف تلقائياً خلال:",
@@ -393,7 +473,7 @@ val ArabicStrings = AppStrings(
     receiveSubtitle = "استقبل التطبيقات من الأجهزة القريبة",
     appVersionFormat = "الإصدار %s",
     filterAll = "الكل",
-    appsCountFormat = "%d تطبيقاً مثبتاً",
+    appsCountFormat = "%s على الهاتف",
     sortAction = "ترتيب",
     toggleViewAction = "تبديل طريقة العرض",
     deleteItemAction = "حذف",
@@ -494,6 +574,46 @@ val ArabicStrings = AppStrings(
 )
 
 val EnglishStrings = AppStrings(
+    x = ExtraStrings(
+        webShareBtn = "From browser",
+        webShareBtnHint = "Move files with a Windows or Mac computer from its browser, nothing to install",
+        webShareTitle = "Transfer via browser",
+        webShareSubtitle = "Open the link in a computer's browser on the same network, then enter the code",
+        webSharePinLabel = "Code",
+        webShareStarting = "Starting…",
+        webShareTransferring = "Transfer in progress…",
+        webShareReceivedFormat = "Received from browser: %d",
+        webShareAutoStop = "Stops when you close this sheet or after 15 idle minutes",
+        webSharePickFiles = "Choose files for the computer",
+        webSharePickedFormat = "Picked files offered to the computer: %d",
+        appForms = com.example.util.ArabicText.Forms("app", "apps", "apps", "apps", "apps"),
+        whatsNewTitle = "What's new",
+        whatsNewVersionFormat = "Version %s",
+        whatsNewTour = "App tour",
+        whatsNewDone = "Done",
+        tileWhatsNewTitle = "What's new",
+        tileWhatsNewSub = "Every release and its changes",
+        tileTourTitle = "App tour",
+        tileTourSub = "A quick look at each tab",
+        tileDiagTitle = "Diagnostics log",
+        tileDiagSub = "Recent errors to send to the developer",
+        diagTitle = "Diagnostics log",
+        diagHint = "The last 50 errors with time and place. Addresses and tokens are hidden. Copy it and send it to the developer if something goes wrong.",
+        diagEmpty = "No errors logged",
+        diagCopy = "Copy log",
+        diagClear = "Clear log",
+        errorReasons = mapOf(
+            com.example.util.ErrorKind.TIMEOUT to "The device didn't answer in time. Make sure it's on and on the same network, then try again.",
+            com.example.util.ErrorKind.UNREACHABLE to "Couldn't reach the device. Make sure receiving is on there and you're on the same Wi-Fi.",
+            com.example.util.ErrorKind.NO_NETWORK to "No network connection. Join Wi-Fi or a hotspot, then try again.",
+            com.example.util.ErrorKind.IDENTITY_CHANGED to "The device's identity changed since last time, so sending was stopped to protect you. If the app was reinstalled there, try again from the device list.",
+            com.example.util.ErrorKind.REJECTED_BY_SERVER to "The other device rejected the request. Try again; if it repeats, update the app there.",
+            com.example.util.ErrorKind.STORAGE_FULL to "Not enough storage. Free some space, then try again.",
+            com.example.util.ErrorKind.RATE_LIMITED to "The server is busy. Try again shortly.",
+            com.example.util.ErrorKind.NOT_FOUND to "Not found.",
+            com.example.util.ErrorKind.UNKNOWN to "Something unexpected went wrong. Try again; if it repeats, copy the Diagnostics log from More and send it to the developer."
+        )
+    ),
     isArabic = false,
     appName = "ShareAPK | شارك أبك",
     navApps = "Apps",
@@ -521,7 +641,7 @@ val EnglishStrings = AppStrings(
     splitWarningBody = "This app contains base.apk plus split configuration APKs. ShareAPK will bundle them into a single .apks archive. The receiver needs ShareAPK's built-in installer (or SAI) to install it.",
     continueBtn = "Continue",
     cancelBtn = "Cancel",
-    selectedCountFormat = "%d selected (%s)",
+    selectedCountFormat = "%s selected (%s)",
     shareSelectedBtn = "Share Selected",
     backupSelectedZipBtn = "Backup (.zip) to Downloads",
     clearSelectionBtn = "Clear Selection",
@@ -547,17 +667,6 @@ val EnglishStrings = AppStrings(
     installNowBtn = "Commit Install Session",
     installingProgress = "Streaming package into PackageInstaller.Session...",
     wifiServerTitle = "Local Wi-Fi HTTP Share Server",
-    webShareBtn = "From browser",
-    webShareBtnHint = "Move files with a Windows or Mac computer from its browser, nothing to install",
-    webShareTitle = "Transfer via browser",
-    webShareSubtitle = "Open the link in a computer's browser on the same network, then enter the code",
-    webSharePinLabel = "Code",
-    webShareStarting = "Starting…",
-    webShareTransferring = "Transfer in progress…",
-    webShareReceivedFormat = "Received from browser: %d",
-    webShareAutoStop = "Stops when you close this sheet or after 15 idle minutes",
-    webSharePickFiles = "Choose files for the computer",
-    webSharePickedFormat = "Picked files offered to the computer: %d",
     wifiServerSubtitle = "Scan the QR code or open the URL in any browser on the same Wi-Fi network or hotspot",
     stopServerBtn = "Stop Server Now",
     autoStopCountdown = "Auto-stops in:",
@@ -629,7 +738,7 @@ val EnglishStrings = AppStrings(
     receiveSubtitle = "Receive apps from nearby devices",
     appVersionFormat = "Version %s",
     filterAll = "All",
-    appsCountFormat = "%d installed apps",
+    appsCountFormat = "%s on this phone",
     sortAction = "Sort",
     toggleViewAction = "Toggle view",
     deleteItemAction = "Delete",

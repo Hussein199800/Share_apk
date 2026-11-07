@@ -3,7 +3,7 @@ package com.example.ui.navigation
 import com.example.data.model.MainNavTab
 
 /** Sub-pages hosted inside the More tab. */
-enum class MoreDestination { HOME, BACKUP, HISTORY, SETTINGS, ABOUT }
+enum class MoreDestination { HOME, BACKUP, HISTORY, SETTINGS, ABOUT, WHATS_NEW, DIAGNOSTICS }
 
 data class NavSnapshot(val tab: MainNavTab, val more: MoreDestination, val hasSelection: Boolean)
 

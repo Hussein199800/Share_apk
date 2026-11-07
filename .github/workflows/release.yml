@@ -61,7 +61,7 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk shareapk.apk
           if gh release view "v$VER" >/dev/null 2>&1; then
             echo "v$VER already published; ensuring stable asset"
-            gh release upload "v$VER" shareapk.apk || echo "shareapk.apk already attached"
+            gh release upload "v$VER" shareapk.apk --clobber
           else
             gh release create "v$VER" "shareapk-$VER.apk" shareapk.apk --title "شارك أبك $VER" --notes-file release-notes.md --target "$GITHUB_SHA"
           fi

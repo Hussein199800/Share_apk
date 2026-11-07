@@ -65,7 +65,7 @@ fun UpdateSheet(
                 Text(s.updateAvailable.format(state.release.version), style = MaterialTheme.typography.titleSmall, color = c.primaryText)
                 if (state.release.notes.isNotBlank()) {
                     SurfaceCard(Modifier.fillMaxWidth().heightIn(max = 220.dp)) {
-                        Text(state.release.notes, style = MaterialTheme.typography.bodySmall, color = c.onBackground, modifier = Modifier.verticalScroll(rememberScrollState()))
+                        Text(com.example.util.ArabicText.plainNotes(state.release.notes), style = MaterialTheme.typography.bodySmall, color = c.onBackground, modifier = Modifier.verticalScroll(rememberScrollState()))
                     }
                 }
                 PrimaryButton(s.updateDownloadBtn, { onDownload(state.release) }, Modifier.fillMaxWidth(), icon = Icons.Outlined.Download, height = h)

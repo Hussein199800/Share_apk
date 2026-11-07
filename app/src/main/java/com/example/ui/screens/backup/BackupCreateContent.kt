@@ -194,7 +194,7 @@ internal fun BackupCreateContent(
         item {
             SurfaceCard(Modifier.fillMaxWidth()) {
                 Text(
-                    s.selectedCountFormat.format(selectedPackageNames.size, FileNameAndHashUtils.formatBytes(totalSelectedBytes)),
+                    s.selectedCountFormat.format(com.example.util.ArabicText.count(selectedPackageNames.size, s.appForms, s.isArabic), FileNameAndHashUtils.formatBytes(totalSelectedBytes)),
                     style = MaterialTheme.typography.titleSmall, color = c.primaryText
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

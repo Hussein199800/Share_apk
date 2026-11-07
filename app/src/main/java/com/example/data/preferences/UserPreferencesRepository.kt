@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -27,7 +28,11 @@ data class UserPreferencesState(
     val lastBackupTreeUri: String? = null,
     /** Name shown to nearby devices; null = device model. */
     val deviceAlias: String? = null,
-    val receiveEnabled: Boolean = true
+    val receiveEnabled: Boolean = true,
+    /** Version whose "What's new" the user has seen; null on a fresh install. */
+    val seenVersion: String? = null,
+    /** Whole-UI text size: one of [TEXT_SCALES]. */
+    val textScale: Float = 1f
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -43,6 +48,8 @@ class UserPreferencesRepository(private val context: Context) {
         val LAST_BACKUP_URI = stringPreferencesKey("last_backup_tree_uri")
         val DEVICE_ALIAS = stringPreferencesKey("device_alias")
         val RECEIVE_ENABLED = booleanPreferencesKey("receive_enabled")
+        val SEEN_VERSION = stringPreferencesKey("seen_version")
+        val TEXT_SCALE = floatPreferencesKey("text_scale")
     }
 
     val preferencesFlow: Flow<UserPreferencesState> = context.shareApkDataStore.data.map { prefs ->
@@ -62,8 +69,19 @@ class UserPreferencesRepository(private val context: Context) {
             favoritePackages = prefs[Keys.FAVORITES] ?: emptySet(),
             lastBackupTreeUri = prefs[Keys.LAST_BACKUP_URI],
             deviceAlias = prefs[Keys.DEVICE_ALIAS],
-            receiveEnabled = prefs[Keys.RECEIVE_ENABLED] ?: true
+            receiveEnabled = prefs[Keys.RECEIVE_ENABLED] ?: true,
+            seenVersion = prefs[Keys.SEEN_VERSION],
+            // Clamp on read so a corrupt value can't break the layout.
+            textScale = sanitizeTextScale(prefs[Keys.TEXT_SCALE])
         )
+    }
+
+    suspend fun setSeenVersion(version: String) {
+        context.shareApkDataStore.edit { it[Keys.SEEN_VERSION] = version }
+    }
+
+    suspend fun setTextScale(scale: Float) {
+        context.shareApkDataStore.edit { it[Keys.TEXT_SCALE] = sanitizeTextScale(scale) }
     }
 
     suspend fun setThemePreference(theme: ThemePreference) {
@@ -123,3 +141,9 @@ class UserPreferencesRepository(private val context: Context) {
         context.shareApkDataStore.edit { it[Keys.RECEIVE_ENABLED] = enabled }
     }
 }
+
+val TEXT_SCALES = listOf(0.9f, 1f, 1.15f, 1.3f)
+
+/** Snaps any stored value to the nearest allowed size (1 when missing or invalid). */
+fun sanitizeTextScale(v: Float?): Float =
+    if (v == null || v.isNaN()) 1f else TEXT_SCALES.minBy { kotlin.math.abs(it - v) }

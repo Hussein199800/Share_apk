@@ -121,6 +121,15 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     fun checkForUpdates() { viewModelScope.launch { updater.check() } }
     fun downloadUpdate(release: ReleaseInfo) { viewModelScope.launch { updater.download(release) } }
     fun dismissUpdate() = updater.dismiss()
+
+    // ---- Diagnostics log & "What's new" ----
+    private val _diagLines = MutableStateFlow<List<String>>(emptyList())
+    val diagLines: StateFlow<List<String>> = _diagLines.asStateFlow()
+    fun refreshDiagnostics() { viewModelScope.launch(Dispatchers.IO) { _diagLines.value = receiver.diagnostics.read().reversed() } }
+    fun clearDiagnostics() { viewModelScope.launch(Dispatchers.IO) { receiver.diagnostics.clear(); _diagLines.value = emptyList() } }
+    fun markWhatsNewSeen() { viewModelScope.launch { prefsRepository.setSeenVersion(com.example.BuildConfig.VERSION_NAME) } }
+    fun replayTour() { viewModelScope.launch { prefsRepository.setOnboardingCompleted(false) } }
+    fun setTextScale(scale: Float) { viewModelScope.launch { prefsRepository.setTextScale(scale) } }
     fun installUpdate(ready: UpdateState.Ready) {
         inspectAndPrepareInstall(androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", ready.apk))
     }
@@ -433,17 +442,22 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             val matchesSearch = if (query.isBlank()) {
                 true
             } else {
-                app.label.contains(query, ignoreCase = true) ||
-                    app.packageName.contains(query, ignoreCase = true)
+                com.example.util.ArabicText.matches(app.label, query) ||
+                    app.packageName.contains(query.trim(), ignoreCase = true)
             }
             matchesFilter && matchesSearch
         }
 
-        when (sort) {
+        val sorted = when (sort) {
             AppSortOption.NAME_ASC -> filtered.sortedBy { it.label.lowercase() }
             AppSortOption.SIZE_DESC -> filtered.sortedByDescending { it.totalSizeBytes }
             AppSortOption.INSTALLED_DATE -> filtered.sortedByDescending { it.firstInstallTime }
             AppSortOption.RECENTLY_UPDATED -> filtered.sortedByDescending { it.lastUpdateTime }
+        }
+        // An exact name match goes first.
+        if (query.isBlank()) sorted else {
+            val q = com.example.util.ArabicText.normalizeForSearch(query)
+            sorted.sortedByDescending { com.example.util.ArabicText.normalizeForSearch(it.label) == q }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -459,7 +473,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         apps.filter { app ->
             val sysMatch = if (includeSystem) true else !app.isSystemApp
             val qMatch = query.isBlank() ||
-                app.label.contains(query, ignoreCase = true) ||
+                com.example.util.ArabicText.matches(app.label, query) ||
                 app.packageName.contains(query, ignoreCase = true)
             sysMatch && qMatch
         }.sortedBy { it.label.lowercase() }
@@ -471,6 +485,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch { updater.autoCheck() }
+        viewModelScope.launch(Dispatchers.IO) {
+            updater.state.collect { st -> if (st is UpdateState.Failed) receiver.diagnostics.add("update", st.reason) }
+        }
         // The receiver lives app-wide; keep it in sync with the user's settings.
         viewModelScope.launch {
             // The repository flow (not userPrefs) so the receiver never sees the pre-load defaults.
@@ -1096,7 +1113,11 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun completeOnboarding() {
-        viewModelScope.launch { prefsRepository.setOnboardingCompleted(true) }
+        viewModelScope.launch {
+            prefsRepository.setOnboardingCompleted(true)
+            // A fresh install has nothing "new" to announce.
+            prefsRepository.setSeenVersion(com.example.BuildConfig.VERSION_NAME)
+        }
     }
 
     fun refreshCacheSize() {

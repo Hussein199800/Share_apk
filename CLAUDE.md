@@ -15,7 +15,9 @@
   - باقي الملفات تُنقل إلى `Download/ShareAPK` عبر MediaStore.
   - النصوص تصل في `preview`، والطلب الذي فيه نصوص فقط يُرد عليه بـ204.
   - مفتاح TLS والملفات المستلمة مستثناة من النسخ الاحتياطي.
-- **الإصدار:** `versionName` و`versionCode` في `app/build.gradle.kts`. يُرفع `versionCode` مع كل إصدار، ويُحدَّث `release-notes.md`.
+- **الإصدار:** `versionName` و`versionCode` في `app/build.gradle.kts` (`versionCode` = رئيسي×10000 + فرعي×100 + تصحيح). مع كل إصدار: أضف مدخلاً في أول `ui/theme/Changelog.kt` بالعربية والإنجليزية، وانسخ نقاطه العربية إلى `release-notes.md` **نصاً عادياً بلا Markdown** (سطر العنوان ثم نقاط «•»). `ChangelogTest` يتحقق من تطابق الثلاثة. لا يُدمج في `main` دون رفع الإصدار.
+- **النصوص الجديدة:** `AppStrings` وصل حد 255 معاملاً في JVM، فالنصوص الجديدة تُضاف إلى `ExtraStrings` (الحقل `x`) مع خاصية تمرير في `AppStrings`.
+- **العدّ والبحث:** `util/ArabicText` (`count` لصياغة المعدود، `matches` للبحث الموحّد للحروف). الأخطاء تُصنَّف بـ`ErrorClassifier` وتُعرض من `errorReasons`، والرسالة الخام في `DiagnosticsLog`.
 - **التحديث من داخل التطبيق:** يقرأ `releases/latest` من `Hussein199800/Share_apk`، ولا يثبّت إلا إذا تطابقت الحزمة والتوقيع والإصدار أحدث.
 - **التوقيع:**
   - مفتاح التوقيع لا يُرفع أبداً.

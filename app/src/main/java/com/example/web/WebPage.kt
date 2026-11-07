@@ -132,6 +132,12 @@ if (!ar) { document.documentElement.lang = "en"; document.documentElement.dir = 
 document.querySelectorAll("[data-t]").forEach(function(e){ e.textContent = T[e.getAttribute("data-t")]; });
 document.querySelectorAll("[data-tp]").forEach(function(e){ e.placeholder = T[e.getAttribute("data-tp")]; });
 function el(id){ return document.getElementById(id); }
+// Same folding as ArabicText.normalizeForSearch in the app.
+function norm(t){
+  return (t || "").replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
+    .replace(/[\u0660-\u0669]/g, function(d){ return String(d.charCodeAt(0) - 0x660); })
+    .replace(/[\u06F0-\u06F9]/g, function(d){ return String(d.charCodeAt(0) - 0x6F0); }).toLowerCase().trim();
+}
 function fmt(n){ if (n <= 0) return ""; var u=["B","KB","MB","GB"], i=0; while (n >= 1024 && i < 3) { n/=1024; i++; } return (i ? n.toFixed(1) : n) + " " + u[i]; }
 function show(view){ el("login").classList.toggle("hidden", view !== "login"); el("main").classList.toggle("hidden", view !== "main"); if (view === "login") el("pin").focus(); }
 
@@ -162,9 +168,9 @@ function load(){
   });
 }
 function render(){
-  var q = el("q").value.trim().toLowerCase(), list = el("list");
+  var words = norm(el("q").value).split(/\s+/).filter(Boolean), list = el("list");
   list.innerHTML = "";
-  var shown = items.filter(function(it){ return (kind === "all" || it.kind === kind || (kind === "file" && it.kind === "text")) && (!q || (it.name + " " + it.subtitle).toLowerCase().indexOf(q) >= 0); });
+  var shown = items.filter(function(it){ return (kind === "all" || it.kind === kind || (kind === "file" && it.kind === "text")) && words.every(function(w){ return norm(it.name + " " + it.subtitle).indexOf(w) >= 0; }); });
   shown.forEach(function(it){
     var row = document.createElement("div"); row.className = "item";
     var ic = document.createElement("div"); ic.className = "ic" + (it.kind === "file" ? " file" : it.kind === "text" ? " text" : "");

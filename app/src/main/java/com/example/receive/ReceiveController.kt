@@ -81,6 +81,9 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
         onBusyChanged = { refreshService() }
     )
 
+    /** Raw errors (masked) for the developer: More → Diagnostics log. */
+    val diagnostics = com.example.util.DiagnosticsLog(File(app.filesDir, "diagnostics.log"))
+
     private val lock = Mutex()
     private var server: LocalSendServer? = null
     private var discovery: MulticastDiscovery? = null
@@ -104,6 +107,15 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
             }
         }
         scope.launch { sender.state.collect { if (!inForeground && !busy()) stopAll() } }
+        scope.launch(Dispatchers.IO) {
+            sender.state.collect { st -> if (st is com.example.send.SendState.Failed) diagnostics.add("send", st.message) }
+        }
+        scope.launch(Dispatchers.IO) {
+            status.collect { st -> st.error?.let { diagnostics.add("receive-server", it) } }
+        }
+        scope.launch(Dispatchers.IO) {
+            web.state.collect { st -> st.error?.let { diagnostics.add("browser", it) } }
+        }
         // Watchdog: an accepted transfer with no upload activity for a minute is cancelled.
         scope.launch {
             while (true) {

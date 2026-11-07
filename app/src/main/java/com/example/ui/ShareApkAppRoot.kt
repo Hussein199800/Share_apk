@@ -77,6 +77,7 @@ fun ShareApkAppRoot(
     val quickZipProgress by viewModel.quickZipProgress.collectAsStateWithLifecycle()
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
+    val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
     val pickedFilesForWeb by viewModel.pickedFiles.collectAsStateWithLifecycle()
     var showWebShare by remember { mutableStateOf(false) }
     // The page stops by itself after a long idle spell: close the sheet with it.
@@ -330,7 +331,8 @@ fun ShareApkAppRoot(
                     onInstallFromFile = pickExternalApk,
                     onShareViaLink = shareViaLink,
                     onUpdates = { showUpdateSheet = true; if (updateState !is UpdateState.Available && updateState !is UpdateState.Ready) viewModel.checkForUpdates() },
-                    availableUpdate = (updateState as? UpdateState.Available)?.release?.version
+                    availableUpdate = (updateState as? UpdateState.Available)?.release?.version,
+                    onTour = viewModel::replayTour
                 )
 
                 MoreDestination.BACKUP -> Box(Modifier.testTag("more_BACKUP")) {
@@ -401,6 +403,19 @@ fun ShareApkAppRoot(
                     deviceAliasPlaceholder = Build.MODEL.orEmpty(),
                     onDeviceAliasChange = viewModel::setDeviceAlias,
                     modifier = Modifier.testTag("more_SETTINGS")
+                )
+
+                MoreDestination.WHATS_NEW -> com.example.ui.screens.more.WhatsNewScreen(
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_WHATS_NEW")
+                )
+
+                MoreDestination.DIAGNOSTICS -> com.example.ui.screens.more.DiagnosticsScreen(
+                    lines = diagLines,
+                    onRefresh = viewModel::refreshDiagnostics,
+                    onClear = viewModel::clearDiagnostics,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_DIAGNOSTICS")
                 )
 
                 MoreDestination.ABOUT -> AboutScreen(
@@ -494,6 +509,13 @@ fun ShareApkAppRoot(
                             WifiShareServerDialog(
                                 state = wifiServerState,
                                 onStopServer = viewModel::stopWifiShareServer
+                            )
+                        }
+
+                        if (prefsLoaded && prefs.onboardingCompleted && prefs.seenVersion != com.example.BuildConfig.VERSION_NAME) {
+                            com.example.ui.screens.more.WhatsNewSheet(
+                                onTour = { viewModel.markWhatsNewSeen(); viewModel.replayTour() },
+                                onDone = viewModel::markWhatsNewSeen
                             )
                         }
 
