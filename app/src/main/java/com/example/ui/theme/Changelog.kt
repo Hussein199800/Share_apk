@@ -13,6 +13,7 @@ object Changelog {
         ChangelogEntry(
             "3.2.0",
             ar = listOf(
+                "تبويب «الشاشة» الجديد: شارك شاشتك مع جوال قريب ليساعدك، فيرى شاشتك ويشير بإصبعه أو يرسم عليها لتعرف أين تضغط، دون أن يتحكم بشيء.",
                 "النقل عبر المتصفح: زر «من المتصفح» في تبويب الاستقبال يعطيك رابطاً ورمزاً من 4 أرقام لأي حاسوب ويندوز أو ماك على نفس الشبكة، بلا تثبيت.",
                 "من الحاسوب: نزّل التطبيقات والملفات المستلمة وما تختاره في تبويب «الملفات»، وارفع ملفات ونصوصاً إلى الهاتف.",
                 "حجم الخط من الإعدادات، وتصميم مناسب للأجهزة اللوحية والعرض الأفقي.",
@@ -20,6 +21,7 @@ object Changelog {
                 "نافذة «ما الجديد» بعد كل تحديث، وسجل تشخيص للأخطاء في «المزيد»، وأسباب واضحة لفشل الإرسال."
             ),
             en = listOf(
+                "New Screen tab: share your screen with a nearby phone so a helper can see it and point or draw on it to show you where to tap, without controlling anything.",
                 "Transfer via browser: “From browser” in Receive gives any Windows or Mac computer on the same network a link and a 4-digit code, nothing to install.",
                 "From the computer: download apps, received files and anything picked in the Files tab, and upload files and text to the phone.",
                 "Text size in Settings, and layouts made for tablets and landscape.",

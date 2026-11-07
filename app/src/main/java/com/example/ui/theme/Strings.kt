@@ -16,6 +16,35 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val navScreen: String,
+    val screenSubtitle: String,
+    val screenShareCardTitle: String,
+    val screenShareCardHint: String,
+    val screenOverlayTitle: String,
+    val screenOverlayHint: String,
+    val screenOverlayBtn: String,
+    val screenSharingTitle: String,
+    val screenCodeLabel: String,
+    val screenAddressLabel: String,
+    val screenWaiting: String,
+    val screenWatchingFormat: String,
+    val screenStopBtn: String,
+    val screenSharingNotif: String,
+    val screenChannelName: String,
+    val screenSecureNote: String,
+    val screenWatchTitle: String,
+    val screenWatchHint: String,
+    val screenNoDevices: String,
+    val screenAddressHint: String,
+    val screenPinHint: String,
+    val screenWatchBtn: String,
+    val screenSharingNow: String,
+    val screenWrongPin: String,
+    val screenEnded: String,
+    val screenConnecting: String,
+    val screenModePoint: String,
+    val screenModeDraw: String,
+    val screenLeave: String,
     val textSizeTitle: String,
     val textSizeHint: String,
     val textSizeSmall: String,
@@ -300,6 +329,35 @@ data class AppStrings(
     val languageHint get() = x.languageHint
     val namingHint get() = x.namingHint
     val deviceNameSaveHint get() = x.deviceNameSaveHint
+    val navScreen get() = x.navScreen
+    val screenSubtitle get() = x.screenSubtitle
+    val screenShareCardTitle get() = x.screenShareCardTitle
+    val screenShareCardHint get() = x.screenShareCardHint
+    val screenOverlayTitle get() = x.screenOverlayTitle
+    val screenOverlayHint get() = x.screenOverlayHint
+    val screenOverlayBtn get() = x.screenOverlayBtn
+    val screenSharingTitle get() = x.screenSharingTitle
+    val screenCodeLabel get() = x.screenCodeLabel
+    val screenAddressLabel get() = x.screenAddressLabel
+    val screenWaiting get() = x.screenWaiting
+    val screenWatchingFormat get() = x.screenWatchingFormat
+    val screenStopBtn get() = x.screenStopBtn
+    val screenSharingNotif get() = x.screenSharingNotif
+    val screenChannelName get() = x.screenChannelName
+    val screenSecureNote get() = x.screenSecureNote
+    val screenWatchTitle get() = x.screenWatchTitle
+    val screenWatchHint get() = x.screenWatchHint
+    val screenNoDevices get() = x.screenNoDevices
+    val screenAddressHint get() = x.screenAddressHint
+    val screenPinHint get() = x.screenPinHint
+    val screenWatchBtn get() = x.screenWatchBtn
+    val screenSharingNow get() = x.screenSharingNow
+    val screenWrongPin get() = x.screenWrongPin
+    val screenEnded get() = x.screenEnded
+    val screenConnecting get() = x.screenConnecting
+    val screenModePoint get() = x.screenModePoint
+    val screenModeDraw get() = x.screenModeDraw
+    val screenLeave get() = x.screenLeave
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -332,6 +390,35 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        navScreen = "الشاشة",
+        screenSubtitle = "شارك شاشتك مع جوال قريب ليساعدك",
+        screenShareCardTitle = "شارك شاشتي",
+        screenShareCardHint = "من يساعدك يرى شاشتك، ويشير بإصبعه أو يرسم عليها لتعرف أين تضغط. لا يستطيع الضغط على أي شيء.",
+        screenOverlayTitle = "اسمح بظهور إشارات المساعِد",
+        screenOverlayHint = "حتى ترى الدائرة والخطوط التي يرسمها فوق أي تطبيق. بدون هذا الإذن تعمل المشاركة، لكن بلا إشارات.",
+        screenOverlayBtn = "السماح",
+        screenSharingTitle = "شاشتك مشتركة الآن",
+        screenCodeLabel = "الرمز",
+        screenAddressLabel = "العنوان",
+        screenWaiting = "بانتظار من يساعدك… أعطه الرمز.",
+        screenWatchingFormat = "%s يشاهد شاشتك",
+        screenStopBtn = "إيقاف المشاركة",
+        screenSharingNotif = "شاشتك مشتركة",
+        screenChannelName = "مشاركة الشاشة",
+        screenSecureNote = "شاشات كلمات السر والبنوك تظهر سوداء عند الطرف الآخر، وهذه حماية من أندرويد.",
+        screenWatchTitle = "ساعد شخصاً",
+        screenWatchHint = "اختر جهازه من القائمة، ثم أدخل الرمز الظاهر على شاشته.",
+        screenNoDevices = "لا أجهزة قريبة تشارك شاشتها الآن. تأكد أنها على نفس الشبكة، أو أدخل العنوان.",
+        screenAddressHint = "العنوان، مثل 192.168.1.5",
+        screenPinHint = "الرمز (4 أرقام)",
+        screenWatchBtn = "شاهد",
+        screenSharingNow = "يشارك الآن",
+        screenWrongPin = "الرمز غير صحيح، أو أن شخصاً آخر يشاهد الآن.",
+        screenEnded = "أوقف الطرف الآخر المشاركة.",
+        screenConnecting = "جارٍ الاتصال…",
+        screenModePoint = "إشارة",
+        screenModeDraw = "رسم",
+        screenLeave = "إنهاء",
         textSizeTitle = "حجم الخط",
         textSizeHint = "يكبّر الواجهة كلها بنسبة واحدة: النصوص والأيقونات والأزرار.",
         textSizeSmall = "صغير",
@@ -608,6 +695,35 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        navScreen = "Screen",
+        screenSubtitle = "Share your screen with a nearby phone for help",
+        screenShareCardTitle = "Share my screen",
+        screenShareCardHint = "Your helper sees your screen and can point or draw on it to show you where to tap. They can't press anything.",
+        screenOverlayTitle = "Allow the helper's marks",
+        screenOverlayHint = "So you see their circle and lines over any app. Sharing works without it, just without marks.",
+        screenOverlayBtn = "Allow",
+        screenSharingTitle = "Your screen is being shared",
+        screenCodeLabel = "Code",
+        screenAddressLabel = "Address",
+        screenWaiting = "Waiting for your helper… give them the code.",
+        screenWatchingFormat = "%s is watching your screen",
+        screenStopBtn = "Stop sharing",
+        screenSharingNotif = "Your screen is shared",
+        screenChannelName = "Screen sharing",
+        screenSecureNote = "Password and banking screens show black on the other side: Android protects them.",
+        screenWatchTitle = "Help someone",
+        screenWatchHint = "Pick their phone from the list, then enter the code shown on their screen.",
+        screenNoDevices = "No nearby phone is sharing its screen now. Check you're on the same network, or enter the address.",
+        screenAddressHint = "Address, e.g. 192.168.1.5",
+        screenPinHint = "Code (4 digits)",
+        screenWatchBtn = "Watch",
+        screenSharingNow = "Sharing now",
+        screenWrongPin = "Wrong code, or someone else is already watching.",
+        screenEnded = "The other phone stopped sharing.",
+        screenConnecting = "Connecting…",
+        screenModePoint = "Point",
+        screenModeDraw = "Draw",
+        screenLeave = "Leave",
         textSizeTitle = "Text size",
         textSizeHint = "Scales the whole interface evenly: text, icons and buttons.",
         textSizeSmall = "Small",

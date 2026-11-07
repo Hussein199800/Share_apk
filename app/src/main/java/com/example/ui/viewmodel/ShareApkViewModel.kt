@@ -106,6 +106,33 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
 
+    // ---- Screen tab: phone-to-phone screen sharing ----
+    val screenShare: StateFlow<com.example.screen.ScreenShareState> = com.example.screen.ScreenShare.state
+    val screenViewer = com.example.screen.ScreenViewer()
+    private val _screenHosts = MutableStateFlow<Set<String>>(emptySet())
+    /** IPs of nearby phones whose screen-sharing port answers right now. */
+    val screenHosts: StateFlow<Set<String>> = _screenHosts.asStateFlow()
+
+    fun probeScreenHosts() {
+        refreshPeers()
+        viewModelScope.launch(Dispatchers.IO) {
+            kotlinx.coroutines.delay(1_500) // let discovery answer first
+            val ips = receiver.peers.peers.value.map { it.ip }.distinct()
+            _screenHosts.value = ips.filter { ip ->
+                runCatching {
+                    java.net.Socket().use { it.connect(java.net.InetSocketAddress(ip, com.example.screen.ScreenProtocol.PORT), 400) }
+                }.isSuccess
+            }.toSet()
+        }
+    }
+
+    fun watchScreen(address: String, pin: String) {
+        val host = address.substringBefore(':').trim()
+        val port = address.substringAfter(':', "").toIntOrNull() ?: com.example.screen.ScreenProtocol.PORT
+        val name = userPrefs.value.deviceAlias?.takeIf { it.isNotBlank() } ?: android.os.Build.MODEL.orEmpty()
+        screenViewer.connect(host, port, com.example.web.PinGate.asciiDigits(pin.trim()), name)
+    }
+
     // ---- "From browser" page ----
     val webShare: StateFlow<com.example.web.WebShareState> = receiver.web.state
     fun startWebShare() {

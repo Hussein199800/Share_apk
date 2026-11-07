@@ -76,3 +76,10 @@ fun contrastRatio(fg: Color, bg: Color): Double {
     val b = luminance(bg)
     return (max(a, b) + 0.05) / (min(a, b) + 0.05)
 }
+
+/** Helper's pointer and drawing on the shared screen (android.graphics ARGB ints, drawn by ScreenOverlay). */
+object ScreenOverlayColors {
+    /** Bright pink-red: visible on light and dark apps alike. */
+    const val POINTER: Int = 0xFFFF2D6F.toInt()
+    const val POINTER_RING: Int = 0xFFFFFFFF.toInt()
+}

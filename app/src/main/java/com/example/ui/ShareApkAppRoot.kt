@@ -78,6 +78,10 @@ fun ShareApkAppRoot(
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
     val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
+    val screenShareState by viewModel.screenShare.collectAsStateWithLifecycle()
+    val screenHosts by viewModel.screenHosts.collectAsStateWithLifecycle()
+    val screenViewerState by viewModel.screenViewer.state.collectAsStateWithLifecycle()
+    val nearbyPeersForScreen by viewModel.nearbyPeers.collectAsStateWithLifecycle()
     val pickedFilesForWeb by viewModel.pickedFiles.collectAsStateWithLifecycle()
     var showWebShare by remember { mutableStateOf(false) }
     // The page stops by itself after a long idle spell: close the sheet with it.
@@ -326,6 +330,18 @@ fun ShareApkAppRoot(
                 onRemoveEntry = viewModel::removeReceivedEntry,
                 onOpenWebShare = { showWebShare = true; viewModel.startWebShare() },
                 lastEvent = receiveEvent
+            )
+
+            MainNavTab.SCREEN -> com.example.ui.screens.screen.ScreenTab(
+                share = screenShareState,
+                peers = nearbyPeersForScreen,
+                sharingHosts = screenHosts,
+                viewerState = screenViewerState,
+                viewer = viewModel.screenViewer,
+                onProbe = viewModel::probeScreenHosts,
+                onWatch = viewModel::watchScreen,
+                onLeave = viewModel.screenViewer::disconnect,
+                modifier = Modifier.testTag("tab_SCREEN")
             )
 
             MainNavTab.MORE -> when (moreDestination) {

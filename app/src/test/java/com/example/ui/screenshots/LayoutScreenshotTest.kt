@@ -63,6 +63,22 @@ class LayoutScreenshotTest {
         SettingsScreen(UserPreferencesState(textScale = scale), 12_345_678, {}, {}, {}, {}, {}, {}, deviceAlias = "Galaxy")
     }
 
+    private fun screenTab(dark: Boolean, tag: String, sharing: Boolean) = shoot("screen-$tag", dark) {
+        val peer = com.example.receive.discovery.NearbyDevice(com.example.receive.protocol.DeviceInfoDto(alias = "هاتف أمي", fingerprint = "f"), "192.168.1.30", 0)
+        com.example.ui.screens.screen.ScreenTab(
+            share = if (sharing) com.example.screen.ScreenShareState(true, "192.168.1.17:53321", "0420", "هاتف أحمد") else com.example.screen.ScreenShareState(),
+            peers = listOf(peer), sharingHosts = setOf("192.168.1.30"),
+            viewerState = com.example.screen.ViewerState.WrongPin, viewer = com.example.screen.ScreenViewer(),
+            onProbe = {}, onWatch = { _, _ -> }, onLeave = {}
+        )
+    }
+
+    @Config(sdk = [36], qualifiers = "w390dp-h844dp-port")
+    @Test fun screenTabIdle() { screenTab(false, "idle", false) }
+
+    @Config(sdk = [36], qualifiers = "w390dp-h844dp-port")
+    @Test fun screenTabSharing() { screenTab(true, "sharing", true) }
+
     @Config(sdk = [36], qualifiers = "w390dp-h844dp-port")
     @Test fun phone() { receive(false, "phone"); }
 

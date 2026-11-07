@@ -3,7 +3,8 @@
 - **الواجهة:** عربية أولاً (RTL)، مع ترجمة إنجليزية. كل نص يراه المستخدم يُضاف إلى `AppStrings` في `ui/theme/Strings.kt` بالنسختين `ArabicStrings` و`EnglishStrings` معاً، ولا تُكتب نصوص داخل الشاشات.
 - **الألوان والأبعاد:** تُكتب في `ui/theme/` فقط (`Color.kt`، `Gradients.kt`، `ShareApkTokens.kt`). لا يُكتب `Color(0x…)` خارجها. المكوّنات المشتركة في `ui/components/design/`.
 - **الأرقام وأسماء الحزم والإصدارات والعناوين:** تُعرض داخل `LtrBox`.
-- **التبويبات:** `APPS · FILES · RECEIVE · MORE` (`MainNavTab`). الإرسال نافذة `DevicePickerSheet` تُفتح من التطبيقات أو الملفات. ترتيب زر الرجوع في `ui/navigation/NavState.kt`.
+- **التبويبات:** `APPS · FILES · RECEIVE · SCREEN · MORE` (`MainNavTab`). الإرسال نافذة `DevicePickerSheet` تُفتح من التطبيقات أو الملفات. ترتيب زر الرجوع في `ui/navigation/NavState.kt`.
+- **الشاشة (التبويب الخامس):** `screen/` مشاركة الشاشة من جوال إلى جوال على المنفذ 53321 (H.264 عبر TCP، والرمز من `PinGate`). المساعِد يشير ويرسم فقط ولا يتحكم، وهذا قرار المالك. الإشارات تُرسم في نافذة فوق التطبيقات (`ScreenOverlay`).
 - **من المتصفح:** `web/` خادم HTTP على المنفذ 53320 يحميه رمز من 4 أرقام (`PinGate`). نصوص الصفحة داخل `WebPage.kt` لأنها تُعرض في متصفح الحاسوب.
 - **الشبكة:**
   - متوافقة مع LocalSend v2 (`receive/`، `send/`).
