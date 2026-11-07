@@ -17,9 +17,6 @@
     <!-- Required for Pre-Flash Backup ForegroundService -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!-- Screen tab: share this screen with a helper's phone, and show their pointer over other apps. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
@@ -101,12 +98,6 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
-
-        <service
-            android:name=".screen.ScreenShareService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
 
         <!-- BroadcastReceiver for PackageInstaller.Session commit callbacks -->
         <receiver

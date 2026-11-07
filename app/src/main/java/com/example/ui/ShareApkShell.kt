@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.ScreenShare
+import com.example.screen.ScreenFeature
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -71,9 +72,10 @@ fun ShareApkShell(
                 NavItem(MainNavTab.APPS, strings.navApps, Icons.Outlined.Apps),
                 NavItem(MainNavTab.FILES, strings.navFiles, Icons.Outlined.FolderCopy),
                 NavItem(MainNavTab.RECEIVE, strings.navReceive, Icons.Outlined.Download),
-                NavItem(MainNavTab.SCREEN, strings.navScreen, Icons.Outlined.ScreenShare),
+                // Hidden until it works across networks (owner's decision, 3.2.0); code kept in screen/.
+                NavItem(MainNavTab.SCREEN, strings.navScreen, Icons.Outlined.ScreenShare).takeIf { ScreenFeature.ENABLED },
                 NavItem(MainNavTab.MORE, strings.navMore, Icons.Outlined.MoreHoriz)
-            )
+            ).filterNotNull()
             // With the keyboard open the IME already covers the navigation bar: don't add both.
             val navInsets = WindowInsets.navigationBars.exclude(WindowInsets.ime)
             val navInset = navInsets.asPaddingValues().calculateBottomPadding()
