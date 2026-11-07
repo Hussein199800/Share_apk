@@ -15,6 +15,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.InstallMobile
@@ -65,7 +68,8 @@ fun MoreScreen(
     onShareViaLink: () -> Unit,
     modifier: Modifier = Modifier,
     onUpdates: () -> Unit = {},
-    availableUpdate: String? = null
+    availableUpdate: String? = null,
+    onTour: () -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -79,7 +83,10 @@ fun MoreScreen(
             Icons.Outlined.Sync, s.tileUpdatesTitle,
             availableUpdate?.let { s.tileUpdatesAvailable.format(it) } ?: s.tileUpdatesSub,
             ShareApkGradients.rose, badge = availableUpdate?.let { s.updateBadge }, onClick = onUpdates
-        )
+        ),
+        MoreTile(Icons.Outlined.NewReleases, s.tileWhatsNewTitle, s.tileWhatsNewSub, ShareApkGradients.violet) { onOpen(MoreDestination.WHATS_NEW) },
+        MoreTile(Icons.Outlined.Explore, s.tileTourTitle, s.tileTourSub, ShareApkGradients.sky, onClick = onTour),
+        MoreTile(Icons.Outlined.BugReport, s.tileDiagTitle, s.tileDiagSub, ShareApkGradients.amber) { onOpen(MoreDestination.DIAGNOSTICS) }
     )
     ScreenScaffold(title = s.moreTitle, modifier = modifier) {
         LazyVerticalGrid(

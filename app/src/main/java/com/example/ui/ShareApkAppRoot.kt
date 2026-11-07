@@ -76,6 +76,20 @@ fun ShareApkAppRoot(
     val pendingSplitAction by viewModel.pendingSplitAction.collectAsStateWithLifecycle()
     val quickZipProgress by viewModel.quickZipProgress.collectAsStateWithLifecycle()
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
+    val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
+    val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
+    val screenShareState by viewModel.screenShare.collectAsStateWithLifecycle()
+    val screenHosts by viewModel.screenHosts.collectAsStateWithLifecycle()
+    val screenViewerState by viewModel.screenViewer.state.collectAsStateWithLifecycle()
+    val nearbyPeersForScreen by viewModel.nearbyPeers.collectAsStateWithLifecycle()
+    val pickedFilesForWeb by viewModel.pickedFiles.collectAsStateWithLifecycle()
+    var showWebShare by remember { mutableStateOf(false) }
+    // The page stops by itself after a long idle spell: close the sheet with it.
+    var webWasRunning by remember { mutableStateOf(false) }
+    LaunchedEffect(webShareState.running) {
+        if (webShareState.running) webWasRunning = true
+        else if (webWasRunning) { webWasRunning = false; showWebShare = false }
+    }
     val wifiServerState by viewModel.wifiServerState.collectAsStateWithLifecycle()
     val preInstallValidation by viewModel.preInstallValidation.collectAsStateWithLifecycle()
     val isCommittingInstall by viewModel.isCommittingInstall.collectAsStateWithLifecycle()
@@ -179,6 +193,11 @@ fun ShareApkAppRoot(
     val manualPeerResult by viewModel.manualPeerResult.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     var showUpdateSheet by remember { mutableStateOf(false) }
+    // A new release found by the automatic check opens the update sheet once per version.
+    LaunchedEffect(updateState) {
+        val available = updateState as? UpdateState.Available
+        if (available != null && !showUpdateSheet && viewModel.takeUpdatePrompt(available.release.version)) showUpdateSheet = true
+    }
     // Look for devices when the Send tab opens with an empty list.
     val pickerTarget by viewModel.pickerTarget.collectAsStateWithLifecycle()
     val pickedFiles by viewModel.pickedFiles.collectAsStateWithLifecycle()
@@ -309,7 +328,20 @@ fun ShareApkAppRoot(
                 },
                 onCopyEntry = { entry -> entry.text?.let { com.example.ui.components.copyToClipboard(context, "text", it, strings.copiedToast) } },
                 onRemoveEntry = viewModel::removeReceivedEntry,
+                onOpenWebShare = { showWebShare = true; viewModel.startWebShare() },
                 lastEvent = receiveEvent
+            )
+
+            MainNavTab.SCREEN -> com.example.ui.screens.screen.ScreenTab(
+                share = screenShareState,
+                peers = nearbyPeersForScreen,
+                sharingHosts = screenHosts,
+                viewerState = screenViewerState,
+                viewer = viewModel.screenViewer,
+                onProbe = viewModel::probeScreenHosts,
+                onWatch = viewModel::watchScreen,
+                onLeave = viewModel.screenViewer::disconnect,
+                modifier = Modifier.testTag("tab_SCREEN")
             )
 
             MainNavTab.MORE -> when (moreDestination) {
@@ -320,7 +352,8 @@ fun ShareApkAppRoot(
                     onInstallFromFile = pickExternalApk,
                     onShareViaLink = shareViaLink,
                     onUpdates = { showUpdateSheet = true; if (updateState !is UpdateState.Available && updateState !is UpdateState.Ready) viewModel.checkForUpdates() },
-                    availableUpdate = (updateState as? UpdateState.Available)?.release?.version
+                    availableUpdate = (updateState as? UpdateState.Available)?.release?.version,
+                    onTour = viewModel::replayTour
                 )
 
                 MoreDestination.BACKUP -> Box(Modifier.testTag("more_BACKUP")) {
@@ -390,7 +423,21 @@ fun ShareApkAppRoot(
                     deviceAlias = prefs.deviceAlias.orEmpty(),
                     deviceAliasPlaceholder = Build.MODEL.orEmpty(),
                     onDeviceAliasChange = viewModel::setDeviceAlias,
+                    onTextScaleChange = viewModel::setTextScale,
                     modifier = Modifier.testTag("more_SETTINGS")
+                )
+
+                MoreDestination.WHATS_NEW -> com.example.ui.screens.more.WhatsNewScreen(
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_WHATS_NEW")
+                )
+
+                MoreDestination.DIAGNOSTICS -> com.example.ui.screens.more.DiagnosticsScreen(
+                    lines = diagLines,
+                    onRefresh = viewModel::refreshDiagnostics,
+                    onClear = viewModel::clearDiagnostics,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_DIAGNOSTICS")
                 )
 
                 MoreDestination.ABOUT -> AboutScreen(
@@ -484,6 +531,22 @@ fun ShareApkAppRoot(
                             WifiShareServerDialog(
                                 state = wifiServerState,
                                 onStopServer = viewModel::stopWifiShareServer
+                            )
+                        }
+
+                        if (prefsLoaded && prefs.onboardingCompleted && prefs.seenVersion != com.example.BuildConfig.VERSION_NAME) {
+                            com.example.ui.screens.more.WhatsNewSheet(
+                                onTour = { viewModel.markWhatsNewSeen(); viewModel.replayTour() },
+                                onDone = viewModel::markWhatsNewSeen
+                            )
+                        }
+
+                        if (showWebShare) {
+                            com.example.ui.components.sheets.WebShareSheet(
+                                state = webShareState,
+                                pickedCount = pickedFilesForWeb.count { !it.isText },
+                                onPickFiles = viewModel::addPickedUris,
+                                onStop = { showWebShare = false; viewModel.stopWebShare() }
                             )
                         }
 

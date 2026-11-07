@@ -106,12 +106,58 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     fun decideIncoming(accept: Boolean) = receiver.sessions.decide(accept)
 
+    // ---- Screen tab: phone-to-phone screen sharing ----
+    val screenShare: StateFlow<com.example.screen.ScreenShareState> = com.example.screen.ScreenShare.state
+    val screenViewer = com.example.screen.ScreenViewer()
+    private val _screenHosts = MutableStateFlow<Set<String>>(emptySet())
+    /** IPs of nearby phones whose screen-sharing port answers right now. */
+    val screenHosts: StateFlow<Set<String>> = _screenHosts.asStateFlow()
+
+    fun probeScreenHosts() {
+        refreshPeers()
+        viewModelScope.launch(Dispatchers.IO) {
+            kotlinx.coroutines.delay(1_500) // let discovery answer first
+            val ips = receiver.peers.peers.value.map { it.ip }.distinct()
+            _screenHosts.value = ips.filter { ip ->
+                runCatching {
+                    java.net.Socket().use { it.connect(java.net.InetSocketAddress(ip, com.example.screen.ScreenProtocol.PORT), 400) }
+                }.isSuccess
+            }.toSet()
+        }
+    }
+
+    fun watchScreen(address: String, pin: String) {
+        val host = address.substringBefore(':').trim()
+        val port = address.substringAfter(':', "").toIntOrNull() ?: com.example.screen.ScreenProtocol.PORT
+        val name = userPrefs.value.deviceAlias?.takeIf { it.isNotBlank() } ?: android.os.Build.MODEL.orEmpty()
+        screenViewer.connect(host, port, com.example.web.PinGate.asciiDigits(pin.trim()), name)
+    }
+
+    // ---- "From browser" page ----
+    val webShare: StateFlow<com.example.web.WebShareState> = receiver.web.state
+    fun startWebShare() {
+        receiver.web.installedApps = { _allApps.value }
+        receiver.web.pickedFiles = { _pickedFiles.value }
+        receiver.web.start()
+    }
+    fun stopWebShare() = receiver.web.stop()
+
     // ---- In-app updates (GitHub releases) ----
     private val updater = Updater(context)
     val updateState: StateFlow<UpdateState> = updater.state
     fun checkForUpdates() { viewModelScope.launch { updater.check() } }
     fun downloadUpdate(release: ReleaseInfo) { viewModelScope.launch { updater.download(release) } }
     fun dismissUpdate() = updater.dismiss()
+    fun takeUpdatePrompt(version: String) = updater.takePrompt(version)
+
+    // ---- Diagnostics log & "What's new" ----
+    private val _diagLines = MutableStateFlow<List<String>>(emptyList())
+    val diagLines: StateFlow<List<String>> = _diagLines.asStateFlow()
+    fun refreshDiagnostics() { viewModelScope.launch(Dispatchers.IO) { _diagLines.value = receiver.diagnostics.read().reversed() } }
+    fun clearDiagnostics() { viewModelScope.launch(Dispatchers.IO) { receiver.diagnostics.clear(); _diagLines.value = emptyList() } }
+    fun markWhatsNewSeen() { viewModelScope.launch { prefsRepository.setSeenVersion(com.example.BuildConfig.VERSION_NAME) } }
+    fun replayTour() { viewModelScope.launch { prefsRepository.setOnboardingCompleted(false) } }
+    fun setTextScale(scale: Float) { viewModelScope.launch { prefsRepository.setTextScale(scale) } }
     fun installUpdate(ready: UpdateState.Ready) {
         inspectAndPrepareInstall(androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", ready.apk))
     }
@@ -424,17 +470,22 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             val matchesSearch = if (query.isBlank()) {
                 true
             } else {
-                app.label.contains(query, ignoreCase = true) ||
-                    app.packageName.contains(query, ignoreCase = true)
+                com.example.util.ArabicText.matches(app.label, query) ||
+                    app.packageName.contains(query.trim(), ignoreCase = true)
             }
             matchesFilter && matchesSearch
         }
 
-        when (sort) {
+        val sorted = when (sort) {
             AppSortOption.NAME_ASC -> filtered.sortedBy { it.label.lowercase() }
             AppSortOption.SIZE_DESC -> filtered.sortedByDescending { it.totalSizeBytes }
             AppSortOption.INSTALLED_DATE -> filtered.sortedByDescending { it.firstInstallTime }
             AppSortOption.RECENTLY_UPDATED -> filtered.sortedByDescending { it.lastUpdateTime }
+        }
+        // An exact name match goes first.
+        if (query.isBlank()) sorted else {
+            val q = com.example.util.ArabicText.normalizeForSearch(query)
+            sorted.sortedByDescending { com.example.util.ArabicText.normalizeForSearch(it.label) == q }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -450,7 +501,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         apps.filter { app ->
             val sysMatch = if (includeSystem) true else !app.isSystemApp
             val qMatch = query.isBlank() ||
-                app.label.contains(query, ignoreCase = true) ||
+                com.example.util.ArabicText.matches(app.label, query) ||
                 app.packageName.contains(query, ignoreCase = true)
             sysMatch && qMatch
         }.sortedBy { it.label.lowercase() }
@@ -462,6 +513,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch { updater.autoCheck() }
+        viewModelScope.launch(Dispatchers.IO) {
+            updater.state.collect { st -> if (st is UpdateState.Failed) receiver.diagnostics.add("update", st.reason) }
+        }
         // The receiver lives app-wide; keep it in sync with the user's settings.
         viewModelScope.launch {
             // The repository flow (not userPrefs) so the receiver never sees the pre-load defaults.
@@ -1087,7 +1141,11 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun completeOnboarding() {
-        viewModelScope.launch { prefsRepository.setOnboardingCompleted(true) }
+        viewModelScope.launch {
+            prefsRepository.setOnboardingCompleted(true)
+            // A fresh install has nothing "new" to announce.
+            prefsRepository.setSeenVersion(com.example.BuildConfig.VERSION_NAME)
+        }
     }
 
     fun refreshCacheSize() {

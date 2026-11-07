@@ -60,7 +60,7 @@ fun SelectionBar(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconActionButton(Icons.Outlined.Close, s.clearSelectionBtn, onClear)
             Text(
-                s.selectedCountFormat.format(count, FileNameAndHashUtils.formatBytes(totalBytes)),
+                s.selectedCountFormat.format(com.example.util.ArabicText.count(count, s.appForms, s.isArabic), FileNameAndHashUtils.formatBytes(totalBytes)),
                 style = MaterialTheme.typography.titleSmall,
                 color = c.onBackground,
                 maxLines = 2,

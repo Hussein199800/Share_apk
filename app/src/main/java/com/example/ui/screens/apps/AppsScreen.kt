@@ -110,7 +110,7 @@ fun AppsScreen(
 
     ScreenScaffold(
         title = s.navApps,
-        subtitle = s.appsCountFormat.format(apps.size),
+        subtitle = s.appsCountFormat.format(com.example.util.ArabicText.count(apps.size, s.appForms, s.isArabic)),
         modifier = modifier,
         action = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

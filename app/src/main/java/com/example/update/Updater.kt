@@ -37,6 +37,13 @@ class Updater(private val context: Context, private val repo: String = REPO) {
         get() = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
 
     /** Automatic check at most every 12 hours; quiet on failure. */
+    /** True once per new version: the update sheet then opens by itself (like طاقتي). */
+    fun takePrompt(version: String): Boolean {
+        if (prefs.getString(KEY_PROMPTED, null) == version) return false
+        prefs.edit().putString(KEY_PROMPTED, version).apply()
+        return true
+    }
+
     suspend fun autoCheck() {
         val last = prefs.getLong(KEY_LAST, 0)
         if (System.currentTimeMillis() - last < 12 * 3600_000L) return
@@ -129,5 +136,6 @@ class Updater(private val context: Context, private val repo: String = REPO) {
     companion object {
         const val REPO = "Hussein199800/Share_apk"
         private const val KEY_LAST = "last_check"
+        private const val KEY_PROMPTED = "prompted_version"
     }
 }

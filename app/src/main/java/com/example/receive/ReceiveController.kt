@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /** What the Receive tab shows about this device. */
 data class ReceiverStatus(
@@ -70,6 +71,19 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     val peers = PeerRegistry({ fingerprint })
     val sender = SendController(scope, ::identity, onBusyChanged = { refreshService() }, history = history, client = com.example.send.SendClient(com.example.send.PrefsPins(app)))
 
+    /** "From browser" page: downloads and uploads for any computer on the network. */
+    val web = com.example.web.WebShare(
+        app, scope,
+        receivedApps = { _received.value },
+        receivedFiles = { _receivedOther.value },
+        onUpload = ::ingestWebUpload,
+        onText = { text -> _receivedOther.value = withContext(Dispatchers.IO) { filesIndex.add(listOf(ReceivedEntry(name = "", text = text))) } },
+        onBusyChanged = { refreshService() }
+    )
+
+    /** Raw errors (masked) for the developer: More → Diagnostics log. */
+    val diagnostics = com.example.util.DiagnosticsLog(File(app.filesDir, "diagnostics.log"))
+
     private val lock = Mutex()
     private var server: LocalSendServer? = null
     private var discovery: MulticastDiscovery? = null
@@ -93,6 +107,15 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
             }
         }
         scope.launch { sender.state.collect { if (!inForeground && !busy()) stopAll() } }
+        scope.launch(Dispatchers.IO) {
+            sender.state.collect { st -> if (st is com.example.send.SendState.Failed) diagnostics.add("send", st.message) }
+        }
+        scope.launch(Dispatchers.IO) {
+            status.collect { st -> st.error?.let { diagnostics.add("receive-server", it) } }
+        }
+        scope.launch(Dispatchers.IO) {
+            web.state.collect { st -> st.error?.let { diagnostics.add("browser", it) } }
+        }
         // Watchdog: an accepted transfer with no upload activity for a minute is cancelled.
         scope.launch {
             while (true) {
@@ -154,14 +177,14 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
         if (!busy()) stopAll()
     }
 
-    private fun busy() = sessions.state.value is ReceiveState.Receiving || sender.isBusy()
+    private fun busy() = sessions.state.value is ReceiveState.Receiving || sender.isBusy() || web.isBusy
 
     /** Starts the keep-alive service once per transfer (not on every progress update), stops it after. */
     @Synchronized
     private fun refreshService() {
         val receiving = sessions.state.value as? ReceiveState.Receiving
-        val alias = receiving?.sender?.alias ?: sender.peerAlias()
-        val needed = receiving != null || sender.isBusy()
+        val alias = receiving?.sender?.alias ?: sender.peerAlias() ?: web.state.value.url.takeIf { web.isBusy }
+        val needed = receiving != null || sender.isBusy() || web.isBusy
         when {
             needed && !serviceRunning -> {
                 serviceRunning = true
@@ -239,35 +262,55 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
             val others = mutableListOf<ReceivedEntry>()
             done.messages.forEach { others += ReceivedEntry(name = "", text = it) }
             done.files.filterNot { it.isApp }.forEach { rf ->
-                // Non-app files go to Download/ShareAPK so the gallery and file managers see them.
-                val mime = DownloadsSaver.mimeFor(rf.fileName, rf.mimeType)
-                val size = rf.file.length()
-                val uri = DownloadsSaver.save(app, rf.file, rf.fileName, mime, rf.relativeDir)
-                if (uri != null) {
-                    rf.file.delete()
-                    others += ReceivedEntry(rf.fileName, uri.toString(), mime, size)
-                    runCatching {
-                        history.logOperation("RECEIVE", rf.fileName, "", "", ".${rf.file.extension}", size, "")
-                    }
-                }
+                saveToDownloads(rf.file, rf.fileName, rf.mimeType, rf.relativeDir)?.let { others += it }
                 rf.file.parentFile?.takeIf { it.listFiles().isNullOrEmpty() }?.delete()
             }
             if (others.isNotEmpty()) _receivedOther.value = filesIndex.add(others)
             done.files.filter { it.isApp }.forEach { rf ->
                 rf.meta?.let { library.saveMeta(rf.file, it) }
-                val item = library.inspect(rf.file)
-                history.logOperation(
-                    actionType = "RECEIVE",
-                    appLabel = item.label,
-                    packageName = item.packageName.orEmpty(),
-                    versionName = item.versionName.orEmpty(),
-                    fileFormat = ".${rf.file.extension}",
-                    fileSizeBytes = rf.file.length(),
-                    sha256Hash = runCatching { FileNameAndHashUtils.computeFileSha256(rf.file) }.getOrDefault("")
-                )
+                logReceivedApp(rf.file)
             }
             _received.value = library.list()
         }
+    }
+
+    /** A file uploaded from the browser page: apps join the received library, the rest go to Downloads. */
+    private suspend fun ingestWebUpload(tmp: File, name: String) = withContext(Dispatchers.IO) {
+        if (ReceiveSessionManager.isAppPackage(name)) {
+            val dir = File(library.root, "web").apply { mkdirs() }
+            var target = File(dir, name)
+            var n = 1
+            while (target.exists()) target = File(dir, "${name.substringBeforeLast('.')} ($n).${name.substringAfterLast('.')}").also { n++ }
+            if (!tmp.renameTo(target)) { tmp.copyTo(target, overwrite = true); tmp.delete() }
+            logReceivedApp(target)
+            _received.value = library.list()
+        } else {
+            saveToDownloads(tmp, name, null, "")?.let { _receivedOther.value = filesIndex.add(listOf(it)) }
+            tmp.delete()
+        }
+    }
+
+    /** Non-app files go to Download/ShareAPK so the gallery and file managers see them. */
+    private suspend fun saveToDownloads(file: File, name: String, declaredMime: String?, relativeDir: String): ReceivedEntry? {
+        val mime = DownloadsSaver.mimeFor(name, declaredMime)
+        val size = file.length()
+        val uri = DownloadsSaver.save(app, file, name, mime, relativeDir) ?: return null
+        file.delete()
+        runCatching { history.logOperation("RECEIVE", name, "", "", ".${file.extension}", size, "") }
+        return ReceivedEntry(name, uri.toString(), mime, size)
+    }
+
+    private suspend fun logReceivedApp(file: File) {
+        val item = library.inspect(file)
+        history.logOperation(
+            actionType = "RECEIVE",
+            appLabel = item.label,
+            packageName = item.packageName.orEmpty(),
+            versionName = item.versionName.orEmpty(),
+            fileFormat = ".${file.extension}",
+            fileSizeBytes = file.length(),
+            sha256Hash = runCatching { FileNameAndHashUtils.computeFileSha256(file) }.getOrDefault("")
+        )
     }
 
     private fun defaultAlias() = Build.MODEL?.takeIf { it.isNotBlank() } ?: "Android"

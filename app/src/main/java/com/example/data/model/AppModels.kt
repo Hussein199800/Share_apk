@@ -39,6 +39,7 @@ enum class MainNavTab {
     APPS,
     FILES,
     RECEIVE,
+    SCREEN,
     MORE
 }
 

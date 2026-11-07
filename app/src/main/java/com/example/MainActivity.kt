@@ -8,9 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.components.design.AdaptiveScale
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.ui.ShareApkAppRoot
 import com.example.ui.viewmodel.ShareApkViewModel
@@ -19,7 +20,6 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: ShareApkViewModel by viewModels()
 
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -28,13 +28,14 @@ class MainActivity : AppCompatActivity() {
         handleIncomingPackageIntent(intent)
 
         setContent {
-            val windowSizeClass = calculateWindowSizeClass(this)
-            val isExpandedScreen = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
-
-            ShareApkAppRoot(
-                viewModel = viewModel,
-                isExpandedScreen = isExpandedScreen
-            )
+            val prefs by viewModel.userPrefs.collectAsStateWithLifecycle()
+            // Text size + tablet scale enlarge the whole UI; layout decisions use the scaled width.
+            AdaptiveScale(prefs.textScale) { logicalWidth, _ ->
+                ShareApkAppRoot(
+                    viewModel = viewModel,
+                    isExpandedScreen = logicalWidth >= 600.dp
+                )
+            }
         }
     }
 

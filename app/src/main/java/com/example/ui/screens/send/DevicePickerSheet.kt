@@ -176,7 +176,7 @@ private fun SendStatusCard(state: SendState, onCancel: () -> Unit, onReset: () -
             is SendState.Done -> ResultRow(Icons.Outlined.CheckCircle, ShareApkGradients.green, s.sendDone.format(state.count, state.peer.info.alias), onReset)
             is SendState.Rejected -> ResultRow(Icons.Outlined.WarningAmber, ShareApkGradients.amber, s.sendRejected.format(state.peer.info.alias), onReset)
             is SendState.Busy -> ResultRow(Icons.Outlined.WarningAmber, ShareApkGradients.amber, s.sendBusy.format(state.peer.info.alias), onReset)
-            is SendState.Failed -> ResultRow(Icons.Outlined.WarningAmber, ShareApkGradients.rose, s.sendFailed.format(state.peer.info.alias, state.message), onReset)
+            is SendState.Failed -> ResultRow(Icons.Outlined.WarningAmber, ShareApkGradients.rose, s.sendFailed.format(state.peer.info.alias, s.errorReasons.getValue(com.example.util.ErrorClassifier.classify(state.message))), onReset)
             SendState.Idle -> Unit
         }
     }

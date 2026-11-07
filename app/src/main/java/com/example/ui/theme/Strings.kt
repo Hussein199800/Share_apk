@@ -15,8 +15,81 @@ import androidx.core.os.LocaleListCompat
 import com.example.data.model.LanguagePreference
 import java.util.Locale
 
+data class ExtraStrings(
+    val navScreen: String,
+    val screenSubtitle: String,
+    val screenShareCardTitle: String,
+    val screenShareCardHint: String,
+    val screenOverlayTitle: String,
+    val screenOverlayHint: String,
+    val screenOverlayBtn: String,
+    val screenSharingTitle: String,
+    val screenCodeLabel: String,
+    val screenAddressLabel: String,
+    val screenWaiting: String,
+    val screenWatchingFormat: String,
+    val screenStopBtn: String,
+    val screenSharingNotif: String,
+    val screenChannelName: String,
+    val screenSecureNote: String,
+    val screenWatchTitle: String,
+    val screenWatchHint: String,
+    val screenNoDevices: String,
+    val screenAddressHint: String,
+    val screenPinHint: String,
+    val screenWatchBtn: String,
+    val screenSharingNow: String,
+    val screenWrongPin: String,
+    val screenEnded: String,
+    val screenConnecting: String,
+    val screenModePoint: String,
+    val screenModeDraw: String,
+    val screenLeave: String,
+    val textSizeTitle: String,
+    val textSizeHint: String,
+    val textSizeSmall: String,
+    val textSizeNormal: String,
+    val textSizeLarge: String,
+    val textSizeLarger: String,
+    val savedMark: String,
+    val themeHint: String,
+    val languageHint: String,
+    val namingHint: String,
+    val deviceNameSaveHint: String,
+    val webShareBtn: String,
+    val webShareBtnHint: String,
+    val webShareTitle: String,
+    val webShareSubtitle: String,
+    val webSharePinLabel: String,
+    val webShareStarting: String,
+    val webShareTransferring: String,
+    val webShareReceivedFormat: String,
+    val webShareAutoStop: String,
+    val webSharePickFiles: String,
+    val webSharePickedFormat: String,
+    val appForms: com.example.util.ArabicText.Forms,
+    val whatsNewTitle: String,
+    val whatsNewVersionFormat: String,
+    val whatsNewTour: String,
+    val whatsNewDone: String,
+    val tileWhatsNewTitle: String,
+    val tileWhatsNewSub: String,
+    val tileTourTitle: String,
+    val tileTourSub: String,
+    val tileDiagTitle: String,
+    val tileDiagSub: String,
+    val diagTitle: String,
+    val diagHint: String,
+    val diagEmpty: String,
+    val diagCopy: String,
+    val diagClear: String,
+    val errorReasons: Map<com.example.util.ErrorKind, String>
+)
+
 data class AppStrings(
     val isArabic: Boolean,
+    /** Newer strings, split out: a JVM constructor takes at most 255 parameters. */
+    val x: ExtraStrings,
     val appName: String,
     val navApps: String,
     val searchHint: String,
@@ -244,9 +317,158 @@ data class AppStrings(
     val copyBtn: String,
     val textMessageLabel: String,
     val pickerTip: String
-)
+) {
+    val textSizeTitle get() = x.textSizeTitle
+    val textSizeHint get() = x.textSizeHint
+    val textSizeSmall get() = x.textSizeSmall
+    val textSizeNormal get() = x.textSizeNormal
+    val textSizeLarge get() = x.textSizeLarge
+    val textSizeLarger get() = x.textSizeLarger
+    val savedMark get() = x.savedMark
+    val themeHint get() = x.themeHint
+    val languageHint get() = x.languageHint
+    val namingHint get() = x.namingHint
+    val deviceNameSaveHint get() = x.deviceNameSaveHint
+    val navScreen get() = x.navScreen
+    val screenSubtitle get() = x.screenSubtitle
+    val screenShareCardTitle get() = x.screenShareCardTitle
+    val screenShareCardHint get() = x.screenShareCardHint
+    val screenOverlayTitle get() = x.screenOverlayTitle
+    val screenOverlayHint get() = x.screenOverlayHint
+    val screenOverlayBtn get() = x.screenOverlayBtn
+    val screenSharingTitle get() = x.screenSharingTitle
+    val screenCodeLabel get() = x.screenCodeLabel
+    val screenAddressLabel get() = x.screenAddressLabel
+    val screenWaiting get() = x.screenWaiting
+    val screenWatchingFormat get() = x.screenWatchingFormat
+    val screenStopBtn get() = x.screenStopBtn
+    val screenSharingNotif get() = x.screenSharingNotif
+    val screenChannelName get() = x.screenChannelName
+    val screenSecureNote get() = x.screenSecureNote
+    val screenWatchTitle get() = x.screenWatchTitle
+    val screenWatchHint get() = x.screenWatchHint
+    val screenNoDevices get() = x.screenNoDevices
+    val screenAddressHint get() = x.screenAddressHint
+    val screenPinHint get() = x.screenPinHint
+    val screenWatchBtn get() = x.screenWatchBtn
+    val screenSharingNow get() = x.screenSharingNow
+    val screenWrongPin get() = x.screenWrongPin
+    val screenEnded get() = x.screenEnded
+    val screenConnecting get() = x.screenConnecting
+    val screenModePoint get() = x.screenModePoint
+    val screenModeDraw get() = x.screenModeDraw
+    val screenLeave get() = x.screenLeave
+    val webShareBtn get() = x.webShareBtn
+    val webShareBtnHint get() = x.webShareBtnHint
+    val webShareTitle get() = x.webShareTitle
+    val webShareSubtitle get() = x.webShareSubtitle
+    val webSharePinLabel get() = x.webSharePinLabel
+    val webShareStarting get() = x.webShareStarting
+    val webShareTransferring get() = x.webShareTransferring
+    val webShareReceivedFormat get() = x.webShareReceivedFormat
+    val webShareAutoStop get() = x.webShareAutoStop
+    val webSharePickFiles get() = x.webSharePickFiles
+    val webSharePickedFormat get() = x.webSharePickedFormat
+    val appForms get() = x.appForms
+    val whatsNewTitle get() = x.whatsNewTitle
+    val whatsNewVersionFormat get() = x.whatsNewVersionFormat
+    val whatsNewTour get() = x.whatsNewTour
+    val whatsNewDone get() = x.whatsNewDone
+    val tileWhatsNewTitle get() = x.tileWhatsNewTitle
+    val tileWhatsNewSub get() = x.tileWhatsNewSub
+    val tileTourTitle get() = x.tileTourTitle
+    val tileTourSub get() = x.tileTourSub
+    val tileDiagTitle get() = x.tileDiagTitle
+    val tileDiagSub get() = x.tileDiagSub
+    val diagTitle get() = x.diagTitle
+    val diagHint get() = x.diagHint
+    val diagEmpty get() = x.diagEmpty
+    val diagCopy get() = x.diagCopy
+    val diagClear get() = x.diagClear
+    val errorReasons get() = x.errorReasons
+}
 
 val ArabicStrings = AppStrings(
+    x = ExtraStrings(
+        navScreen = "الشاشة",
+        screenSubtitle = "شارك شاشتك مع جوال قريب ليساعدك",
+        screenShareCardTitle = "شارك شاشتي",
+        screenShareCardHint = "من يساعدك يرى شاشتك، ويشير بإصبعه أو يرسم عليها لتعرف أين تضغط. لا يستطيع الضغط على أي شيء.",
+        screenOverlayTitle = "اسمح بظهور إشارات المساعِد",
+        screenOverlayHint = "حتى ترى الدائرة والخطوط التي يرسمها فوق أي تطبيق. بدون هذا الإذن تعمل المشاركة، لكن بلا إشارات.",
+        screenOverlayBtn = "السماح",
+        screenSharingTitle = "شاشتك مشتركة الآن",
+        screenCodeLabel = "الرمز",
+        screenAddressLabel = "العنوان",
+        screenWaiting = "بانتظار من يساعدك… أعطه الرمز.",
+        screenWatchingFormat = "%s يشاهد شاشتك",
+        screenStopBtn = "إيقاف المشاركة",
+        screenSharingNotif = "شاشتك مشتركة",
+        screenChannelName = "مشاركة الشاشة",
+        screenSecureNote = "شاشات كلمات السر والبنوك تظهر سوداء عند الطرف الآخر، وهذه حماية من أندرويد.",
+        screenWatchTitle = "ساعد شخصاً",
+        screenWatchHint = "اختر جهازه من القائمة، ثم أدخل الرمز الظاهر على شاشته.",
+        screenNoDevices = "لا أجهزة قريبة تشارك شاشتها الآن. تأكد أنها على نفس الشبكة، أو أدخل العنوان.",
+        screenAddressHint = "العنوان، مثل 192.168.1.5",
+        screenPinHint = "الرمز (4 أرقام)",
+        screenWatchBtn = "شاهد",
+        screenSharingNow = "يشارك الآن",
+        screenWrongPin = "الرمز غير صحيح، أو أن شخصاً آخر يشاهد الآن.",
+        screenEnded = "أوقف الطرف الآخر المشاركة.",
+        screenConnecting = "جارٍ الاتصال…",
+        screenModePoint = "إشارة",
+        screenModeDraw = "رسم",
+        screenLeave = "إنهاء",
+        textSizeTitle = "حجم الخط",
+        textSizeHint = "يكبّر الواجهة كلها بنسبة واحدة: النصوص والأيقونات والأزرار.",
+        textSizeSmall = "صغير",
+        textSizeNormal = "عادي",
+        textSizeLarge = "كبير",
+        textSizeLarger = "أكبر",
+        savedMark = "محفوظ ✓",
+        themeHint = "«تلقائي» يتبع وضع الهاتف ويتغير معه.",
+        languageHint = "لغة الواجهة واتجاهها.",
+        namingHint = "اسم الملف عند حفظ التطبيقات أو مشاركتها.",
+        deviceNameSaveHint = "يُحفظ أثناء الكتابة.",
+        webShareBtn = "من المتصفح",
+        webShareBtnHint = "انقل الملفات مع حاسوب ويندوز أو ماك من المتصفح، بلا تثبيت",
+        webShareTitle = "النقل عبر المتصفح",
+        webShareSubtitle = "افتح الرابط في متصفح حاسوب على نفس الشبكة، ثم أدخل الرمز",
+        webSharePinLabel = "الرمز",
+        webShareStarting = "جارٍ التشغيل…",
+        webShareTransferring = "يجري النقل الآن…",
+        webShareReceivedFormat = "وصل من المتصفح: %d",
+        webShareAutoStop = "يتوقف عند إغلاق هذه النافذة أو بعد 15 دقيقة بلا نشاط",
+        webSharePickFiles = "اختر ملفات للحاسوب",
+        webSharePickedFormat = "معروض للحاسوب من الملفات المختارة: %d",
+        appForms = com.example.util.ArabicText.Forms("تطبيق واحد", "تطبيقان", "تطبيقات", "تطبيقاً", "تطبيق"),
+        whatsNewTitle = "ما الجديد",
+        whatsNewVersionFormat = "الإصدار %s",
+        whatsNewTour = "جولة في التطبيق",
+        whatsNewDone = "تم",
+        tileWhatsNewTitle = "ما الجديد",
+        tileWhatsNewSub = "كل الإصدارات وما تغيّر فيها",
+        tileTourTitle = "جولة في التطبيق",
+        tileTourSub = "شرح سريع للتبويبات",
+        tileDiagTitle = "سجل التشخيص",
+        tileDiagSub = "آخر الأخطاء لإرسالها للمطوّر",
+        diagTitle = "سجل التشخيص",
+        diagHint = "آخر 50 خطأ مع وقتها ومكانها. العناوين والرموز مخفية. انسخ السجل وأرسله للمطوّر إن واجهتك مشكلة.",
+        diagEmpty = "لا أخطاء مسجلة",
+        diagCopy = "نسخ السجل",
+        diagClear = "مسح السجل",
+        errorReasons = mapOf(
+            com.example.util.ErrorKind.TIMEOUT to "الجهاز لم يردّ في الوقت المحدد. تأكد أنه مفتوح وعلى نفس الشبكة ثم أعد المحاولة.",
+            com.example.util.ErrorKind.UNREACHABLE to "تعذّر الوصول إلى الجهاز. تأكد أن الاستقبال مفعّل عليه وأنكما على نفس شبكة الواي فاي.",
+            com.example.util.ErrorKind.NO_NETWORK to "لا اتصال بالشبكة. اتصل بالواي فاي أو نقطة الاتصال ثم أعد المحاولة.",
+            com.example.util.ErrorKind.IDENTITY_CHANGED to "هوية الجهاز تغيّرت منذ آخر اتصال، فأوقفنا الإرسال حمايةً لك. إن أعدت تثبيت التطبيق عليه فأعد المحاولة من قائمة الأجهزة.",
+            com.example.util.ErrorKind.REJECTED_BY_SERVER to "الجهاز الآخر رفض الطلب. أعد المحاولة، وإن تكرر فحدّث التطبيق عليه.",
+            com.example.util.ErrorKind.STORAGE_FULL to "لا توجد مساحة كافية. احذف بعض الملفات ثم أعد المحاولة.",
+            com.example.util.ErrorKind.RATE_LIMITED to "الخادم مشغول الآن. أعد المحاولة بعد قليل.",
+            com.example.util.ErrorKind.NOT_FOUND to "لم يُعثر على المطلوب.",
+            com.example.util.ErrorKind.UNKNOWN to "حدث خطأ غير متوقع. أعد المحاولة، وإن تكرر فانسخ «سجل التشخيص» من «المزيد» وأرسله للمطوّر."
+        )
+    ),
     isArabic = true,
     appName = "شارك أبك | ShareAPK",
     navApps = "التطبيقات",
@@ -274,7 +496,7 @@ val ArabicStrings = AppStrings(
     splitWarningBody = "يتكون هذا التطبيق من حزمة أساسية (base.apk) وملفات تقسيم إضافية. سيتم دمجها تلقائياً في أرشيف (.apks) واحد. يحتاج جهاز المستلم إلى مثبت \"شارك أبك\" المدمج أو تطبيق SAI لتثبيت الحزمة.",
     continueBtn = "متابعة",
     cancelBtn = "إلغاء",
-    selectedCountFormat = "تم تحديد %d تطبيق (%s)",
+    selectedCountFormat = "المحدد: %s (%s)",
     shareSelectedBtn = "مشاركة المحدد",
     backupSelectedZipBtn = "نسخ (.zip) للتنزيلات",
     clearSelectionBtn = "إلغاء التحديد",
@@ -371,7 +593,7 @@ val ArabicStrings = AppStrings(
     receiveSubtitle = "استقبل التطبيقات من الأجهزة القريبة",
     appVersionFormat = "الإصدار %s",
     filterAll = "الكل",
-    appsCountFormat = "%d تطبيقاً مثبتاً",
+    appsCountFormat = "%s على الهاتف",
     sortAction = "ترتيب",
     toggleViewAction = "تبديل طريقة العرض",
     deleteItemAction = "حذف",
@@ -472,6 +694,86 @@ val ArabicStrings = AppStrings(
 )
 
 val EnglishStrings = AppStrings(
+    x = ExtraStrings(
+        navScreen = "Screen",
+        screenSubtitle = "Share your screen with a nearby phone for help",
+        screenShareCardTitle = "Share my screen",
+        screenShareCardHint = "Your helper sees your screen and can point or draw on it to show you where to tap. They can't press anything.",
+        screenOverlayTitle = "Allow the helper's marks",
+        screenOverlayHint = "So you see their circle and lines over any app. Sharing works without it, just without marks.",
+        screenOverlayBtn = "Allow",
+        screenSharingTitle = "Your screen is being shared",
+        screenCodeLabel = "Code",
+        screenAddressLabel = "Address",
+        screenWaiting = "Waiting for your helper… give them the code.",
+        screenWatchingFormat = "%s is watching your screen",
+        screenStopBtn = "Stop sharing",
+        screenSharingNotif = "Your screen is shared",
+        screenChannelName = "Screen sharing",
+        screenSecureNote = "Password and banking screens show black on the other side: Android protects them.",
+        screenWatchTitle = "Help someone",
+        screenWatchHint = "Pick their phone from the list, then enter the code shown on their screen.",
+        screenNoDevices = "No nearby phone is sharing its screen now. Check you're on the same network, or enter the address.",
+        screenAddressHint = "Address, e.g. 192.168.1.5",
+        screenPinHint = "Code (4 digits)",
+        screenWatchBtn = "Watch",
+        screenSharingNow = "Sharing now",
+        screenWrongPin = "Wrong code, or someone else is already watching.",
+        screenEnded = "The other phone stopped sharing.",
+        screenConnecting = "Connecting…",
+        screenModePoint = "Point",
+        screenModeDraw = "Draw",
+        screenLeave = "Leave",
+        textSizeTitle = "Text size",
+        textSizeHint = "Scales the whole interface evenly: text, icons and buttons.",
+        textSizeSmall = "Small",
+        textSizeNormal = "Normal",
+        textSizeLarge = "Large",
+        textSizeLarger = "Larger",
+        savedMark = "Saved ✓",
+        themeHint = "“System” follows the phone and changes with it.",
+        languageHint = "Interface language and direction.",
+        namingHint = "File name used when saving or sharing apps.",
+        deviceNameSaveHint = "Saved as you type.",
+        webShareBtn = "From browser",
+        webShareBtnHint = "Move files with a Windows or Mac computer from its browser, nothing to install",
+        webShareTitle = "Transfer via browser",
+        webShareSubtitle = "Open the link in a computer's browser on the same network, then enter the code",
+        webSharePinLabel = "Code",
+        webShareStarting = "Starting…",
+        webShareTransferring = "Transfer in progress…",
+        webShareReceivedFormat = "Received from browser: %d",
+        webShareAutoStop = "Stops when you close this sheet or after 15 idle minutes",
+        webSharePickFiles = "Choose files for the computer",
+        webSharePickedFormat = "Picked files offered to the computer: %d",
+        appForms = com.example.util.ArabicText.Forms("app", "apps", "apps", "apps", "apps"),
+        whatsNewTitle = "What's new",
+        whatsNewVersionFormat = "Version %s",
+        whatsNewTour = "App tour",
+        whatsNewDone = "Done",
+        tileWhatsNewTitle = "What's new",
+        tileWhatsNewSub = "Every release and its changes",
+        tileTourTitle = "App tour",
+        tileTourSub = "A quick look at each tab",
+        tileDiagTitle = "Diagnostics log",
+        tileDiagSub = "Recent errors to send to the developer",
+        diagTitle = "Diagnostics log",
+        diagHint = "The last 50 errors with time and place. Addresses and tokens are hidden. Copy it and send it to the developer if something goes wrong.",
+        diagEmpty = "No errors logged",
+        diagCopy = "Copy log",
+        diagClear = "Clear log",
+        errorReasons = mapOf(
+            com.example.util.ErrorKind.TIMEOUT to "The device didn't answer in time. Make sure it's on and on the same network, then try again.",
+            com.example.util.ErrorKind.UNREACHABLE to "Couldn't reach the device. Make sure receiving is on there and you're on the same Wi-Fi.",
+            com.example.util.ErrorKind.NO_NETWORK to "No network connection. Join Wi-Fi or a hotspot, then try again.",
+            com.example.util.ErrorKind.IDENTITY_CHANGED to "The device's identity changed since last time, so sending was stopped to protect you. If the app was reinstalled there, try again from the device list.",
+            com.example.util.ErrorKind.REJECTED_BY_SERVER to "The other device rejected the request. Try again; if it repeats, update the app there.",
+            com.example.util.ErrorKind.STORAGE_FULL to "Not enough storage. Free some space, then try again.",
+            com.example.util.ErrorKind.RATE_LIMITED to "The server is busy. Try again shortly.",
+            com.example.util.ErrorKind.NOT_FOUND to "Not found.",
+            com.example.util.ErrorKind.UNKNOWN to "Something unexpected went wrong. Try again; if it repeats, copy the Diagnostics log from More and send it to the developer."
+        )
+    ),
     isArabic = false,
     appName = "ShareAPK | شارك أبك",
     navApps = "Apps",
@@ -499,7 +801,7 @@ val EnglishStrings = AppStrings(
     splitWarningBody = "This app contains base.apk plus split configuration APKs. ShareAPK will bundle them into a single .apks archive. The receiver needs ShareAPK's built-in installer (or SAI) to install it.",
     continueBtn = "Continue",
     cancelBtn = "Cancel",
-    selectedCountFormat = "%d selected (%s)",
+    selectedCountFormat = "%s selected (%s)",
     shareSelectedBtn = "Share Selected",
     backupSelectedZipBtn = "Backup (.zip) to Downloads",
     clearSelectionBtn = "Clear Selection",
@@ -596,7 +898,7 @@ val EnglishStrings = AppStrings(
     receiveSubtitle = "Receive apps from nearby devices",
     appVersionFormat = "Version %s",
     filterAll = "All",
-    appsCountFormat = "%d installed apps",
+    appsCountFormat = "%s on this phone",
     sortAction = "Sort",
     toggleViewAction = "Toggle view",
     deleteItemAction = "Delete",

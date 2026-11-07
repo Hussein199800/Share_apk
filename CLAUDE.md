@@ -3,7 +3,9 @@
 - **الواجهة:** عربية أولاً (RTL)، مع ترجمة إنجليزية. كل نص يراه المستخدم يُضاف إلى `AppStrings` في `ui/theme/Strings.kt` بالنسختين `ArabicStrings` و`EnglishStrings` معاً، ولا تُكتب نصوص داخل الشاشات.
 - **الألوان والأبعاد:** تُكتب في `ui/theme/` فقط (`Color.kt`، `Gradients.kt`، `ShareApkTokens.kt`). لا يُكتب `Color(0x…)` خارجها. المكوّنات المشتركة في `ui/components/design/`.
 - **الأرقام وأسماء الحزم والإصدارات والعناوين:** تُعرض داخل `LtrBox`.
-- **التبويبات:** `APPS · FILES · RECEIVE · MORE` (`MainNavTab`). الإرسال نافذة `DevicePickerSheet` تُفتح من التطبيقات أو الملفات. ترتيب زر الرجوع في `ui/navigation/NavState.kt`.
+- **التبويبات:** `APPS · FILES · RECEIVE · MORE` (و`SCREEN` مخفي) (`MainNavTab`). الإرسال نافذة `DevicePickerSheet` تُفتح من التطبيقات أو الملفات. ترتيب زر الرجوع في `ui/navigation/NavState.kt`.
+- **الشاشة (مخفية، `ScreenFeature.ENABLED = false`):** `screen/` مشاركة الشاشة من جوال إلى جوال على المنفذ 53321 (H.264 عبر TCP، والرمز من `PinGate`). المساعِد يشير ويرسم فقط ولا يتحكم، وهذا قرار المالك. الإشارات تُرسم في نافذة فوق التطبيقات (`ScreenOverlay`).
+- **من المتصفح:** `web/` خادم HTTP على المنفذ 53320 يحميه رمز من 4 أرقام (`PinGate`). نصوص الصفحة داخل `WebPage.kt` لأنها تُعرض في متصفح الحاسوب.
 - **الشبكة:**
   - متوافقة مع LocalSend v2 (`receive/`، `send/`).
   - المنفذ 53317 يخدم HTTPS وHTTP معاً عبر `OptionalSslHandler`، فلا تُرجعه إلى HTTPS فقط، لأن LocalSend بلا تشفير يتوقف عن العمل.
@@ -14,7 +16,9 @@
   - باقي الملفات تُنقل إلى `Download/ShareAPK` عبر MediaStore.
   - النصوص تصل في `preview`، والطلب الذي فيه نصوص فقط يُرد عليه بـ204.
   - مفتاح TLS والملفات المستلمة مستثناة من النسخ الاحتياطي.
-- **الإصدار:** `versionName` و`versionCode` في `app/build.gradle.kts`. يُرفع `versionCode` مع كل إصدار، ويُحدَّث `release-notes.md`.
+- **الإصدار:** `versionName` و`versionCode` في `app/build.gradle.kts` (`versionCode` = رئيسي×10000 + فرعي×100 + تصحيح). مع كل إصدار: أضف مدخلاً في أول `ui/theme/Changelog.kt` بالعربية والإنجليزية، وانسخ نقاطه العربية إلى `release-notes.md` **نصاً عادياً بلا Markdown** (سطر العنوان ثم نقاط «•»). `ChangelogTest` يتحقق من تطابق الثلاثة. لا يُدمج في `main` دون رفع الإصدار.
+- **النصوص الجديدة:** `AppStrings` وصل حد 255 معاملاً في JVM، فالنصوص الجديدة تُضاف إلى `ExtraStrings` (الحقل `x`) مع خاصية تمرير في `AppStrings`.
+- **العدّ والبحث:** `util/ArabicText` (`count` لصياغة المعدود، `matches` للبحث الموحّد للحروف). الأخطاء تُصنَّف بـ`ErrorClassifier` وتُعرض من `errorReasons`، والرسالة الخام في `DiagnosticsLog`.
 - **التحديث من داخل التطبيق:** يقرأ `releases/latest` من `Hussein199800/Share_apk`، ولا يثبّت إلا إذا تطابقت الحزمة والتوقيع والإصدار أحدث.
 - **التوقيع:**
   - مفتاح التوقيع لا يُرفع أبداً.
