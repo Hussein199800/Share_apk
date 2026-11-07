@@ -1,5 +1,7 @@
 package com.example.ui.screens.history
 
+import com.example.ui.components.design.AdaptiveList
+import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,8 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -76,9 +77,9 @@ fun HistoryScreen(
             }
             return@ScreenScaffold
         }
-        LazyColumn(
+        AdaptiveList(
             contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            gap = ShareApkTokens.CardGap,
             modifier = Modifier.fillMaxSize()
         ) {
             items(historyItems, key = { it.id }) { item ->

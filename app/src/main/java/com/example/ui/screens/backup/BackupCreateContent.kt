@@ -1,5 +1,7 @@
 package com.example.ui.screens.backup
 
+import com.example.ui.components.design.AdaptiveList
+import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,8 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FolderOpen
@@ -73,9 +74,9 @@ internal fun BackupCreateContent(
     val mono = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace)
     val totalSelectedBytes = candidateApps.filter { it.packageName in selectedPackageNames }.sumOf { it.totalSizeBytes }
 
-    LazyColumn(
+    AdaptiveList(
         contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+        gap = ShareApkTokens.CardGap,
         modifier = Modifier.fillMaxSize()
     ) {
         // 1. Running / verifying progress

@@ -121,6 +121,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     fun checkForUpdates() { viewModelScope.launch { updater.check() } }
     fun downloadUpdate(release: ReleaseInfo) { viewModelScope.launch { updater.download(release) } }
     fun dismissUpdate() = updater.dismiss()
+    fun takeUpdatePrompt(version: String) = updater.takePrompt(version)
 
     // ---- Diagnostics log & "What's new" ----
     private val _diagLines = MutableStateFlow<List<String>>(emptyList())

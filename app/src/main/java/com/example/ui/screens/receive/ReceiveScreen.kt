@@ -1,5 +1,7 @@
 package com.example.ui.screens.receive
 
+import com.example.ui.components.design.AdaptiveList
+import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,8 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
@@ -80,9 +81,9 @@ fun ReceiveScreen(
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     ScreenScaffold(title = s.receiveTitle, subtitle = s.receiveSubtitle, modifier = modifier) {
-        LazyColumn(
+        AdaptiveList(
             contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            gap = ShareApkTokens.CardGap,
             modifier = Modifier.fillMaxSize()
         ) {
             item { DeviceCard(status, enabled, onToggleEnabled) }
@@ -95,7 +96,7 @@ fun ReceiveScreen(
                     }
                 }
             }
-            if (lastEvent != null && state is ReceiveState.Idle) item {
+            if (lastEvent != null && state is ReceiveState.Idle) fullLine {
                 StatusBadge(
                     when (lastEvent) {
                         is ReceiveEvent.TimedOut -> s.evTimedOut.format(lastEvent.sender)
@@ -114,7 +115,7 @@ fun ReceiveScreen(
             }
 
             when (state) {
-                is ReceiveState.Receiving -> item {
+                is ReceiveState.Receiving -> fullLine {
                     SurfaceCard(Modifier.fillMaxWidth()) {
                         Text(s.receivingFrom.format(state.sender.alias), style = MaterialTheme.typography.titleSmall, color = c.onBackground)
                         val total = state.totalBytes.coerceAtLeast(1)
@@ -134,7 +135,7 @@ fun ReceiveScreen(
                         SecondaryButton(s.cancelBtn, onCancel, Modifier.fillMaxWidth())
                     }
                 }
-                is ReceiveState.Done -> item {
+                is ReceiveState.Done -> fullLine {
                     SurfaceCard(Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             GradientIconBox(ShareApkGradients.green, size = 40.dp) { Icon(Icons.Outlined.CheckCircle, null, Modifier.size(22.dp)) }
@@ -146,7 +147,7 @@ fun ReceiveScreen(
                 else -> Unit
             }
 
-            item { Text(s.receivedTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
+            fullLine { Text(s.receivedTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
             if (received.isEmpty()) {
                 item {
                     SurfaceCard(Modifier.fillMaxWidth()) {
@@ -156,7 +157,7 @@ fun ReceiveScreen(
             }
             items(received, key = { it.file.path }) { item -> ReceivedRow(item, onInstall, onDelete) }
             if (receivedOther.isNotEmpty()) {
-                item { Text(s.receivedFilesTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
+                fullLine { Text(s.receivedFilesTitle, style = MaterialTheme.typography.titleMedium, color = c.onBackground) }
                 items(receivedOther, key = { it.receivedAt.toString() + it.name + (it.text?.hashCode() ?: 0) }) { e ->
                     SurfaceCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

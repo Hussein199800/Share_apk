@@ -16,6 +16,17 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val textSizeTitle: String,
+    val textSizeHint: String,
+    val textSizeSmall: String,
+    val textSizeNormal: String,
+    val textSizeLarge: String,
+    val textSizeLarger: String,
+    val savedMark: String,
+    val themeHint: String,
+    val languageHint: String,
+    val namingHint: String,
+    val deviceNameSaveHint: String,
     val webShareBtn: String,
     val webShareBtnHint: String,
     val webShareTitle: String,
@@ -278,6 +289,17 @@ data class AppStrings(
     val textMessageLabel: String,
     val pickerTip: String
 ) {
+    val textSizeTitle get() = x.textSizeTitle
+    val textSizeHint get() = x.textSizeHint
+    val textSizeSmall get() = x.textSizeSmall
+    val textSizeNormal get() = x.textSizeNormal
+    val textSizeLarge get() = x.textSizeLarge
+    val textSizeLarger get() = x.textSizeLarger
+    val savedMark get() = x.savedMark
+    val themeHint get() = x.themeHint
+    val languageHint get() = x.languageHint
+    val namingHint get() = x.namingHint
+    val deviceNameSaveHint get() = x.deviceNameSaveHint
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -310,6 +332,17 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        textSizeTitle = "حجم الخط",
+        textSizeHint = "يكبّر الواجهة كلها بنسبة واحدة: النصوص والأيقونات والأزرار.",
+        textSizeSmall = "صغير",
+        textSizeNormal = "عادي",
+        textSizeLarge = "كبير",
+        textSizeLarger = "أكبر",
+        savedMark = "محفوظ ✓",
+        themeHint = "«تلقائي» يتبع وضع الهاتف ويتغير معه.",
+        languageHint = "لغة الواجهة واتجاهها.",
+        namingHint = "اسم الملف عند حفظ التطبيقات أو مشاركتها.",
+        deviceNameSaveHint = "يُحفظ أثناء الكتابة.",
         webShareBtn = "من المتصفح",
         webShareBtnHint = "انقل الملفات مع حاسوب ويندوز أو ماك من المتصفح، بلا تثبيت",
         webShareTitle = "النقل عبر المتصفح",
@@ -575,6 +608,17 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        textSizeTitle = "Text size",
+        textSizeHint = "Scales the whole interface evenly: text, icons and buttons.",
+        textSizeSmall = "Small",
+        textSizeNormal = "Normal",
+        textSizeLarge = "Large",
+        textSizeLarger = "Larger",
+        savedMark = "Saved ✓",
+        themeHint = "“System” follows the phone and changes with it.",
+        languageHint = "Interface language and direction.",
+        namingHint = "File name used when saving or sharing apps.",
+        deviceNameSaveHint = "Saved as you type.",
         webShareBtn = "From browser",
         webShareBtnHint = "Move files with a Windows or Mac computer from its browser, nothing to install",
         webShareTitle = "Transfer via browser",

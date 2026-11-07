@@ -1,5 +1,7 @@
 package com.example.ui.screens.files
 
+import com.example.ui.components.design.AdaptiveList
+import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,8 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Close
@@ -70,9 +71,9 @@ fun FilesScreen(
     val c = ShareApkTheme.colors
     var showText by remember { mutableStateOf(false) }
     ScreenScaffold(title = s.navFiles, subtitle = s.filesSubtitle, modifier = modifier) {
-        LazyColumn(
+        AdaptiveList(
             contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            gap = ShareApkTokens.CardGap,
             modifier = Modifier.weight(1f).fillMaxWidth()
         ) {
             item {

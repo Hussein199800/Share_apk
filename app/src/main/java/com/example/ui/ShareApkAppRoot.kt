@@ -189,6 +189,11 @@ fun ShareApkAppRoot(
     val manualPeerResult by viewModel.manualPeerResult.collectAsStateWithLifecycle()
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     var showUpdateSheet by remember { mutableStateOf(false) }
+    // A new release found by the automatic check opens the update sheet once per version.
+    LaunchedEffect(updateState) {
+        val available = updateState as? UpdateState.Available
+        if (available != null && !showUpdateSheet && viewModel.takeUpdatePrompt(available.release.version)) showUpdateSheet = true
+    }
     // Look for devices when the Send tab opens with an empty list.
     val pickerTarget by viewModel.pickerTarget.collectAsStateWithLifecycle()
     val pickedFiles by viewModel.pickedFiles.collectAsStateWithLifecycle()
@@ -402,6 +407,7 @@ fun ShareApkAppRoot(
                     deviceAlias = prefs.deviceAlias.orEmpty(),
                     deviceAliasPlaceholder = Build.MODEL.orEmpty(),
                     onDeviceAliasChange = viewModel::setDeviceAlias,
+                    onTextScaleChange = viewModel::setTextScale,
                     modifier = Modifier.testTag("more_SETTINGS")
                 )
 

@@ -1,13 +1,14 @@
 package com.example.ui.screens.more
 
+import com.example.ui.components.design.AdaptiveList
+import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -72,9 +73,9 @@ fun WhatsNewScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     ScreenScaffold(title = s.whatsNewTitle, onBack = onBack, modifier = modifier) {
-        LazyColumn(
+        AdaptiveList(
             contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            gap = ShareApkTokens.CardGap,
             modifier = Modifier.fillMaxSize()
         ) {
             items(Changelog.entries, key = { it.version }) { e ->
@@ -94,12 +95,12 @@ fun DiagnosticsScreen(lines: List<String>, onRefresh: () -> Unit, onClear: () ->
     val context = LocalContext.current
     LaunchedEffect(Unit) { onRefresh() }
     ScreenScaffold(title = s.diagTitle, onBack = onBack, modifier = modifier) {
-        LazyColumn(
+        AdaptiveList(
             contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap),
+            gap = ShareApkTokens.CardGap,
             modifier = Modifier.fillMaxSize()
         ) {
-            item {
+            fullLine {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(s.diagHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -109,7 +110,7 @@ fun DiagnosticsScreen(lines: List<String>, onRefresh: () -> Unit, onClear: () ->
                     }
                 }
             }
-            if (lines.isEmpty()) item {
+            if (lines.isEmpty()) fullLine {
                 SurfaceCard(Modifier.fillMaxWidth()) {
                     Text(s.diagEmpty, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 }
