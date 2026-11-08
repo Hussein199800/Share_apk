@@ -126,7 +126,9 @@ data class BackupManifest(
     val sdkInt: Int,
     val appCount: Int,
     val totalSizeBytes: Long,
-    val apps: List<BackupAppEntry>
+    val apps: List<BackupAppEntry>,
+    /** Name of the ZIP holding the app files (compressed backup), or null for a plain folder. */
+    val archive: String? = null
 )
 
 data class RestoreCandidateApp(

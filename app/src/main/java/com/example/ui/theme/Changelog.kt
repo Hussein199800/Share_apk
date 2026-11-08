@@ -11,6 +11,19 @@ data class ChangelogEntry(val version: String, val ar: List<String>, val en: Lis
 object Changelog {
     val entries = listOf(
         ChangelogEntry(
+            "3.3.0",
+            ar = listOf(
+                "النسخ الاحتياطي المضغوط: خيار «ضغط النسخة (ZIP)» مفعّل افتراضياً، فتأخذ النسخة مساحة أقل.",
+                "الأمان قبل المساحة: كل ملف يُفحص ببصمة SHA-256 بعد الحفظ، ومرة أخرى أثناء الاستعادة قبل التثبيت، والملف التالف لا يُثبَّت أبداً.",
+                "الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه، فلا تحتاج مساحة إضافية. والنسخ القديمة بمجلدات ما زالت تُستعاد كما هي."
+            ),
+            en = listOf(
+                "Compressed backups: “Compress the backup (ZIP)” is on by default, so backups take less space.",
+                "Safety before space: every file is checked by SHA-256 after saving and again while restoring, before installing; a damaged file is never installed.",
+                "Restore reads straight from the archive without extracting it, so it needs no extra space. Older folder backups restore as before."
+            )
+        ),
+        ChangelogEntry(
             "3.2.0",
             ar = listOf(
                 "النقل عبر المتصفح: زر «من المتصفح» في تبويب الاستقبال يعطيك رابطاً ورمزاً من 4 أرقام لأي حاسوب ويندوز أو ماك على نفس الشبكة، بلا تثبيت.",

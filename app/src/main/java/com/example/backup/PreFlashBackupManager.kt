@@ -87,6 +87,7 @@ class PreFlashBackupManager(private val context: Context) {
         rootTreeUri: Uri,
         appsToBackup: List<InstalledAppInfo>,
         resumeFolderName: String? = null,
+        compress: Boolean = false,
         onProgress: (currentIdx: Int, totalCount: Int, currentApp: String, skippedCount: Int) -> Unit
     ): Pair<DocumentFile, BackupManifest> = withContext(Dispatchers.IO) {
         val rootDoc = DocumentFile.fromTreeUri(context, rootTreeUri)
@@ -123,6 +124,39 @@ class PreFlashBackupManager(private val context: Context) {
 
         val manifestEntries = mutableListOf<BackupAppEntry>()
         var skippedFilesTotal = 0
+
+        if (compress) {
+            // A ZIP can't be resumed half-written: an interrupted archive is rebuilt from scratch.
+            backupDir.findFile(BackupArchive.NAME)?.delete()
+            val zipDoc = backupDir.createFile("application/zip", BackupArchive.NAME)
+                ?: throw IllegalStateException("Unable to create ${BackupArchive.NAME}")
+            context.contentResolver.openOutputStream(zipDoc.uri)?.use { raw ->
+                BackupArchive.open(java.io.BufferedOutputStream(raw, 256 * 1024)).use { zos ->
+                    appsToBackup.forEachIndexed { index, app ->
+                        coroutineContext.ensureActive()
+                        onProgress(index + 1, appsToBackup.size, app.label, 0)
+                        val folder = FileNameAndHashUtils.sanitizeFileName(app.packageName, 90)
+                        app.iconBitmap?.let { bmp ->
+                            val png = java.io.ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.PNG, 90, it) }.toByteArray()
+                            BackupArchive.addEntry(zos, BackupArchive.entryName(folder, "icon.png"), png.inputStream())
+                        }
+                        val files = mutableListOf<BackupFileEntry>()
+                        appSourceFiles(app).forEach { (name, src) ->
+                            coroutineContext.ensureActive()
+                            val (size, sha) = BufferedInputStream(FileInputStream(src), 256 * 1024).use {
+                                BackupArchive.addEntry(zos, BackupArchive.entryName(folder, name), it)
+                            }
+                            files += BackupFileEntry(fileName = name, sizeBytes = size, sha256 = sha)
+                        }
+                        manifestEntries += appEntry(app, files)
+                    }
+                }
+            } ?: throw IllegalStateException("Cannot open ${BackupArchive.NAME} for writing")
+            val manifest = buildManifest(manifestEntries, BackupArchive.NAME)
+            writeTextToDocFile(backupDir, "manifest.json", "application/json", serializeManifestToJson(manifest))
+            writeTextToDocFile(backupDir, "apps_list.html", "text/html", buildSelfContainedHtmlReport(manifest))
+            return@withContext Pair(backupDir, manifest)
+        }
 
         // 2. Back up each selected application into <packageName>/
         appsToBackup.forEachIndexed { index, app ->
@@ -234,6 +268,52 @@ class PreFlashBackupManager(private val context: Context) {
         Pair(backupDir, manifest)
     }
 
+    /** (name inside the backup, source file) for base.apk and every split, as the folder backup names them. */
+    private fun appSourceFiles(app: InstalledAppInfo): List<Pair<String, File>> {
+        val out = mutableListOf<Pair<String, File>>()
+        File(app.baseApkPath).takeIf { it.exists() }?.let { out += "base.apk" to it }
+        app.splitSourceDirs.forEachIndexed { i, path ->
+            val f = File(path)
+            if (f.exists()) {
+                val name = if (f.name.endsWith(".apk") && f.name != "base.apk") FileNameAndHashUtils.sanitizeFileName(f.name, 64) else "split_config_$i.apk"
+                out += name to f
+            }
+        }
+        return out
+    }
+
+    private fun appEntry(app: InstalledAppInfo, files: List<BackupFileEntry>) = BackupAppEntry(
+        label = app.label, packageName = app.packageName, versionName = app.versionName, versionCode = app.versionCode,
+        minSdk = app.minSdk, targetSdk = app.targetSdk, isSplitApk = app.isSplitApk, supportedAbis = app.supportedAbis,
+        installerPackageName = app.installerPackageName, googlePlayUrl = app.googlePlayUrl,
+        totalSizeBytes = app.totalSizeBytes, files = files
+    )
+
+    private fun buildManifest(entries: List<BackupAppEntry>, archive: String?) = BackupManifest(
+        schemaVersion = 1,
+        backupDateIso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date()),
+        deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
+        androidRelease = Build.VERSION.RELEASE ?: "12+",
+        sdkInt = Build.VERSION.SDK_INT,
+        appCount = entries.size,
+        totalSizeBytes = entries.sumOf { it.totalSizeBytes },
+        apps = entries,
+        archive = archive
+    )
+
+    /**
+     * Opens a compressed backup's archive. Uses the real file behind the SAF descriptor when there is
+     * one (fast random access), otherwise falls back to streaming. Caller closes it.
+     */
+    fun openArchive(backupDir: DocumentFile, archiveName: String): BackupArchive.Reader {
+        val doc = backupDir.findFile(archiveName) ?: throw IllegalStateException("$archiveName missing")
+        val pfd = runCatching { context.contentResolver.openFileDescriptor(doc.uri, "r") }.getOrNull()
+        val file = pfd?.let { File("/proc/self/fd/${it.fd}") }
+        return BackupArchive.Reader.of(file, openStream = {
+            context.contentResolver.openInputStream(doc.uri) ?: throw IllegalStateException("Cannot read $archiveName")
+        }, onClose = { pfd?.close() })
+    }
+
     /**
      * Resume helper: If `targetName` already exists in `parentDir`, has the exact same byte length,
      * and its SHA-256 matches `expectedSha256`, skips re-copying and returns true!
@@ -298,6 +378,27 @@ class PreFlashBackupManager(private val context: Context) {
         var totalChecked = 0
         var matched = 0
         val corruptList = mutableListOf<String>()
+
+        manifest.archive?.let { archive ->
+            // Re-read the whole archive: every entry's CRC-32, size and SHA-256 must match.
+            val expected = manifest.apps.flatMap { app ->
+                val folder = FileNameAndHashUtils.sanitizeFileName(app.packageName, 90)
+                app.files.map { BackupArchive.entryName(folder, it.fileName) to (it.sizeBytes to it.sha256) }
+            }.toMap()
+            val doc = backupDir.findFile(archive)
+            val problems = if (doc == null) listOf("$archive (missing)") else
+                context.contentResolver.openInputStream(doc.uri)?.use { input ->
+                    BackupArchive.verify(java.io.BufferedInputStream(input, 256 * 1024), expected) { name ->
+                        totalChecked++
+                        onFileProgress(totalChecked, name)
+                    }
+                } ?: listOf("$archive (unreadable)")
+            return@withContext BackupVerificationReport(
+                totalFilesChecked = expected.size,
+                verifiedMatchCount = expected.size - problems.count { it.contains('/') },
+                corruptOrMissingFiles = problems
+            )
+        }
 
         for (appEntry in manifest.apps) {
             coroutineContext.ensureActive()
@@ -369,12 +470,26 @@ class PreFlashBackupManager(private val context: Context) {
         val pm = context.packageManager
         val deviceAbis = Build.SUPPORTED_ABIS.toSet()
 
+        // Compressed backup: list the archive once (sizes come from its central directory when available).
+        val archiveSizes: Map<String, Long>? = manifest.archive?.let { name ->
+            runCatching {
+                openArchive(targetBackupDir, name).use { r -> r.names().associateWith { n -> r.size(n) ?: -1L } }
+            }.getOrDefault(emptyMap())
+        }
+
         val candidates = manifest.apps.map { entry ->
             val safeFolder = FileNameAndHashUtils.sanitizeFileName(entry.packageName, 90)
-            val appFolder = targetBackupDir.findFile(safeFolder)
-            val filesExist = appFolder != null && entry.files.all { f ->
-                val doc = appFolder.findFile(f.fileName)
-                doc != null && doc.length() == f.sizeBytes
+            val filesExist = if (archiveSizes != null) {
+                entry.files.all { f ->
+                    val size = archiveSizes[BackupArchive.entryName(safeFolder, f.fileName)]
+                    size != null && (size < 0 || size == f.sizeBytes)
+                }
+            } else {
+                val appFolder = targetBackupDir.findFile(safeFolder)
+                appFolder != null && entry.files.all { f ->
+                    val doc = appFolder.findFile(f.fileName)
+                    doc != null && doc.length() == f.sizeBytes
+                }
             }
 
             val installedInfo = runCatching {
@@ -469,6 +584,7 @@ class PreFlashBackupManager(private val context: Context) {
             put("sdkInt", manifest.sdkInt)
             put("appCount", manifest.appCount)
             put("totalSizeBytes", manifest.totalSizeBytes)
+            manifest.archive?.let { put("archive", it) }
             put("apps", appsJson)
         }.toString(2)
     }
@@ -521,7 +637,8 @@ class PreFlashBackupManager(private val context: Context) {
             sdkInt = root.optInt("sdkInt", 31),
             appCount = root.optInt("appCount", apps.size),
             totalSizeBytes = root.optLong("totalSizeBytes", apps.sumOf { it.totalSizeBytes }),
-            apps = apps
+            apps = apps,
+            archive = root.optString("archive").takeIf { it.isNotBlank() && it != "null" }
         )
     }
 

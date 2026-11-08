@@ -72,7 +72,9 @@ fun BackupScreen(
     onSkipCurrentRestoreApp: () -> Unit,
     onCancelBatchRestore: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compress: Boolean = true,
+    onCompressChange: (Boolean) -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     var activeSubTab by rememberSaveable { mutableIntStateOf(0) }
@@ -88,7 +90,8 @@ fun BackupScreen(
                 candidateApps, selectedPackageNames, includeSystemApps, searchQuery, destinationUriString,
                 spaceCheckResult, backupServiceState, safetyCheck1, safetyCheck2, safetyCheck3,
                 onToggleIncludeSystem, onSearchQueryChange, onToggleAppSelection, onSelectAll, onSelectNone,
-                onPickDestinationFolder, onStartFullBackup, onCancelFullBackup, onSafetyCheckChange, onConfirmSafetyChecklist
+                onPickDestinationFolder, onStartFullBackup, onCancelFullBackup, onSafetyCheckChange, onConfirmSafetyChecklist,
+                compress = compress, onCompressChange = onCompressChange
             )
         } else {
             BackupRestoreContent(

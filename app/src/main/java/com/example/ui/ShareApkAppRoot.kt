@@ -78,6 +78,7 @@ fun ShareApkAppRoot(
     val showWifiDialog by viewModel.showWifiDialog.collectAsStateWithLifecycle()
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
     val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
+    val backupCompress by viewModel.backupCompress.collectAsStateWithLifecycle()
     val screenShareState by viewModel.screenShare.collectAsStateWithLifecycle()
     val screenHosts by viewModel.screenHosts.collectAsStateWithLifecycle()
     val screenViewerState by viewModel.screenViewer.state.collectAsStateWithLifecycle()
@@ -392,6 +393,8 @@ fun ShareApkAppRoot(
                         onCancelFullBackup = viewModel::cancelFullPreFlashBackup,
                         onSafetyCheckChange = viewModel::setSafetyCheck,
                         onConfirmSafetyChecklist = viewModel::completePreFlashSafetyChecklist,
+                        compress = backupCompress,
+                        onCompressChange = viewModel::setBackupCompress,
                         onPickRestoreFolder = {
                             pickRestoreFolderLauncher.launch(null)
                         },

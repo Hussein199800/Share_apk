@@ -16,6 +16,8 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val backupCompressTitle: String,
+    val backupCompressHint: String,
     val navScreen: String,
     val screenSubtitle: String,
     val screenShareCardTitle: String,
@@ -358,6 +360,8 @@ data class AppStrings(
     val screenModePoint get() = x.screenModePoint
     val screenModeDraw get() = x.screenModeDraw
     val screenLeave get() = x.screenLeave
+    val backupCompressTitle get() = x.backupCompressTitle
+    val backupCompressHint get() = x.backupCompressHint
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -390,6 +394,8 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        backupCompressTitle = "ضغط النسخة (ZIP)",
+        backupCompressHint = "توفّر مساحة، وكل ملف يُفحص ببصمة SHA-256 بعد الحفظ وقبل التثبيت. الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه. أطفئه لنسخة بمجلد لكل تطبيق.",
         navScreen = "الشاشة",
         screenSubtitle = "شارك شاشتك مع جوال قريب ليساعدك",
         screenShareCardTitle = "شارك شاشتي",
@@ -695,6 +701,8 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        backupCompressTitle = "Compress the backup (ZIP)",
+        backupCompressHint = "Saves space; every file is checked by SHA-256 after saving and before installing. Restore reads straight from the archive, no extraction. Turn off for a folder per app.",
         navScreen = "Screen",
         screenSubtitle = "Share your screen with a nearby phone for help",
         screenShareCardTitle = "Share my screen",

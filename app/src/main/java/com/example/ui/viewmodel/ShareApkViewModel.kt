@@ -949,7 +949,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             context = context,
             treeUri = treeUri,
             apps = appsToBackup,
-            resumeFolderName = resumeFolderName
+            resumeFolderName = resumeFolderName,
+            compress = _backupCompress.value
         )
 
         viewModelScope.launch {
@@ -988,10 +989,16 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val _backupCompress = MutableStateFlow(true)
+    /** Compressed (ZIP) backups by default; off writes the plain folder layout. */
+    val backupCompress: StateFlow<Boolean> = _backupCompress.asStateFlow()
+    fun setBackupCompress(on: Boolean) { _backupCompress.value = on }
+
     // Flow B: Restore from ShareAPK_Backup_* Folder
     fun loadBackupFolderForRestore(treeUri: Uri) {
         viewModelScope.launch {
             runCatching {
+                closeRestoreArchive()
                 val (backupDir, manifest, candidates) = preFlashBackupManager.parseBackupFolderForRestore(treeUri)
                 activeRestoreBackupDir = backupDir
                 _restoreManifest.value = manifest
@@ -1037,9 +1044,18 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         installNextInBatchRestoreQueue(backupDir)
     }
 
+    /** Open while a compressed backup is being restored; closed when the batch ends. */
+    private var restoreArchiveReader: com.example.backup.BackupArchive.Reader? = null
+
+    private fun closeRestoreArchive() {
+        runCatching { restoreArchiveReader?.close() }
+        restoreArchiveReader = null
+    }
+
     private fun installNextInBatchRestoreQueue(backupDir: DocumentFile) {
         val idx = _batchRestoreCurrentIndex.value
         if (idx >= batchRestoreQueue.size) {
+            closeRestoreArchive()
             _isBatchRestoring.value = false
             _batchRestoreSummary.value = BatchRestoreSummary(
                 installedCount = batchInstalledCount,
@@ -1057,12 +1073,20 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             runCatching {
                 val safeFolder = FileNameAndHashUtils.sanitizeFileName(currentCandidate.entry.packageName, 90)
-                val appFolder = backupDir.findFile(safeFolder)
-                    ?: throw IllegalStateException("Folder missing for ${currentCandidate.entry.packageName}")
-                packageInstallerManager.installFromBackupAppFolder(
-                    appFolder = appFolder,
-                    packageName = currentCandidate.entry.packageName
-                )
+                val archive = _restoreManifest.value?.archive
+                if (archive != null) {
+                    // Compressed backup: stream straight from the archive, no extraction needed.
+                    val reader = restoreArchiveReader ?: preFlashBackupManager.openArchive(backupDir, archive).also { restoreArchiveReader = it }
+                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry) { f ->
+                        reader.stream(com.example.backup.BackupArchive.entryName(safeFolder, f.fileName))
+                    }
+                } else {
+                    val appFolder = backupDir.findFile(safeFolder)
+                        ?: throw IllegalStateException("Folder missing for ${currentCandidate.entry.packageName}")
+                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry) { f ->
+                        appFolder.findFile(f.fileName)?.let { context.contentResolver.openInputStream(it.uri) }
+                    }
+                }
             }.onFailure { e ->
                 batchFailedCount++
                 batchDetailsLog.add("✗ ${currentCandidate.entry.label}: ${e.localizedMessage}")
@@ -1102,6 +1126,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelBatchRestore() {
+        closeRestoreArchive()
         _isBatchRestoring.value = false
         _batchRestoreSummary.value = BatchRestoreSummary(
             installedCount = batchInstalledCount,

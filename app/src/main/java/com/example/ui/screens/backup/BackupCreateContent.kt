@@ -1,5 +1,6 @@
 package com.example.ui.screens.backup
 
+import androidx.compose.foundation.selection.toggleable
 import com.example.ui.components.design.AdaptiveList
 import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +68,9 @@ internal fun BackupCreateContent(
     onStartFullBackup: (resumeFolderName: String?) -> Unit,
     onCancelFullBackup: () -> Unit,
     onSafetyCheckChange: (Int, Boolean) -> Unit,
-    onConfirmSafetyChecklist: () -> Unit
+    onConfirmSafetyChecklist: () -> Unit,
+    compress: Boolean = true,
+    onCompressChange: (Boolean) -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -171,6 +174,19 @@ internal fun BackupCreateContent(
                             if (space.isSufficient) BadgeTone.Success else BadgeTone.Error
                         )
                     }
+                }
+                // Whole row is the toggle, so TalkBack reads the label with the switch.
+                Row(
+                    Modifier.toggleable(value = compress, role = androidx.compose.ui.semantics.Role.Switch, onValueChange = onCompressChange)
+                        .testTag("backup_compress_toggle"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(s.backupCompressTitle, style = MaterialTheme.typography.titleSmall, color = c.onBackground)
+                        Text(s.backupCompressHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(checked = compress, onCheckedChange = null)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     PrimaryButton(
