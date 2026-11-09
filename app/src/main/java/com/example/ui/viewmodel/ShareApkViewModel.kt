@@ -150,6 +150,63 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     fun dismissUpdate() = updater.dismiss()
     fun takeUpdatePrompt(version: String) = updater.takePrompt(version)
 
+    // ---- Removing / disabling apps (Shizuku for system apps) ----
+    private val removedStore = com.example.installer.RemovedAppsStore(context)
+    private val _removedApps = MutableStateFlow(removedStore.list())
+    val removedApps: StateFlow<List<com.example.installer.RemovedApp>> = _removedApps.asStateFlow()
+    private val _removeRunning = MutableStateFlow(false)
+    val removeRunning: StateFlow<Boolean> = _removeRunning.asStateFlow()
+    private val _removeResult = MutableStateFlow<Pair<Int, Int>?>(null)
+    /** (removed, failed) of the last removal, shown in the sheet. */
+    val removeResult: StateFlow<Pair<Int, Int>?> = _removeResult.asStateFlow()
+
+    fun removeApps(plan: List<Pair<InstalledAppInfo, com.example.installer.RemoveMode>>) {
+        if (plan.isEmpty()) return
+        _removeResult.value = null
+        if (!com.example.installer.ShizukuBridge.isReady()) {
+            // Without Shizuku: Android asks to confirm each user app; system apps can't be removed.
+            plan.filter { !it.first.isSystemApp }.forEach { (app, _) ->
+                runCatching {
+                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, Uri.parse("package:${app.packageName}"))
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+            }
+            return
+        }
+        _removeRunning.value = true
+        viewModelScope.launch {
+            var ok = 0; var failed = 0
+            plan.forEach { (app, mode) ->
+                val reason = runCatching { com.example.installer.AppRemoval.remove(app.packageName, mode) }.getOrElse { it.message ?: "error" }
+                if (reason == null) {
+                    ok++
+                    if (mode != com.example.installer.RemoveMode.UNINSTALL) {
+                        removedStore.add(com.example.installer.RemovedApp(app.packageName, app.label, mode, System.currentTimeMillis()))
+                    }
+                } else {
+                    failed++
+                    receiver.diagnostics.add("remove", "${app.packageName}: $reason")
+                }
+            }
+            _removedApps.value = removedStore.list()
+            _removeResult.value = ok to failed
+            _removeRunning.value = false
+            clearSelection()
+            refreshInstalledApps()
+        }
+    }
+
+    fun clearRemoveResult() { _removeResult.value = null }
+
+    fun restoreRemovedApp(app: com.example.installer.RemovedApp) {
+        viewModelScope.launch {
+            val reason = runCatching { com.example.installer.AppRemoval.restore(app) }.getOrElse { it.message ?: "error" }
+            if (reason == null) removedStore.remove(app.packageName) else receiver.diagnostics.add("restore-removed", "${app.packageName}: $reason")
+            _removedApps.value = removedStore.list()
+            refreshInstalledApps()
+        }
+    }
+
     // ---- Diagnostics log & "What's new" ----
     private val _diagLines = MutableStateFlow<List<String>>(emptyList())
     val diagLines: StateFlow<List<String>> = _diagLines.asStateFlow()

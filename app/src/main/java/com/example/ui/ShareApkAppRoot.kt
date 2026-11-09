@@ -80,6 +80,10 @@ fun ShareApkAppRoot(
     val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
     val backupCompress by viewModel.backupCompress.collectAsStateWithLifecycle()
     val shizukuStatus by com.example.installer.ShizukuBridge.status.collectAsStateWithLifecycle()
+    val removedApps by viewModel.removedApps.collectAsStateWithLifecycle()
+    val removeRunning by viewModel.removeRunning.collectAsStateWithLifecycle()
+    val removeResult by viewModel.removeResult.collectAsStateWithLifecycle()
+    var removeTargets by remember { mutableStateOf<List<com.example.data.model.InstalledAppInfo>?>(null) }
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) { com.example.installer.ShizukuBridge.refresh() }
     val screenShareState by viewModel.screenShare.collectAsStateWithLifecycle()
     val screenHosts by viewModel.screenHosts.collectAsStateWithLifecycle()
@@ -279,6 +283,7 @@ fun ShareApkAppRoot(
                 onReinstallVerifyApp = viewModel::inspectInstalledAppForReinstall,
                 onWifiShareApps = viewModel::startWifiShareForApps,
                 onWifiShareSelected = { viewModel.startWifiShareForApps(viewModel.getSelectedAppsList()) },
+                onRemoveSelected = { removeTargets = apps.filter { it.packageName in selectedPackageNames } },
                 onShareSelectedApps = {
                     viewModel.executeShareApps(viewModel.getSelectedAppsList()) { chooser ->
                         runCatching { context.startActivity(chooser) }
@@ -441,6 +446,14 @@ fun ShareApkAppRoot(
                     modifier = Modifier.testTag("more_WHATS_NEW")
                 )
 
+                MoreDestination.REMOVED -> com.example.ui.screens.apps.RemovedAppsScreen(
+                    items = removedApps,
+                    shizukuReady = shizukuStatus == com.example.installer.ShizukuStatus.READY,
+                    onRestore = viewModel::restoreRemovedApp,
+                    onBack = { viewModel.openMore(MoreDestination.HOME) },
+                    modifier = Modifier.testTag("more_REMOVED")
+                )
+
                 MoreDestination.DIAGNOSTICS -> com.example.ui.screens.more.DiagnosticsScreen(
                     lines = diagLines,
                     onRefresh = viewModel::refreshDiagnostics,
@@ -547,6 +560,20 @@ fun ShareApkAppRoot(
                             com.example.ui.screens.more.WhatsNewSheet(
                                 onTour = { viewModel.markWhatsNewSeen(); viewModel.replayTour() },
                                 onDone = viewModel::markWhatsNewSeen
+                            )
+                        }
+
+                        removeTargets?.let { targets ->
+                            com.example.ui.screens.apps.RemoveAppsSheet(
+                                apps = targets,
+                                shizukuReady = shizukuStatus == com.example.installer.ShizukuStatus.READY,
+                                running = removeRunning,
+                                result = removeResult,
+                                onConfirm = { plan ->
+                                    viewModel.removeApps(plan)
+                                    if (shizukuStatus != com.example.installer.ShizukuStatus.READY) removeTargets = null
+                                },
+                                onDismiss = { if (!removeRunning) { removeTargets = null; viewModel.clearRemoveResult() } }
                             )
                         }
 

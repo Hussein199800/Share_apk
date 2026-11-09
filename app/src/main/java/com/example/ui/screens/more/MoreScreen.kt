@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.InstallMobile
@@ -86,6 +87,7 @@ fun MoreScreen(
         ),
         MoreTile(Icons.Outlined.NewReleases, s.tileWhatsNewTitle, s.tileWhatsNewSub, ShareApkGradients.violet) { onOpen(MoreDestination.WHATS_NEW) },
         MoreTile(Icons.Outlined.Explore, s.tileTourTitle, s.tileTourSub, ShareApkGradients.sky, onClick = onTour),
+        MoreTile(Icons.Outlined.RestoreFromTrash, s.tileRemovedTitle, s.tileRemovedSub, ShareApkGradients.green) { onOpen(MoreDestination.REMOVED) },
         MoreTile(Icons.Outlined.BugReport, s.tileDiagTitle, s.tileDiagSub, ShareApkGradients.amber) { onOpen(MoreDestination.DIAGNOSTICS) }
     )
     ScreenScaffold(title = s.moreTitle, modifier = modifier) {

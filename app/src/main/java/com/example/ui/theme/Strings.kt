@@ -16,6 +16,23 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val removeAppsBtn: String,
+    val removeTitle: String,
+    val removeUserHint: String,
+    val removeSystemHint: String,
+    val removeNeedsShizuku: String,
+    val removeProtected: String,
+    val removeModeUninstall: String,
+    val removeModeForUser: String,
+    val removeModeDisable: String,
+    val removeConfirmFormat: String,
+    val removeDoneFormat: String,
+    val tileRemovedTitle: String,
+    val tileRemovedSub: String,
+    val removedEmpty: String,
+    val restoreAppBtn: String,
+    val removedDisabledLabel: String,
+    val removedForUserLabel: String,
     val restoreReportTitle: String,
     val restoreInstalledFormat: String,
     val restoreFailedFormat: String,
@@ -400,6 +417,23 @@ data class AppStrings(
     val shizukuAllowBtn get() = x.shizukuAllowBtn
     val shizukuGetBtn get() = x.shizukuGetBtn
     val shizukuOpenBtn get() = x.shizukuOpenBtn
+    val removeAppsBtn get() = x.removeAppsBtn
+    val removeTitle get() = x.removeTitle
+    val removeUserHint get() = x.removeUserHint
+    val removeSystemHint get() = x.removeSystemHint
+    val removeNeedsShizuku get() = x.removeNeedsShizuku
+    val removeProtected get() = x.removeProtected
+    val removeModeUninstall get() = x.removeModeUninstall
+    val removeModeForUser get() = x.removeModeForUser
+    val removeModeDisable get() = x.removeModeDisable
+    val removeConfirmFormat get() = x.removeConfirmFormat
+    val removeDoneFormat get() = x.removeDoneFormat
+    val tileRemovedTitle get() = x.tileRemovedTitle
+    val tileRemovedSub get() = x.tileRemovedSub
+    val removedEmpty get() = x.removedEmpty
+    val restoreAppBtn get() = x.restoreAppBtn
+    val removedDisabledLabel get() = x.removedDisabledLabel
+    val removedForUserLabel get() = x.removedForUserLabel
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -432,6 +466,23 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        removeAppsBtn = "إزالة",
+        removeTitle = "إزالة التطبيقات المحددة",
+        removeUserHint = "تطبيقات المستخدم تُحذف نهائياً مع بياناتها.",
+        removeSystemHint = "تطبيقات النظام لا تُحذف من الهاتف: تُزال للمستخدم الحالي أو تُعطَّل، ويمكن استرجاعها من «المزيد ← التطبيقات المحذوفة».",
+        removeNeedsShizuku = "إزالة تطبيقات النظام تحتاج Shizuku يعمل. بدونه تُحذف تطبيقات المستخدم فقط، بتأكيد أندرويد لكل تطبيق.",
+        removeProtected = "محمي: إزالته قد توقف الهاتف عن العمل",
+        removeModeUninstall = "حذف",
+        removeModeForUser = "إزالة للمستخدم",
+        removeModeDisable = "تعطيل",
+        removeConfirmFormat = "إزالة %s",
+        removeDoneFormat = "أُزيل %1\$s، وفشل %2\$s",
+        tileRemovedTitle = "التطبيقات المحذوفة",
+        tileRemovedSub = "استرجع تطبيقات النظام التي أزلتها أو عطّلتها",
+        removedEmpty = "لم تُزل أي تطبيقات نظام بعد.",
+        restoreAppBtn = "استرجاع",
+        removedDisabledLabel = "معطّل",
+        removedForUserLabel = "مُزال للمستخدم",
         restoreReportTitle = "تقرير التثبيت",
         restoreInstalledFormat = "نجح: %s",
         restoreFailedFormat = "فشل: %s",
@@ -758,6 +809,23 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        removeAppsBtn = "Remove",
+        removeTitle = "Remove the selected apps",
+        removeUserHint = "User apps are deleted permanently with their data.",
+        removeSystemHint = "System apps aren't erased: they're removed for this user or disabled, and can be brought back from More → Removed apps.",
+        removeNeedsShizuku = "Removing system apps needs Shizuku running. Without it only user apps are removed, with Android's confirmation for each.",
+        removeProtected = "Protected: removing it can break the phone",
+        removeModeUninstall = "Delete",
+        removeModeForUser = "Remove for user",
+        removeModeDisable = "Disable",
+        removeConfirmFormat = "Remove %s",
+        removeDoneFormat = "Removed %1\$s, failed %2\$s",
+        tileRemovedTitle = "Removed apps",
+        tileRemovedSub = "Bring back system apps you removed or disabled",
+        removedEmpty = "No system apps removed yet.",
+        restoreAppBtn = "Restore",
+        removedDisabledLabel = "Disabled",
+        removedForUserLabel = "Removed for user",
         restoreReportTitle = "Install report",
         restoreInstalledFormat = "Installed: %s",
         restoreFailedFormat = "Failed: %s",

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wifi
@@ -41,7 +42,8 @@ fun SelectionBar(
     onZip: () -> Unit,
     onWifi: () -> Unit,
     onSend: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRemove: () -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -72,6 +74,7 @@ fun SelectionBar(
             IconActionButton(Icons.Outlined.Share, s.shareSelectedBtn, onShare, Modifier.testTag("multi_share_selected_button"))
             IconActionButton(Icons.Outlined.FolderZip, s.backupSelectedZipBtn, onZip, Modifier.testTag("multi_backup_zip_button"))
             IconActionButton(Icons.Outlined.Wifi, s.wifiShareAction, onWifi, Modifier.testTag("multi_wifi_share_button"))
+            IconActionButton(Icons.Outlined.DeleteOutline, s.removeAppsBtn, onRemove, Modifier.testTag("multi_remove_button"))
             PrimaryButton(
                 text = s.navSend,
                 onClick = onSend,
