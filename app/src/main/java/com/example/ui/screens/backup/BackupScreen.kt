@@ -74,7 +74,11 @@ fun BackupScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     compress: Boolean = true,
-    onCompressChange: (Boolean) -> Unit = {}
+    onCompressChange: (Boolean) -> Unit = {},
+    onRetryRestore: (Set<String>) -> Unit = {},
+    onIgnoreRestore: (Set<String>) -> Unit = {},
+    shizukuStatus: com.example.installer.ShizukuStatus = com.example.installer.ShizukuStatus.NOT_INSTALLED,
+    onShizukuAllow: () -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     var activeSubTab by rememberSaveable { mutableIntStateOf(0) }
@@ -97,7 +101,9 @@ fun BackupScreen(
             BackupRestoreContent(
                 restoreManifest, restoreCandidates, isBatchRestoring, batchRestoreCurrentIndex, batchRestoreCurrentLabel,
                 batchRestoreSummary, onPickRestoreFolder, onToggleRestoreCandidate, onStartSequentialRestore,
-                onSkipCurrentRestoreApp, onCancelBatchRestore
+                onSkipCurrentRestoreApp, onCancelBatchRestore,
+                onRetry = onRetryRestore, onIgnore = onIgnoreRestore,
+                shizukuStatus = shizukuStatus, onShizukuAllow = onShizukuAllow
             )
         }
     }

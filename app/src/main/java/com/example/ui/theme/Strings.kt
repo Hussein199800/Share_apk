@@ -16,6 +16,25 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val restoreReportTitle: String,
+    val restoreInstalledFormat: String,
+    val restoreFailedFormat: String,
+    val restoreSkippedFormat: String,
+    val retryAllBtn: String,
+    val retryBtn: String,
+    val installAllBtn: String,
+    val restoreInstallNowBtn: String,
+    val ignoreBtn: String,
+    val ignoreAllBtn: String,
+    val openStoreBtn: String,
+    val shizukuTitle: String,
+    val shizukuReady: String,
+    val shizukuNotInstalled: String,
+    val shizukuNotRunning: String,
+    val shizukuNoPermission: String,
+    val shizukuAllowBtn: String,
+    val shizukuGetBtn: String,
+    val shizukuOpenBtn: String,
     val backupCompressTitle: String,
     val backupCompressHint: String,
     val navScreen: String,
@@ -362,6 +381,25 @@ data class AppStrings(
     val screenLeave get() = x.screenLeave
     val backupCompressTitle get() = x.backupCompressTitle
     val backupCompressHint get() = x.backupCompressHint
+    val restoreReportTitle get() = x.restoreReportTitle
+    val restoreInstalledFormat get() = x.restoreInstalledFormat
+    val restoreFailedFormat get() = x.restoreFailedFormat
+    val restoreSkippedFormat get() = x.restoreSkippedFormat
+    val retryAllBtn get() = x.retryAllBtn
+    val retryBtn get() = x.retryBtn
+    val installAllBtn get() = x.installAllBtn
+    val restoreInstallNowBtn get() = x.restoreInstallNowBtn
+    val ignoreBtn get() = x.ignoreBtn
+    val ignoreAllBtn get() = x.ignoreAllBtn
+    val openStoreBtn get() = x.openStoreBtn
+    val shizukuTitle get() = x.shizukuTitle
+    val shizukuReady get() = x.shizukuReady
+    val shizukuNotInstalled get() = x.shizukuNotInstalled
+    val shizukuNotRunning get() = x.shizukuNotRunning
+    val shizukuNoPermission get() = x.shizukuNoPermission
+    val shizukuAllowBtn get() = x.shizukuAllowBtn
+    val shizukuGetBtn get() = x.shizukuGetBtn
+    val shizukuOpenBtn get() = x.shizukuOpenBtn
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -394,6 +432,25 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        restoreReportTitle = "تقرير التثبيت",
+        restoreInstalledFormat = "نجح: %s",
+        restoreFailedFormat = "فشل: %s",
+        restoreSkippedFormat = "تخطّيت: %s",
+        retryAllBtn = "أعد المحاولة للكل",
+        retryBtn = "أعد المحاولة",
+        installAllBtn = "ثبّت الكل",
+        restoreInstallNowBtn = "ثبّت الآن",
+        ignoreBtn = "تجاهل",
+        ignoreAllBtn = "تجاهل الكل",
+        openStoreBtn = "المتجر",
+        shizukuTitle = "التثبيت والإزالة دون تأكيد (Shizuku)",
+        shizukuReady = "Shizuku يعمل: التثبيت الجماعي صامت، دون ضغطة لكل تطبيق.",
+        shizukuNotInstalled = "اختياري: ثبّت تطبيق Shizuku وشغّله ليصير التثبيت الجماعي صامتاً. بدونه يطلب أندرويد ضغطة «تثبيت» لكل تطبيق.",
+        shizukuNotRunning = "Shizuku مثبّت لكنه متوقف. افتحه وشغّله (يلزم بعد كل إعادة تشغيل للهاتف).",
+        shizukuNoPermission = "اسمح لـ«شارك أبك» باستخدام Shizuku.",
+        shizukuAllowBtn = "السماح",
+        shizukuGetBtn = "تنزيل Shizuku",
+        shizukuOpenBtn = "فتح Shizuku",
         backupCompressTitle = "ضغط النسخة (ZIP)",
         backupCompressHint = "توفّر مساحة، وكل ملف يُفحص ببصمة SHA-256 بعد الحفظ وقبل التثبيت. الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه. أطفئه لنسخة بمجلد لكل تطبيق.",
         navScreen = "الشاشة",
@@ -701,6 +758,25 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        restoreReportTitle = "Install report",
+        restoreInstalledFormat = "Installed: %s",
+        restoreFailedFormat = "Failed: %s",
+        restoreSkippedFormat = "Skipped: %s",
+        retryAllBtn = "Retry all",
+        retryBtn = "Retry",
+        installAllBtn = "Install all",
+        restoreInstallNowBtn = "Install now",
+        ignoreBtn = "Ignore",
+        ignoreAllBtn = "Ignore all",
+        openStoreBtn = "Store",
+        shizukuTitle = "Install & remove without prompts (Shizuku)",
+        shizukuReady = "Shizuku is running: batch installs are silent, no tap per app.",
+        shizukuNotInstalled = "Optional: install and start Shizuku to make batch installs silent. Without it Android asks for a tap per app.",
+        shizukuNotRunning = "Shizuku is installed but stopped. Open it and start it (needed after each reboot).",
+        shizukuNoPermission = "Allow ShareAPK to use Shizuku.",
+        shizukuAllowBtn = "Allow",
+        shizukuGetBtn = "Get Shizuku",
+        shizukuOpenBtn = "Open Shizuku",
         backupCompressTitle = "Compress the backup (ZIP)",
         backupCompressHint = "Saves space; every file is checked by SHA-256 after saving and before installing. Restore reads straight from the archive, no extraction. Turn off for a folder per app.",
         navScreen = "Screen",

@@ -61,6 +61,7 @@ android {
   buildFeatures {
     compose = true
     buildConfig = true
+    aidl = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
   packaging {
@@ -112,6 +113,9 @@ dependencies {
   implementation(libs.bouncycastle.pkix)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.zxing.core)
+  // Optional silent install/uninstall through Shizuku (ADB-level rights without root).
+  implementation(libs.shizuku.api)
+  implementation(libs.shizuku.provider)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.okhttp)
   testImplementation(libs.androidx.compose.ui.test.junit4)

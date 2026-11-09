@@ -53,7 +53,11 @@ internal fun BackupRestoreContent(
     onToggleRestoreCandidate: (String) -> Unit,
     onStartSequentialRestore: () -> Unit,
     onSkipCurrentRestoreApp: () -> Unit,
-    onCancelBatchRestore: () -> Unit
+    onCancelBatchRestore: () -> Unit,
+    onRetry: (Set<String>) -> Unit = {},
+    onIgnore: (Set<String>) -> Unit = {},
+    shizukuStatus: com.example.installer.ShizukuStatus = com.example.installer.ShizukuStatus.NOT_INSTALLED,
+    onShizukuAllow: () -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
@@ -65,6 +69,7 @@ internal fun BackupRestoreContent(
         gap = ShareApkTokens.CardGap,
         modifier = Modifier.fillMaxSize()
     ) {
+        item(key = "shizuku") { ShizukuCard(shizukuStatus, onShizukuAllow) }
         item {
             SurfaceCard(Modifier.fillMaxWidth()) {
                 PrimaryButton(
@@ -112,18 +117,9 @@ internal fun BackupRestoreContent(
         }
 
         if (batchRestoreSummary != null) {
-            item {
-                SurfaceCard(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("تقرير الاسترجاع النهائي / Restore Summary Report", style = MaterialTheme.typography.titleMedium, color = c.onBackground)
-                    LtrBox {
-                        StatusBadge(
-                            "Installed: ${batchRestoreSummary.installedCount} • Skipped: ${batchRestoreSummary.skippedCount} • Failed: ${batchRestoreSummary.failedCount}",
-                            if (batchRestoreSummary.failedCount == 0) BadgeTone.Success else BadgeTone.Warning
-                        )
-                    }
-                    batchRestoreSummary.details.forEach { line ->
-                        LtrBox { Text(line, style = mono, color = c.onSurfaceVariant) }
-                    }
+            fullLine(key = "report") {
+                androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap)) {
+                    RestoreReport(batchRestoreSummary, onRetry, onIgnore)
                 }
             }
         }

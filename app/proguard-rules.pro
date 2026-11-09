@@ -55,3 +55,7 @@
 -dontwarn sun.security.**
 -dontwarn okhttp3.internal.platform.**
 -dontwarn org.openjsse.**
+
+# Shizuku starts the UserService by class name (reflection) in its own process.
+-keep class com.example.installer.ShellService { <init>(...); }
+-keep class com.example.installer.IShellService** { *; }

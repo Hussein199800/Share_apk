@@ -450,10 +450,14 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     private val _batchRestoreSummary = MutableStateFlow<BatchRestoreSummary?>(null)
     val batchRestoreSummary: StateFlow<BatchRestoreSummary?> = _batchRestoreSummary.asStateFlow()
     private var batchRestoreQueue: List<RestoreCandidateApp> = emptyList()
-    private var batchInstalledCount = 0
-    private var batchSkippedCount = 0
-    private var batchFailedCount = 0
-    private val batchDetailsLog = mutableListOf<String>()
+    private val batchInstalled = mutableListOf<RestoreCandidateApp>()
+    private val batchFailed = mutableListOf<Pair<RestoreCandidateApp, String>>()
+    private val batchSkipped = mutableListOf<RestoreCandidateApp>()
+    /** Results of earlier rounds kept while failed/skipped apps are retried. */
+    private var batchCarry = BatchRestoreSummary()
+
+    private fun currentBatchSummary(extraSkipped: List<RestoreCandidateApp> = emptyList()) =
+        batchCarry + BatchRestoreSummary(batchInstalled.toList(), batchFailed.toList(), batchSkipped.toList() + extraSkipped)
 
     val filteredAndSortedApps: StateFlow<List<InstalledAppInfo>> = combine(
         _allApps,
@@ -1021,8 +1025,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun startSequentialBatchRestore() {
-        val backupDir = activeRestoreBackupDir ?: return
-        if (!packageInstallerManager.canRequestPackageInstalls()) {
+        if (activeRestoreBackupDir == null) return
+        if (!packageInstallerManager.canRequestPackageInstalls() && !com.example.installer.ShizukuBridge.isReady()) {
             _showUnknownSourcesDialog.value = true
             return
         }
@@ -1032,11 +1036,32 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         }
         if (selected.isEmpty()) return
 
+        batchCarry = BatchRestoreSummary()
+        runBatch(selected)
+    }
+
+    /** Retries failed apps or installs skipped ones; earlier results stay in the report. */
+    fun retryRestore(packages: Set<String>) {
+        val summary = _batchRestoreSummary.value ?: return
+        if (!packageInstallerManager.canRequestPackageInstalls() && !com.example.installer.ShizukuBridge.isReady()) {
+            _showUnknownSourcesDialog.value = true
+            return
+        }
+        val again = (summary.failed.map { it.first } + summary.skipped).filter { it.entry.packageName in packages }
+        if (again.isEmpty()) return
+        batchCarry = summary.without(packages)
+        runBatch(again)
+    }
+
+    /** Removes skipped apps from the report without installing them. */
+    fun ignoreSkipped(packages: Set<String>) {
+        _batchRestoreSummary.value = _batchRestoreSummary.value?.without(packages)
+    }
+
+    private fun runBatch(selected: List<RestoreCandidateApp>) {
+        val backupDir = activeRestoreBackupDir ?: return
         batchRestoreQueue = selected
-        batchInstalledCount = 0
-        batchSkippedCount = 0
-        batchFailedCount = 0
-        batchDetailsLog.clear()
+        batchInstalled.clear(); batchFailed.clear(); batchSkipped.clear()
         _batchRestoreSummary.value = null
         _isBatchRestoring.value = true
         _batchRestoreCurrentIndex.value = 0
@@ -1057,12 +1082,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         if (idx >= batchRestoreQueue.size) {
             closeRestoreArchive()
             _isBatchRestoring.value = false
-            _batchRestoreSummary.value = BatchRestoreSummary(
-                installedCount = batchInstalledCount,
-                skippedCount = batchSkippedCount,
-                failedCount = batchFailedCount,
-                details = batchDetailsLog.toList()
-            )
+            _batchRestoreSummary.value = currentBatchSummary()
             refreshInstalledApps()
             return
         }
@@ -1074,22 +1094,30 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             runCatching {
                 val safeFolder = FileNameAndHashUtils.sanitizeFileName(currentCandidate.entry.packageName, 90)
                 val archive = _restoreManifest.value?.archive
-                if (archive != null) {
+                val open: (com.example.data.model.BackupFileEntry) -> java.io.InputStream? = if (archive != null) {
                     // Compressed backup: stream straight from the archive, no extraction needed.
                     val reader = restoreArchiveReader ?: preFlashBackupManager.openArchive(backupDir, archive).also { restoreArchiveReader = it }
-                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry) { f ->
-                        reader.stream(com.example.backup.BackupArchive.entryName(safeFolder, f.fileName))
-                    }
+                    ({ f -> reader.stream(com.example.backup.BackupArchive.entryName(safeFolder, f.fileName)) })
                 } else {
                     val appFolder = backupDir.findFile(safeFolder)
                         ?: throw IllegalStateException("Folder missing for ${currentCandidate.entry.packageName}")
-                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry) { f ->
-                        appFolder.findFile(f.fileName)?.let { context.contentResolver.openInputStream(it.uri) }
+                    ({ f -> appFolder.findFile(f.fileName)?.let { context.contentResolver.openInputStream(it.uri) } })
+                }
+                if (com.example.installer.ShizukuBridge.isReady()) {
+                    // Silent install: no confirmation per app; the result comes back right here.
+                    val files = currentCandidate.entry.files.map { f ->
+                        Triple(f.fileName, f.sizeBytes) {
+                            val raw = open(f) ?: throw IllegalStateException("${f.fileName} missing in backup")
+                            if (f.sha256.isNotBlank()) com.example.backup.BackupArchive.checked(raw, f.sizeBytes, f.sha256) else raw
+                        }
                     }
+                    val failure = com.example.installer.ShizukuBridge.install(currentCandidate.entry.packageName, files)
+                    onBatchRestorePackageCompleted(failure == null, failure.orEmpty())
+                } else {
+                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry, open)
                 }
             }.onFailure { e ->
-                batchFailedCount++
-                batchDetailsLog.add("✗ ${currentCandidate.entry.label}: ${e.localizedMessage}")
+                batchFailed += currentCandidate to (e.localizedMessage ?: e.javaClass.simpleName)
                 _batchRestoreCurrentIndex.value = idx + 1
                 installNextInBatchRestoreQueue(backupDir)
             }
@@ -1101,13 +1129,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         val idx = _batchRestoreCurrentIndex.value
         val candidate = batchRestoreQueue.getOrNull(idx)
         if (candidate != null) {
-            if (success) {
-                batchInstalledCount++
-                batchDetailsLog.add("✓ ${candidate.entry.label} (v${candidate.entry.versionName})")
-            } else {
-                batchFailedCount++
-                batchDetailsLog.add("✗ ${candidate.entry.label}: $statusMessage")
-            }
+            if (success) batchInstalled += candidate else batchFailed += candidate to statusMessage
         }
         _batchRestoreCurrentIndex.value = idx + 1
         installNextInBatchRestoreQueue(backupDir)
@@ -1117,10 +1139,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         val backupDir = activeRestoreBackupDir ?: return
         val idx = _batchRestoreCurrentIndex.value
         val candidate = batchRestoreQueue.getOrNull(idx)
-        if (candidate != null) {
-            batchSkippedCount++
-            batchDetailsLog.add("⏭ ${candidate.entry.label} (Skipped)")
-        }
+        if (candidate != null) batchSkipped += candidate
         _batchRestoreCurrentIndex.value = idx + 1
         installNextInBatchRestoreQueue(backupDir)
     }
@@ -1128,12 +1147,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     fun cancelBatchRestore() {
         closeRestoreArchive()
         _isBatchRestoring.value = false
-        _batchRestoreSummary.value = BatchRestoreSummary(
-            installedCount = batchInstalledCount,
-            skippedCount = batchSkippedCount + (batchRestoreQueue.size - _batchRestoreCurrentIndex.value).coerceAtLeast(0),
-            failedCount = batchFailedCount,
-            details = batchDetailsLog.toList()
-        )
+        // Whatever was still queued counts as skipped, so it can be installed later from the report.
+        _batchRestoreSummary.value = currentBatchSummary(batchRestoreQueue.drop(_batchRestoreCurrentIndex.value))
     }
 
     // History & Settings

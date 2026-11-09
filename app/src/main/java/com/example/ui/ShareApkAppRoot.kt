@@ -79,6 +79,8 @@ fun ShareApkAppRoot(
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
     val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
     val backupCompress by viewModel.backupCompress.collectAsStateWithLifecycle()
+    val shizukuStatus by com.example.installer.ShizukuBridge.status.collectAsStateWithLifecycle()
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) { com.example.installer.ShizukuBridge.refresh() }
     val screenShareState by viewModel.screenShare.collectAsStateWithLifecycle()
     val screenHosts by viewModel.screenHosts.collectAsStateWithLifecycle()
     val screenViewerState by viewModel.screenViewer.state.collectAsStateWithLifecycle()
@@ -394,6 +396,10 @@ fun ShareApkAppRoot(
                         onSafetyCheckChange = viewModel::setSafetyCheck,
                         onConfirmSafetyChecklist = viewModel::completePreFlashSafetyChecklist,
                         compress = backupCompress,
+                        onRetryRestore = viewModel::retryRestore,
+                        onIgnoreRestore = viewModel::ignoreSkipped,
+                        shizukuStatus = shizukuStatus,
+                        onShizukuAllow = com.example.installer.ShizukuBridge::requestPermission,
                         onCompressChange = viewModel::setBackupCompress,
                         onPickRestoreFolder = {
                             pickRestoreFolderLauncher.launch(null)

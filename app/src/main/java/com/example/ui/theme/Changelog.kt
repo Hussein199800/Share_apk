@@ -15,12 +15,16 @@ object Changelog {
             ar = listOf(
                 "النسخ الاحتياطي المضغوط: خيار «ضغط النسخة (ZIP)» مفعّل افتراضياً، فتأخذ النسخة مساحة أقل.",
                 "الأمان قبل المساحة: كل ملف يُفحص ببصمة SHA-256 بعد الحفظ، ومرة أخرى أثناء الاستعادة قبل التثبيت، والملف التالف لا يُثبَّت أبداً.",
-                "الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه، فلا تحتاج مساحة إضافية. والنسخ القديمة بمجلدات ما زالت تُستعاد كما هي."
+                "الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه، فلا تحتاج مساحة إضافية. والنسخ القديمة بمجلدات ما زالت تُستعاد كما هي.",
+                "تقرير بعد التثبيت الجماعي بثلاث قوائم: نجح، وفشل مع سببه وزر «أعد المحاولة»، ومتخطى مع «ثبّت الآن» و«تجاهل» و«المتجر».",
+                "تثبيت جماعي صامت دون ضغطة لكل تطبيق عند تشغيل تطبيق Shizuku (اختياري)."
             ),
             en = listOf(
                 "Compressed backups: “Compress the backup (ZIP)” is on by default, so backups take less space.",
                 "Safety before space: every file is checked by SHA-256 after saving and again while restoring, before installing; a damaged file is never installed.",
-                "Restore reads straight from the archive without extracting it, so it needs no extra space. Older folder backups restore as before."
+                "Restore reads straight from the archive without extracting it, so it needs no extra space. Older folder backups restore as before.",
+                "A report after batch installs with three lists: installed, failed with the reason and Retry, and skipped with Install now, Ignore and Store.",
+                "Silent batch installs, no tap per app, when the Shizuku app is running (optional)."
             )
         ),
         ChangelogEntry(

@@ -141,9 +141,22 @@ data class RestoreCandidateApp(
     val incompatibilityReason: String? = null
 )
 
+/** Outcome of a batch install: three lists the user can act on (retry failed, install or ignore skipped). */
 data class BatchRestoreSummary(
-    val installedCount: Int,
-    val skippedCount: Int,
-    val failedCount: Int,
-    val details: List<String>
-)
+    val installed: List<RestoreCandidateApp> = emptyList(),
+    /** App and the reason it failed (already in the user's language). */
+    val failed: List<Pair<RestoreCandidateApp, String>> = emptyList(),
+    val skipped: List<RestoreCandidateApp> = emptyList()
+) {
+    val installedCount get() = installed.size
+    val failedCount get() = failed.size
+    val skippedCount get() = skipped.size
+
+    /** Drops [packages] from the failed/skipped lists (they are being retried or were ignored). */
+    fun without(packages: Set<String>) = copy(
+        failed = failed.filterNot { it.first.entry.packageName in packages },
+        skipped = skipped.filterNot { it.entry.packageName in packages }
+    )
+
+    operator fun plus(o: BatchRestoreSummary) = BatchRestoreSummary(installed + o.installed, failed + o.failed, skipped + o.skipped)
+}

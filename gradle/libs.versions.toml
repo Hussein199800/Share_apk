@@ -1,5 +1,6 @@
 [versions]
 zxing = "3.5.3"
+shizuku = "13.1.5"
 ktor = "3.0.3"
 bouncycastle = "1.78.1"
 kotlinxSerialization = "1.7.3"
@@ -34,6 +35,8 @@ appcompat = "1.7.0"
 
 [libraries]
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
+shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
 bouncycastle-pkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
