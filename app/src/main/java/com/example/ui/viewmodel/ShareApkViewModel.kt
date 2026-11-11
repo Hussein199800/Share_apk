@@ -637,9 +637,16 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             val loaded = runCatching { apkRepository.loadInstalledApps(favs) }.getOrDefault(emptyList())
             _allApps.value = loaded
             // Default select all USER apps for Pre-Flash Backup if not initialized yet
-            if (_backupSelectedPackages.value.isEmpty()) {
+            // Only once: later refreshes must not undo "select none" or re-add removed choices.
+            if (!backupSelectionInitialized && loaded.isNotEmpty()) {
+                backupSelectionInitialized = true
                 _backupSelectedPackages.value = loaded.filter { !it.isSystemApp }.map { it.packageName }.toSet()
+            } else {
+                // Forget apps that are no longer installed, so counts and sizes stay true.
+                val installed = loaded.map { it.packageName }.toSet()
+                _backupSelectedPackages.value = _backupSelectedPackages.value.intersect(installed)
             }
+            updateFreeSpaceCheck()
             // Refresh focused app if present
             _focusedApp.value?.let { current ->
                 _focusedApp.value = loaded.find { it.packageName == current.packageName }
@@ -953,8 +960,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     // Flow A: Pre-Flash Backup Controls
     fun setBackupIncludeSystemApps(include: Boolean) {
         _backupIncludeSystemApps.value = include
-        val candidates = _allApps.value.filter { if (include) true else !it.isSystemApp }
-        _backupSelectedPackages.value = candidates.map { it.packageName }.toSet()
+        // Keep the user's own choices: only add or drop the system apps.
+        val system = _allApps.value.filter { it.isSystemApp }.map { it.packageName }.toSet()
+        _backupSelectedPackages.value = if (include) _backupSelectedPackages.value + system else _backupSelectedPackages.value - system
         updateFreeSpaceCheck()
     }
 
@@ -969,14 +977,24 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         updateFreeSpaceCheck()
     }
 
+    /** Adds everything shown (all apps, or the search results) without dropping what's hidden by the search. */
     fun selectAllBackupApps() {
-        _backupSelectedPackages.value = backupCandidateApps.value.map { it.packageName }.toSet()
+        _backupSelectedPackages.value = _backupSelectedPackages.value + backupCandidateApps.value.map { it.packageName }
         updateFreeSpaceCheck()
     }
 
+    /** Clears everything; while searching, clears only the results shown. */
     fun selectNoneBackupApps() {
-        _backupSelectedPackages.value = emptySet()
+        _backupSelectedPackages.value =
+            if (_backupSearchQuery.value.isBlank()) emptySet()
+            else _backupSelectedPackages.value - backupCandidateApps.value.map { it.packageName }.toSet()
         updateFreeSpaceCheck()
+    }
+
+    fun setAllRestoreSelected(selected: Boolean) {
+        _restoreCandidates.value = _restoreCandidates.value.map {
+            if (it.status != RestoreAppStatus.INCOMPATIBLE && it.integrityOk) it.copy(isSelected = selected) else it
+        }
     }
 
     fun onBackupDestinationPicked(treeUri: Uri) {
@@ -1020,9 +1038,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
                 appLabel = "Pre-Flash Backup (${appsToBackup.size} Apps)",
                 packageName = "com.shareapk.preflash",
                 versionName = "${appsToBackup.size} packages",
-                fileFormat = "SAF Folder",
+                fileFormat = if (_backupCompress.value) "ZIP" else "Folder",
                 fileSizeBytes = appsToBackup.sumOf { it.totalSizeBytes },
-                sha256Hash = "MANIFEST_SHA256_VERIFIED"
+                sha256Hash = ""
             )
         }
     }
@@ -1050,6 +1068,17 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val _batchRestoreTotal = MutableStateFlow(0)
+    val batchRestoreTotal: StateFlow<Int> = _batchRestoreTotal.asStateFlow()
+
+    private var backupSelectionInitialized = false
+
+    /** (count, bytes) of the whole selection, including apps hidden by the search box. */
+    val backupSelectedTotals: StateFlow<Pair<Int, Long>> = combine(_allApps, _backupSelectedPackages) { apps, sel ->
+        val chosen = apps.filter { it.packageName in sel }
+        chosen.size to chosen.sumOf { it.totalSizeBytes }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0 to 0L)
+
     private val _backupCompress = MutableStateFlow(true)
     /** Compressed (ZIP) backups by default; off writes the plain folder layout. */
     val backupCompress: StateFlow<Boolean> = _backupCompress.asStateFlow()
@@ -1073,7 +1102,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleRestoreCandidate(packageName: String) {
         _restoreCandidates.value = _restoreCandidates.value.map { item ->
-            if (item.entry.packageName == packageName && item.status != RestoreAppStatus.INCOMPATIBLE) {
+            if (item.entry.packageName == packageName && item.status != RestoreAppStatus.INCOMPATIBLE && item.integrityOk) {
                 item.copy(isSelected = !item.isSelected)
             } else {
                 item
@@ -1118,6 +1147,7 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     private fun runBatch(selected: List<RestoreCandidateApp>) {
         val backupDir = activeRestoreBackupDir ?: return
         batchRestoreQueue = selected
+        _batchRestoreTotal.value = selected.size
         batchInstalled.clear(); batchFailed.clear(); batchSkipped.clear()
         _batchRestoreSummary.value = null
         _isBatchRestoring.value = true

@@ -79,6 +79,8 @@ fun ShareApkAppRoot(
     val webShareState by viewModel.webShare.collectAsStateWithLifecycle()
     val diagLines by viewModel.diagLines.collectAsStateWithLifecycle()
     val backupCompress by viewModel.backupCompress.collectAsStateWithLifecycle()
+    val backupSelectedTotals by viewModel.backupSelectedTotals.collectAsStateWithLifecycle()
+    val batchRestoreTotal by viewModel.batchRestoreTotal.collectAsStateWithLifecycle()
     val shizukuStatus by com.example.installer.ShizukuBridge.status.collectAsStateWithLifecycle()
     val removedApps by viewModel.removedApps.collectAsStateWithLifecycle()
     val removeRunning by viewModel.removeRunning.collectAsStateWithLifecycle()
@@ -401,6 +403,9 @@ fun ShareApkAppRoot(
                         onSafetyCheckChange = viewModel::setSafetyCheck,
                         onConfirmSafetyChecklist = viewModel::completePreFlashSafetyChecklist,
                         compress = backupCompress,
+                        selectedTotals = backupSelectedTotals,
+                        onSelectAllRestore = viewModel::setAllRestoreSelected,
+                        batchTotal = batchRestoreTotal,
                         onRetryRestore = viewModel::retryRestore,
                         onIgnoreRestore = viewModel::ignoreSkipped,
                         shizukuStatus = shizukuStatus,

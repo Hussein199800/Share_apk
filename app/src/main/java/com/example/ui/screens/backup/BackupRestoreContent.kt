@@ -1,5 +1,6 @@
 package com.example.ui.screens.backup
 
+import androidx.compose.foundation.selection.toggleable
 import com.example.ui.components.design.AdaptiveList
 import com.example.ui.components.design.fullLine
 import androidx.compose.foundation.layout.Arrangement
@@ -57,12 +58,17 @@ internal fun BackupRestoreContent(
     onRetry: (Set<String>) -> Unit = {},
     onIgnore: (Set<String>) -> Unit = {},
     shizukuStatus: com.example.installer.ShizukuStatus = com.example.installer.ShizukuStatus.NOT_INSTALLED,
-    onShizukuAllow: () -> Unit = {}
+    onShizukuAllow: () -> Unit = {},
+    onSelectAll: (Boolean) -> Unit = {},
+    /** Apps in the running batch, for a real progress bar. */
+    batchTotal: Int = 0
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     val mono = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace)
-    val selectedRestoreCount = restoreCandidates.count { it.isSelected }
+    // Same rule the install uses, so the number on the button is what really gets installed.
+    val selectable = restoreCandidates.filter { it.status != RestoreAppStatus.INCOMPATIBLE && it.integrityOk }
+    val selectedRestoreCount = selectable.count { it.isSelected }
 
     AdaptiveList(
         contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
@@ -78,17 +84,38 @@ internal fun BackupRestoreContent(
                 )
                 if (restoreManifest != null) {
                     HorizontalDivider(color = c.outline)
-                    LtrBox {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "Device: ${restoreManifest.deviceModel} (Android ${restoreManifest.androidRelease})",
-                                style = MaterialTheme.typography.titleSmall, color = c.onBackground
-                            )
-                            Text(
-                                "Backup Date: ${restoreManifest.backupDateIso} • ${restoreManifest.appCount} Apps (${FileNameAndHashUtils.formatBytes(restoreManifest.totalSizeBytes)})",
-                                style = MaterialTheme.typography.bodySmall, color = c.primaryText
-                            )
-                        }
+                    val ltr = com.example.ui.theme.LocaleHelper::ltr
+                    Text(
+                        s.restoreDeviceFormat.format(ltr(restoreManifest.deviceModel), ltr(restoreManifest.androidRelease)),
+                        style = MaterialTheme.typography.titleSmall, color = c.onBackground
+                    )
+                    Text(
+                        s.restoreDateFormat.format(
+                            ltr(restoreManifest.backupDateIso.take(10)),
+                            com.example.util.ArabicText.count(restoreManifest.appCount, s.appForms, s.isArabic),
+                            ltr(FileNameAndHashUtils.formatBytes(restoreManifest.totalSizeBytes))
+                        ),
+                        style = MaterialTheme.typography.bodySmall, color = c.primaryText
+                    )
+                    val allSelected = selectable.isNotEmpty() && selectedRestoreCount == selectable.size
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .toggleable(value = allSelected, enabled = selectable.isNotEmpty() && !isBatchRestoring, role = androidx.compose.ui.semantics.Role.Checkbox, onValueChange = { onSelectAll(!allSelected) })
+                            .testTag("restore_select_all"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        androidx.compose.material3.TriStateCheckbox(
+                            state = when {
+                                allSelected -> androidx.compose.ui.state.ToggleableState.On
+                                selectedRestoreCount == 0 -> androidx.compose.ui.state.ToggleableState.Off
+                                else -> androidx.compose.ui.state.ToggleableState.Indeterminate
+                            },
+                            onClick = null,
+                            colors = CheckboxDefaults.colors(checkedColor = c.primary, uncheckedColor = c.onSurfaceVariant)
+                        )
+                        Text(s.selectAllCheck, style = MaterialTheme.typography.bodyLarge, color = c.onBackground, modifier = Modifier.weight(1f))
+                        LtrBox { Text("$selectedRestoreCount / ${selectable.size}", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant) }
                     }
                     PrimaryButton(
                         "${s.startBatchRestoreBtn} ($selectedRestoreCount)", onStartSequentialRestore,
@@ -104,12 +131,13 @@ internal fun BackupRestoreContent(
             item {
                 SurfaceCard(Modifier.fillMaxWidth()) {
                     Text(
-                        "Sequential Batch Restore (#${batchRestoreCurrentIndex + 1}) — $batchRestoreCurrentLabel",
+                        s.restoreProgressFormat.format(batchRestoreCurrentIndex + 1, batchTotal.coerceAtLeast(batchRestoreCurrentIndex + 1)),
                         style = MaterialTheme.typography.titleMedium, color = c.primaryText
                     )
-                    GradientProgressBar(progress = null)
+                    Text(batchRestoreCurrentLabel, style = MaterialTheme.typography.bodyMedium, color = c.onBackground)
+                    GradientProgressBar(progress = if (batchTotal > 0) batchRestoreCurrentIndex.toFloat() / batchTotal else null)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SecondaryButton("Skip / تخطي", onSkipCurrentRestoreApp, Modifier.weight(1f), icon = Icons.Outlined.SkipNext)
+                        SecondaryButton(s.skipBtn, onSkipCurrentRestoreApp, Modifier.weight(1f), icon = Icons.Outlined.SkipNext)
                         SecondaryButton(s.cancelBtn, onCancelBatchRestore, Modifier.weight(1f))
                     }
                 }
@@ -131,7 +159,7 @@ internal fun BackupRestoreContent(
                 RestoreAppStatus.ALREADY_INSTALLED -> s.statusAlreadyInstalled to BadgeTone.Info
                 RestoreAppStatus.INCOMPATIBLE -> s.statusIncompatible to BadgeTone.Warning
             }
-            val selectable = item.status != RestoreAppStatus.INCOMPATIBLE
+            val selectable = item.status != RestoreAppStatus.INCOMPATIBLE && item.integrityOk && !isBatchRestoring
             SurfaceCard(
                 Modifier.fillMaxWidth(),
                 onClick = if (selectable) ({ onToggleRestoreCandidate(item.entry.packageName) }) else null,
@@ -140,7 +168,7 @@ internal fun BackupRestoreContent(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Checkbox(
                         checked = item.isSelected,
-                        enabled = selectable && item.integrityOk,
+                        enabled = selectable,
                         onCheckedChange = { onToggleRestoreCandidate(item.entry.packageName) },
                         colors = CheckboxDefaults.colors(checkedColor = c.primary, uncheckedColor = c.onSurfaceVariant)
                     )
@@ -148,11 +176,12 @@ internal fun BackupRestoreContent(
                         Text(item.entry.label, style = MaterialTheme.typography.bodyLarge, color = c.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         LtrBox {
                             Text(
-                                "${item.entry.packageName} • Backup v${item.entry.versionName} (${FileNameAndHashUtils.formatBytes(item.entry.totalSizeBytes)})",
+                                "${item.entry.packageName} • v${item.entry.versionName} • ${FileNameAndHashUtils.formatBytes(item.entry.totalSizeBytes)}",
                                 style = mono, color = c.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis
                             )
                         }
-                        StatusBadge(item.incompatibilityReason ?: statusLabel, tone)
+                        if (!item.integrityOk) StatusBadge(s.restoreDamagedLabel, BadgeTone.Error)
+                        else StatusBadge(if (item.status == RestoreAppStatus.INCOMPATIBLE) statusLabel else item.incompatibilityReason ?: statusLabel, tone)
                     }
                 }
             }

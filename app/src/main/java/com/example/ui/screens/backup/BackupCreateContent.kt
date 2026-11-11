@@ -70,12 +70,17 @@ internal fun BackupCreateContent(
     onSafetyCheckChange: (Int, Boolean) -> Unit,
     onConfirmSafetyChecklist: () -> Unit,
     compress: Boolean = true,
-    onCompressChange: (Boolean) -> Unit = {}
+    onCompressChange: (Boolean) -> Unit = {},
+    /** (count, bytes) of the whole selection; null falls back to what is shown. */
+    selectedTotals: Pair<Int, Long>? = null
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
     val mono = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace)
-    val totalSelectedBytes = candidateApps.filter { it.packageName in selectedPackageNames }.sumOf { it.totalSizeBytes }
+    val totalSelectedBytes = selectedTotals?.second ?: candidateApps.filter { it.packageName in selectedPackageNames }.sumOf { it.totalSizeBytes }
+    val totalSelectedCount = selectedTotals?.first ?: selectedPackageNames.size
+    val shownSelected = candidateApps.count { it.packageName in selectedPackageNames }
+    val busy = backupServiceState.isRunning || backupServiceState.isVerifying
 
     AdaptiveList(
         contentPadding = PaddingValues(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp),
@@ -88,22 +93,39 @@ internal fun BackupCreateContent(
                 SurfaceCard(Modifier.fillMaxWidth()) {
                     Text(
                         if (backupServiceState.isVerifying) s.verifyBackupIntegrityBtn
-                        else "ForegroundService: ${backupServiceState.currentAppIndex} / ${backupServiceState.totalAppsCount}",
+                        else s.backupProgressFormat.format(backupServiceState.currentAppIndex, backupServiceState.totalAppsCount),
                         style = MaterialTheme.typography.titleMedium, color = c.primaryText
                     )
                     Text(backupServiceState.currentAppLabel, style = MaterialTheme.typography.bodyMedium, color = c.onBackground)
                     if (backupServiceState.skippedFilesCount > 0) {
                         Text(
-                            "Resumed / Skipped matching SHA-256 files: ${backupServiceState.skippedFilesCount}",
+                            s.backupSkippedFormat.format(backupServiceState.skippedFilesCount),
                             style = MaterialTheme.typography.bodySmall, color = c.success
                         )
                     }
+                    // The app being copied isn't done yet: count the ones before it. Verifying has no known length.
                     GradientProgressBar(
-                        if (backupServiceState.totalAppsCount > 0)
-                            backupServiceState.currentAppIndex.toFloat() / backupServiceState.totalAppsCount
+                        if (!backupServiceState.isVerifying && backupServiceState.totalAppsCount > 0)
+                            (backupServiceState.currentAppIndex - 1).coerceAtLeast(0).toFloat() / backupServiceState.totalAppsCount
                         else null
                     )
                     SecondaryButton(s.cancelBtn, onCancelFullBackup, Modifier.align(Alignment.End))
+                }
+            }
+        }
+
+        // 1b. A stopped or failed backup must say so.
+        backupServiceState.errorMessage?.takeIf { !busy }?.let { raw ->
+            item {
+                SurfaceCard(Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(Icons.Outlined.WarningAmber, null, tint = c.error)
+                        Text(s.backupFailedTitle, style = MaterialTheme.typography.titleSmall, color = c.error)
+                    }
+                    Text(
+                        if (raw.isBlank()) s.backupStoppedMsg else s.errorReasons.getValue(com.example.util.ErrorClassifier.classify(raw)),
+                        style = MaterialTheme.typography.bodySmall, color = c.onBackground
+                    )
                 }
             }
         }
@@ -121,16 +143,17 @@ internal fun BackupCreateContent(
                             )
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    if (ok) s.backupVerifiedSuccess else "Corrupt/Mismatched files: ${report.corruptOrMissingFiles.joinToString()}",
+                                    if (ok) s.backupVerifiedSuccess else s.backupCorruptFormat.format(report.corruptOrMissingFiles.joinToString("، ")),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = if (ok) c.success else c.error
                                 )
-                                LtrBox {
-                                    Text(
-                                        "Folder: ${backupServiceState.completedFolderName} • Verified ${report.verifiedMatchCount}/${report.totalFilesChecked} APK files + 00_Install_ShareAPK_First.apk + manifest.json + apps_list.html",
-                                        style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant
-                                    )
-                                }
+                                Text(
+                                    s.backupVerifiedDetailFormat.format(
+                                        com.example.ui.theme.LocaleHelper.ltr(backupServiceState.completedFolderName.orEmpty()),
+                                        report.verifiedMatchCount, report.totalFilesChecked
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -142,9 +165,11 @@ internal fun BackupCreateContent(
                     CheckRow(safetyCheck2, s.safetyCheck2, { onSafetyCheckChange(2, it) }, Modifier.testTag("safety_check_2"))
                     CheckRow(safetyCheck3, s.safetyCheck3, { onSafetyCheckChange(3, it) }, Modifier.testTag("safety_check_3"))
                     PrimaryButton(
-                        text = if (backupServiceState.isFullyCompleted) "✓ Pre-Flash Backup Verified & Ready" else s.confirmChecklistAndFinish,
+                        text = if (backupServiceState.isFullyCompleted) s.backupDoneLabel else s.confirmChecklistAndFinish,
                         onClick = onConfirmSafetyChecklist,
-                        enabled = safetyCheck1 && safetyCheck2 && safetyCheck3 && !backupServiceState.isFullyCompleted,
+                        // A backup with damaged files can't be confirmed as safe.
+                        enabled = safetyCheck1 && safetyCheck2 && safetyCheck3 && !backupServiceState.isFullyCompleted &&
+                            backupServiceState.verificationReport?.isAllVerified != false,
                         icon = Icons.Outlined.CheckCircle,
                         modifier = Modifier.fillMaxWidth().testTag("confirm_safety_checklist_button")
                     )
@@ -158,22 +183,30 @@ internal fun BackupCreateContent(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text(s.chooseDestinationBtn, style = MaterialTheme.typography.titleSmall, color = c.onBackground)
-                        LtrBox {
+                        if (destinationUriString.isNullOrBlank()) {
+                            Text(s.destinationNotChosen, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                        } else LtrBox {
                             Text(
-                                destinationUriString ?: "Not selected yet (Pick USB OTG / SD Card / Folder)",
+                                android.net.Uri.decode(destinationUriString).substringAfterLast("/tree/"),
                                 style = mono, color = c.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-                    SecondaryButton("SAF", onPickDestinationFolder, Modifier.testTag("pick_backup_destination_button"), icon = Icons.Outlined.FolderOpen)
+                    SecondaryButton(s.pickBtn, onPickDestinationFolder, Modifier.testTag("pick_backup_destination_button"), icon = Icons.Outlined.FolderOpen)
                 }
-                spaceCheckResult?.let { space ->
-                    LtrBox {
-                        StatusBadge(
-                            "Required: ${FileNameAndHashUtils.formatBytes(space.requiredBytes)} • Available Free Space: ${FileNameAndHashUtils.formatBytes(space.availableBytes)}",
-                            if (space.isSufficient) BadgeTone.Success else BadgeTone.Error
-                        )
+                // Free space is only meaningful once a destination is chosen and readable.
+                spaceCheckResult?.takeIf { !destinationUriString.isNullOrBlank() && it.availableBytes != Long.MAX_VALUE }?.let { space ->
+                    // Label and number are separate texts: one mixed RTL line scrambles "95.4 MB".
+                    val tint = if (space.isSufficient) c.success else c.error
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        listOf(s.spaceNeededLabel to space.requiredBytes, s.spaceFreeLabel to space.availableBytes).forEach { (label, bytes) ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(label, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                                LtrBox { Text(FileNameAndHashUtils.formatBytes(bytes), style = MaterialTheme.typography.labelLarge, color = tint) }
+                            }
+                        }
                     }
+                    if (!space.isSufficient) Text(s.spaceInsufficient, style = MaterialTheme.typography.bodySmall, color = c.error)
                 }
                 // Whole row is the toggle, so TalkBack reads the label with the switch.
                 Row(
@@ -192,15 +225,16 @@ internal fun BackupCreateContent(
                     PrimaryButton(
                         text = s.startFullBackupBtn,
                         onClick = { onStartFullBackup(null) },
-                        enabled = !destinationUriString.isNullOrBlank() && selectedPackageNames.isNotEmpty() && !backupServiceState.isRunning,
+                        enabled = !destinationUriString.isNullOrBlank() && totalSelectedCount > 0 && !busy,
                         icon = Icons.Outlined.PlayArrow,
                         modifier = Modifier.weight(1f).testTag("start_full_backup_button")
                     )
-                    if (!backupServiceState.completedFolderName.isNullOrBlank()) {
+                    // Only folder backups can resume; a ZIP is always rebuilt.
+                    if (!compress && !backupServiceState.completedFolderName.isNullOrBlank()) {
                         SecondaryButton(
                             s.resumeBackupBtn,
                             { onStartFullBackup(backupServiceState.completedFolderName) },
-                            enabled = !backupServiceState.isRunning
+                            enabled = !busy
                         )
                     }
                 }
@@ -211,12 +245,36 @@ internal fun BackupCreateContent(
         item {
             SurfaceCard(Modifier.fillMaxWidth()) {
                 Text(
-                    s.selectedCountFormat.format(com.example.util.ArabicText.count(selectedPackageNames.size, s.appForms, s.isArabic), FileNameAndHashUtils.formatBytes(totalSelectedBytes)),
+                    s.selectedCountFormat.format(
+                        com.example.util.ArabicText.count(totalSelectedCount, s.appForms, s.isArabic),
+                        com.example.ui.theme.LocaleHelper.ltr(FileNameAndHashUtils.formatBytes(totalSelectedBytes))
+                    ),
                     style = MaterialTheme.typography.titleSmall, color = c.primaryText
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SecondaryButton(s.selectAllBtn, onSelectAll, Modifier.weight(1f))
-                    SecondaryButton(s.selectNoneBtn, onSelectNone, Modifier.weight(1f))
+                // One checkbox for everything shown: checked = all, dash = some, empty = none.
+                val allShown = candidateApps.isNotEmpty() && shownSelected == candidateApps.size
+                val toggleAll = { if (allShown) onSelectNone() else onSelectAll() }
+                Row(
+                    Modifier.fillMaxWidth()
+                        .toggleable(value = allShown, enabled = candidateApps.isNotEmpty(), role = androidx.compose.ui.semantics.Role.Checkbox, onValueChange = { toggleAll() })
+                        .testTag("backup_select_all"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    androidx.compose.material3.TriStateCheckbox(
+                        state = when {
+                            allShown -> androidx.compose.ui.state.ToggleableState.On
+                            shownSelected == 0 -> androidx.compose.ui.state.ToggleableState.Off
+                            else -> androidx.compose.ui.state.ToggleableState.Indeterminate
+                        },
+                        onClick = null,
+                        colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = c.primary, uncheckedColor = c.onSurfaceVariant)
+                    )
+                    Text(
+                        if (searchQuery.isBlank()) s.selectAllCheck else s.selectAllShownCheck,
+                        style = MaterialTheme.typography.bodyLarge, color = c.onBackground, modifier = Modifier.weight(1f)
+                    )
+                    LtrBox { Text("$shownSelected / ${candidateApps.size}", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(s.includeSystemAppsToggle, style = MaterialTheme.typography.bodyMedium, color = c.onBackground, modifier = Modifier.weight(1f))

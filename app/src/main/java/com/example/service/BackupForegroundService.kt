@@ -113,7 +113,7 @@ class BackupForegroundService : Service() {
                     it.copy(
                         isRunning = false,
                         isVerifying = false,
-                        errorMessage = "Backup cancelled by user / تم إلغاء النسخ الاحتياطي"
+                        errorMessage = ""
                     )
                 }
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -223,7 +223,7 @@ class BackupForegroundService : Service() {
                     it.copy(
                         isRunning = false,
                         isVerifying = false,
-                        errorMessage = "تم إيقاف النسخ الاحتياطي (يمكنك الاستئناف لاحقاً)"
+                        errorMessage = ""
                     )
                 }
             } catch (e: Exception) {

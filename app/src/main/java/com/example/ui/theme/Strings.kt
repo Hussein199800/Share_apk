@@ -16,6 +16,24 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val spaceNeededLabel: String,
+    val spaceFreeLabel: String,
+    val selectAllCheck: String,
+    val selectAllShownCheck: String,
+    val backupProgressFormat: String,
+    val backupSkippedFormat: String,
+    val backupCorruptFormat: String,
+    val backupVerifiedDetailFormat: String,
+    val backupFailedTitle: String,
+    val backupStoppedMsg: String,
+    val backupDoneLabel: String,
+    val destinationNotChosen: String,
+    val pickBtn: String,
+    val spaceInsufficient: String,
+    val restoreProgressFormat: String,
+    val restoreDeviceFormat: String,
+    val restoreDateFormat: String,
+    val restoreDamagedLabel: String,
     val removeAppsBtn: String,
     val removeTitle: String,
     val removeUserHint: String,
@@ -434,6 +452,24 @@ data class AppStrings(
     val restoreAppBtn get() = x.restoreAppBtn
     val removedDisabledLabel get() = x.removedDisabledLabel
     val removedForUserLabel get() = x.removedForUserLabel
+    val selectAllCheck get() = x.selectAllCheck
+    val selectAllShownCheck get() = x.selectAllShownCheck
+    val backupProgressFormat get() = x.backupProgressFormat
+    val backupSkippedFormat get() = x.backupSkippedFormat
+    val backupCorruptFormat get() = x.backupCorruptFormat
+    val backupVerifiedDetailFormat get() = x.backupVerifiedDetailFormat
+    val backupFailedTitle get() = x.backupFailedTitle
+    val backupStoppedMsg get() = x.backupStoppedMsg
+    val backupDoneLabel get() = x.backupDoneLabel
+    val destinationNotChosen get() = x.destinationNotChosen
+    val pickBtn get() = x.pickBtn
+    val spaceInsufficient get() = x.spaceInsufficient
+    val restoreProgressFormat get() = x.restoreProgressFormat
+    val restoreDeviceFormat get() = x.restoreDeviceFormat
+    val restoreDateFormat get() = x.restoreDateFormat
+    val restoreDamagedLabel get() = x.restoreDamagedLabel
+    val spaceNeededLabel get() = x.spaceNeededLabel
+    val spaceFreeLabel get() = x.spaceFreeLabel
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -466,6 +502,24 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        spaceNeededLabel = "المطلوب",
+        spaceFreeLabel = "المتاح",
+        selectAllCheck = "تحديد الكل",
+        selectAllShownCheck = "تحديد كل نتائج البحث",
+        backupProgressFormat = "جارٍ النسخ: %1\$d من %2\$d",
+        backupSkippedFormat = "ملفات مطابقة تُخطّيت: %d",
+        backupCorruptFormat = "ملفات تالفة أو ناقصة: %s",
+        backupVerifiedDetailFormat = "المجلد: %1\$s · سليم: %2\$d من %3\$d",
+        backupFailedTitle = "لم تكتمل النسخة",
+        backupStoppedMsg = "أُوقف النسخ الاحتياطي. يمكنك البدء من جديد.",
+        backupDoneLabel = "اكتملت النسخة وتم التحقق منها ✓",
+        destinationNotChosen = "لم يُختر مجلد بعد",
+        pickBtn = "اختيار",
+        spaceInsufficient = "المساحة المتاحة قد لا تكفي. اختر مجلداً آخر أو قلّل التطبيقات.",
+        restoreProgressFormat = "جارٍ التثبيت: %1\$d من %2\$d",
+        restoreDeviceFormat = "الجهاز: %1\$s (أندرويد %2\$s)",
+        restoreDateFormat = "تاريخ النسخة: %1\$s · %2\$s (%3\$s)",
+        restoreDamagedLabel = "ملفاته ناقصة في النسخة",
         removeAppsBtn = "إزالة",
         removeTitle = "إزالة التطبيقات المحددة",
         removeUserHint = "تطبيقات المستخدم تُحذف نهائياً مع بياناتها.",
@@ -809,6 +863,24 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        spaceNeededLabel = "Needed",
+        spaceFreeLabel = "Free",
+        selectAllCheck = "Select all",
+        selectAllShownCheck = "Select all search results",
+        backupProgressFormat = "Backing up: %1\$d of %2\$d",
+        backupSkippedFormat = "Matching files skipped: %d",
+        backupCorruptFormat = "Damaged or missing files: %s",
+        backupVerifiedDetailFormat = "Folder: %1\$s · verified: %2\$d of %3\$d",
+        backupFailedTitle = "The backup didn't finish",
+        backupStoppedMsg = "The backup was stopped. You can start again.",
+        backupDoneLabel = "Backup finished and verified ✓",
+        destinationNotChosen = "No folder chosen yet",
+        pickBtn = "Choose",
+        spaceInsufficient = "Free space may not be enough. Choose another folder or fewer apps.",
+        restoreProgressFormat = "Installing: %1\$d of %2\$d",
+        restoreDeviceFormat = "Device: %1\$s (Android %2\$s)",
+        restoreDateFormat = "Backup date: %1\$s · %2\$s (%3\$s)",
+        restoreDamagedLabel = "Its files are missing from the backup",
         removeAppsBtn = "Remove",
         removeTitle = "Remove the selected apps",
         removeUserHint = "User apps are deleted permanently with their data.",

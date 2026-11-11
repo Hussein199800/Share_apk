@@ -395,7 +395,8 @@ class PreFlashBackupManager(private val context: Context) {
                 } ?: listOf("$archive (unreadable)")
             return@withContext BackupVerificationReport(
                 totalFilesChecked = expected.size,
-                verifiedMatchCount = expected.size - problems.count { it.contains('/') },
+                // A damaged archive (unreadable as a whole) verifies nothing.
+                verifiedMatchCount = if (problems.any { !it.contains('/') }) 0 else expected.size - problems.size,
                 corruptOrMissingFiles = problems
             )
         }
