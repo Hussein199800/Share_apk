@@ -52,8 +52,8 @@ class WebItem(
 interface WebShareSource {
     fun items(): List<WebItem>
     fun iconPng(id: String): ByteArray?
-    /** Takes ownership of [tmp] (an uploaded file named [name]). */
-    suspend fun acceptUpload(tmp: File, name: String)
+    /** Takes ownership of [tmp] (an uploaded file named [name]). Null when saved, else a failure code. */
+    suspend fun acceptUpload(tmp: File, name: String): String?
     suspend fun acceptText(text: String)
 }
 
@@ -128,11 +128,14 @@ class WebShareServer(
                             call.receiveChannel().toInputStream().use { input -> tmp.outputStream().use { input.copyTo(it, 64 * 1024) } }
                         }.isSuccess
                     }
-                    if (!ok) {
+                    // A cut-off upload must not be saved as if it were complete.
+                    val declared = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+                    if (!ok || (declared != null && declared != tmp.length())) {
                         tmp.delete()
-                        return@post call.respond(HttpStatusCode.InternalServerError)
+                        return@post call.respondText(INCOMPLETE, status = HttpStatusCode.BadRequest)
                     }
-                    source.acceptUpload(tmp, name)
+                    val failure = source.acceptUpload(tmp, name)
+                    if (failure != null) return@post call.respondText(failure, status = HttpStatusCode.InternalServerError)
                     call.respond(HttpStatusCode.NoContent)
                 }
                 post("/api/text") {
@@ -172,6 +175,10 @@ class WebShareServer(
 
     companion object {
         const val COOKIE = "sa_t"
+        /** Upload failure codes, shown by the page in its own language. */
+        const val INCOMPLETE = "incomplete"
+        const val SAVE_FAILED = "save_failed"
+        const val NO_SPACE = "no_space"
         const val MAX_TEXT = 100_000
 
         /** RFC 6266 header: an ASCII fallback plus the real (UTF-8) name for modern browsers. */

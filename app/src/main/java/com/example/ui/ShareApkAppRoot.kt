@@ -478,7 +478,7 @@ fun ShareApkAppRoot(
         // Dialogs & Sheets
         pickerTarget?.let { target ->
             val (count, bytes) = when (target) {
-                ShareApkViewModel.SendTarget.FILES -> pickedFiles.size to pickedFiles.sumOf { it.size }
+                ShareApkViewModel.SendTarget.FILES -> pickedFiles.size to pickedFiles.sumOf { it.size.coerceAtLeast(0) }
                 ShareApkViewModel.SendTarget.APPS -> {
                     val sel = apps.filter { it.packageName in selectedPackageNames }
                     selectedPackageNames.size to sel.sumOf { it.totalSizeBytes }

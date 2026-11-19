@@ -266,7 +266,10 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             SendTarget.FILES -> {
                 val items = _pickedFiles.value
                 if (items.isEmpty()) return
-                receiver.sender.send(peer) { items.map(::toOutgoing) }
+                receiver.sender.send(peer) {
+                    clearSendTmp() // leftovers of an earlier send
+                    try { items.map(::toOutgoing) } catch (e: Exception) { clearSendTmp(); throw e }
+                }
             }
             else -> {
                 val apps = getSelectedAppsList()
@@ -303,7 +306,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
                 dir.listFiles().forEach { f ->
                     val name = f.name ?: return@forEach
                     if (f.isDirectory) walk(f, "$path/$name")
-                    else if (found.size < 2_000) found += PickedItem(++pickedSeq, "$path/$name", f.length(), f.type, f.uri)
+                    // DocumentFile reports 0 when it doesn't know: treat that as unknown, measured before sending.
+                    else if (found.size < 2_000) found += PickedItem(++pickedSeq, "$path/$name", f.length().takeIf { it > 0 } ?: -1L, f.type, f.uri)
                 }
             }
             walk(root, root.name ?: "folder")
@@ -337,17 +341,33 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
                 if (!c.isNull(1)) size = c.getLong(1)
             }
         }
-        PickedItem(++pickedSeq, name ?: uri.lastPathSegment ?: "file", size.coerceAtLeast(0), context.contentResolver.getType(uri), uri)
+        // -1 = the provider didn't say; measured before sending (see toOutgoing).
+        PickedItem(++pickedSeq, name ?: uri.lastPathSegment ?: "file", size, context.contentResolver.getType(uri), uri)
     }.getOrNull()
 
-    private fun toOutgoing(item: PickedItem): OutgoingFile =
-        if (item.text != null) OutgoingFile.text(item.text)
-        else OutgoingFile(
-            fileName = item.name,
-            size = item.size,
-            mimeType = item.mimeType ?: "application/octet-stream",
-            open = { context.contentResolver.openInputStream(item.uri!!) ?: error("cannot open ${item.name}") }
-        )
+    /** Copies of files whose size the provider didn't report; removed when the send ends. */
+    private val sendTmpDir get() = java.io.File(context.cacheDir, "send-tmp")
+
+    private fun clearSendTmp() { runCatching { sendTmpDir.deleteRecursively() } }
+
+    /**
+     * A file is announced with its size before its bytes are sent, so the size must be exact.
+     * When the provider didn't give one, the file is first copied to the cache and measured.
+     */
+    private fun toOutgoing(item: PickedItem): OutgoingFile {
+        if (item.text != null) return OutgoingFile.text(item.text)
+        val uri = item.uri ?: error("cannot open ${item.name}")
+        val mime = item.mimeType ?: "application/octet-stream"
+        if (item.size >= 0) {
+            return OutgoingFile(item.name, item.size, mime, { context.contentResolver.openInputStream(uri) ?: error("cannot open ${item.name}") })
+        }
+        sendTmpDir.mkdirs()
+        val copy = java.io.File(sendTmpDir, "${item.id}.bin")
+        (context.contentResolver.openInputStream(uri) ?: error("cannot open ${item.name}")).use { input ->
+            copy.outputStream().use { input.copyTo(it, 64 * 1024) }
+        }
+        return OutgoingFile(item.name, copy.length(), mime, { copy.inputStream() })
+    }
 
     // ---- Received non-app files and messages ----
     val receivedOther: StateFlow<List<com.example.receive.ReceivedEntry>> = receiver.receivedOther
@@ -574,6 +594,12 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch { updater.autoCheck() }
+        // Cached copies are only needed while a send runs.
+        viewModelScope.launch(Dispatchers.IO) {
+            receiver.sender.state.collect { st ->
+                if (st !is com.example.send.SendState.Preparing && st !is com.example.send.SendState.Waiting && st !is com.example.send.SendState.Sending) clearSendTmp()
+            }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             updater.state.collect { st -> if (st is UpdateState.Failed) receiver.diagnostics.add("update", st.reason) }
         }

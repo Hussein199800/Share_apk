@@ -275,17 +275,37 @@ class ReceiveController private constructor(private val app: Context) : DefaultL
     }
 
     /** A file uploaded from the browser page: apps join the received library, the rest go to Downloads. */
-    private suspend fun ingestWebUpload(tmp: File, name: String) = withContext(Dispatchers.IO) {
-        if (ReceiveSessionManager.isAppPackage(name)) {
-            val dir = File(library.root, "web").apply { mkdirs() }
-            var target = File(dir, name)
-            var n = 1
-            while (target.exists()) target = File(dir, "${name.substringBeforeLast('.')} ($n).${name.substringAfterLast('.')}").also { n++ }
-            if (!tmp.renameTo(target)) { tmp.copyTo(target, overwrite = true); tmp.delete() }
-            logReceivedApp(target)
-            _received.value = library.list()
-        } else {
-            saveToDownloads(tmp, name, null, "")?.let { _receivedOther.value = filesIndex.add(listOf(it)) }
+    /**
+     * Stores a file uploaded from the browser. Returns null only when it is really saved,
+     * else a short code the page turns into a reason ([com.example.web.WebShareServer.SAVE_FAILED]...).
+     * The temporary file is always removed.
+     */
+    private suspend fun ingestWebUpload(tmp: File, name: String): String? = withContext(Dispatchers.IO) {
+        try {
+            if (ReceiveSessionManager.isAppPackage(name)) {
+                val dir = File(library.root, "web").apply { mkdirs() }
+                var target = File(dir, name)
+                var n = 1
+                while (target.exists()) target = File(dir, "${name.substringBeforeLast('.')} ($n).${name.substringAfterLast('.')}").also { n++ }
+                val size = tmp.length()
+                val moved = tmp.renameTo(target) || runCatching { tmp.copyTo(target, overwrite = true) }.isSuccess
+                if (!moved || target.length() != size) {
+                    target.delete()
+                    return@withContext com.example.web.WebShareServer.SAVE_FAILED
+                }
+                logReceivedApp(target)
+                _received.value = library.list()
+                null
+            } else {
+                val entry = saveToDownloads(tmp, name, null, "") ?: return@withContext com.example.web.WebShareServer.SAVE_FAILED
+                _receivedOther.value = filesIndex.add(listOf(entry))
+                null
+            }
+        } catch (e: Exception) {
+            diagnostics.add("browser-save", "${e.javaClass.simpleName}: ${e.message}")
+            if (com.example.util.ErrorClassifier.classify(e.message) == com.example.util.ErrorKind.STORAGE_FULL) com.example.web.WebShareServer.NO_SPACE
+            else com.example.web.WebShareServer.SAVE_FAILED
+        } finally {
             tmp.delete()
         }
     }

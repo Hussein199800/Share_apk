@@ -111,7 +111,7 @@ fun FilesScreen(
                                 maxLines = if (item.isText) 2 else 1, overflow = TextOverflow.Ellipsis
                             )
                             if (!item.isText) LtrBox {
-                                Text(FileNameAndHashUtils.formatBytes(item.size), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                                Text(if (item.size < 0) "…" else FileNameAndHashUtils.formatBytes(item.size), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                             }
                         }
                         IconActionButton(Icons.Outlined.Close, s.deleteItemAction, { onRemove(item) })
@@ -121,7 +121,7 @@ fun FilesScreen(
         }
         if (items.isNotEmpty()) {
             PrimaryButton(
-                s.sendToDeviceBtn + "  ·  " + s.itemsSummary.format(items.size, FileNameAndHashUtils.formatBytes(items.sumOf { it.size })),
+                s.sendToDeviceBtn + "  ·  " + s.itemsSummary.format(items.size, FileNameAndHashUtils.formatBytes(items.sumOf { it.size.coerceAtLeast(0) })),
                 onSend,
                 Modifier.fillMaxWidth().padding(horizontal = ShareApkTokens.ScreenPadding, vertical = 8.dp).testTag("files_send"),
                 icon = Icons.AutoMirrored.Outlined.Send
