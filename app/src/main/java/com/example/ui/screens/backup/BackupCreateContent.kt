@@ -147,6 +147,13 @@ internal fun BackupCreateContent(
                                     style = MaterialTheme.typography.titleSmall,
                                     color = if (ok) c.success else c.error
                                 )
+                                // Per app, not per file: that's what the user restores.
+                                val total = backupServiceState.completedManifest?.apps?.size ?: 0
+                                val affected = report.corruptOrMissingFiles.map { it.substringBefore(':').substringBefore('/').substringBefore(" (") }.distinct()
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    StatusBadge(s.backupVerifiedAppsFormat.format(com.example.util.ArabicText.count((total - affected.size).coerceAtLeast(0), s.appForms, s.isArabic)), BadgeTone.Success)
+                                    if (affected.isNotEmpty()) StatusBadge(s.backupRecopyFormat.format(com.example.util.ArabicText.count(affected.size, s.appForms, s.isArabic)), BadgeTone.Error)
+                                }
                                 Text(
                                     s.backupVerifiedDetailFormat.format(
                                         com.example.ui.theme.LocaleHelper.ltr(backupServiceState.completedFolderName.orEmpty()),
@@ -180,6 +187,7 @@ internal fun BackupCreateContent(
         // 3. Destination + free space + start
         item {
             SurfaceCard(Modifier.fillMaxWidth()) {
+                Text(s.backupScopeNote, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text(s.chooseDestinationBtn, style = MaterialTheme.typography.titleSmall, color = c.onBackground)

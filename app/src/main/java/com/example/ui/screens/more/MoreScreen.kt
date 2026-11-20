@@ -1,5 +1,7 @@
 package com.example.ui.screens.more
 
+import com.example.ui.components.design.BadgeTone
+import com.example.ui.components.design.StatusBadge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -115,11 +117,28 @@ fun MoreScreen(
                     }
                 }
             }
-            items(tiles) { t ->
+            // The two everyday tools stand out; the rest are plain rows.
+            val featured = listOf(tiles[0], tiles[2])
+            // Two featured tiles always share the row evenly, however many grid columns fit.
+            items(featured, span = { GridItemSpan((maxLineSpan / 2).coerceAtLeast(1)) }) { t ->
                 GradientTile(
                     icon = t.icon, title = t.title, subtitle = t.subtitle, gradient = t.gradient,
                     enabled = t.enabled, badge = t.badge, onClick = t.onClick
                 )
+            }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(s.moreOtherTitle, style = MaterialTheme.typography.titleSmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+            }
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                SurfaceCard(contentPadding = PaddingValues(0.dp)) {
+                    tiles.filterNot { it in featured }.forEach { t ->
+                        SettingsRow(
+                            icon = t.icon, title = t.title, subtitle = t.subtitle,
+                            onClick = t.onClick.takeIf { t.enabled },
+                            trailing = t.badge?.let { b -> { StatusBadge(b, BadgeTone.Error) } }
+                        )
+                    }
+                }
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
                 SurfaceCard(contentPadding = PaddingValues(0.dp)) {
