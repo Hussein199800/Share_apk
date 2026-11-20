@@ -198,7 +198,7 @@ class BackupForegroundService : Service() {
                     )
                 }
 
-                val report = manager.verifyBackupFolderSha256(backupDir, manifest) { count, fileLabel ->
+                val report = manager.verifyBackupFolderSha256(backupDir, manifest, manager.writeProblems.toList()) { count, fileLabel ->
                     BackupJobOrchestrator.updateState {
                         it.copy(
                             isVerifying = true,

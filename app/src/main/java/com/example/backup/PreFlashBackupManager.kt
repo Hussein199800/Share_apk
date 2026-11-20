@@ -124,6 +124,7 @@ class PreFlashBackupManager(private val context: Context) {
 
         val manifestEntries = mutableListOf<BackupAppEntry>()
         var skippedFilesTotal = 0
+        writeProblems.clear()
 
         if (compress) {
             // A ZIP can't be resumed half-written: an interrupted archive is rebuilt from scratch.
@@ -141,12 +142,25 @@ class PreFlashBackupManager(private val context: Context) {
                             BackupArchive.addEntry(zos, BackupArchive.entryName(folder, "icon.png"), png.inputStream())
                         }
                         val files = mutableListOf<BackupFileEntry>()
-                        appSourceFiles(app).forEach { (name, src) ->
-                            coroutineContext.ensureActive()
-                            val (size, sha) = BufferedInputStream(FileInputStream(src), 256 * 1024).use {
-                                BackupArchive.addEntry(zos, BackupArchive.entryName(folder, name), it)
+                        val sources = appSourceFiles(app)
+                        // Check every file is readable first, so an incomplete app writes nothing.
+                        val unreadable = sources.firstOrNull { !it.second.canRead() }
+                        if (unreadable != null) {
+                            writeProblems += "${app.label}: ${unreadable.first}"
+                            return@forEachIndexed
+                        }
+                        try {
+                            sources.forEach { (name, src) ->
+                                coroutineContext.ensureActive()
+                                val (size, sha) = BufferedInputStream(FileInputStream(src), 256 * 1024).use {
+                                    BackupArchive.addEntry(zos, BackupArchive.entryName(folder, name), it)
+                                }
+                                files += BackupFileEntry(fileName = name, sizeBytes = size, sha256 = sha)
                             }
-                            files += BackupFileEntry(fileName = name, sizeBytes = size, sha256 = sha)
+                        } catch (e: java.io.IOException) {
+                            // Left out of the manifest, so restore never offers a half-saved app.
+                            writeProblems += "${app.label}: ${sources.getOrNull(files.size)?.first ?: "?"}"
+                            return@forEachIndexed
                         }
                         manifestEntries += appEntry(app, files)
                     }
@@ -181,45 +195,20 @@ class PreFlashBackupManager(private val context: Context) {
 
             val fileEntries = mutableListOf<BackupFileEntry>()
 
-            // Copy base.apk (with SHA-256 resume check)
-            val baseSource = File(app.baseApkPath)
-            if (baseSource.exists()) {
-                val baseSha = FileNameAndHashUtils.computeFileSha256(baseSource)
-                val wasSkipped = copyOrSkipIfMatchingSha(appDir, baseSource, "base.apk", baseSha)
-                if (wasSkipped) skippedFilesTotal++
-                fileEntries.add(
-                    BackupFileEntry(
-                        fileName = "base.apk",
-                        sizeBytes = baseSource.length(),
-                        sha256 = baseSha
-                    )
-                )
-            }
-
-            // Copy all split_*.apk files if split
-            app.splitSourceDirs.forEachIndexed { splitIdx, splitPath ->
+            // Every file the installed app has must be copied, or the app is left out as incomplete.
+            var complete = true
+            for ((name, src) in appSourceFiles(app)) {
                 coroutineContext.ensureActive()
-                val splitFile = File(splitPath)
-                if (splitFile.exists()) {
-                    val splitName = splitFile.name.let { raw ->
-                        if (raw.endsWith(".apk") && raw != "base.apk") {
-                            FileNameAndHashUtils.sanitizeFileName(raw, 64)
-                        } else {
-                            "split_config_${splitIdx}.apk"
-                        }
-                    }
-                    val splitSha = FileNameAndHashUtils.computeFileSha256(splitFile)
-                    val wasSkipped = copyOrSkipIfMatchingSha(appDir, splitFile, splitName, splitSha)
-                    if (wasSkipped) skippedFilesTotal++
-                    fileEntries.add(
-                        BackupFileEntry(
-                            fileName = splitName,
-                            sizeBytes = splitFile.length(),
-                            sha256 = splitSha
-                        )
-                    )
+                if (!src.canRead()) { writeProblems += "${app.label}: $name"; complete = false; break }
+                try {
+                    val sha = FileNameAndHashUtils.computeFileSha256(src)
+                    if (copyOrSkipIfMatchingSha(appDir, src, name, sha)) skippedFilesTotal++
+                    fileEntries.add(BackupFileEntry(fileName = name, sizeBytes = src.length(), sha256 = sha))
+                } catch (e: java.io.IOException) {
+                    writeProblems += "${app.label}: $name"; complete = false; break
                 }
             }
+            if (!complete) return@forEachIndexed
 
             val playUrl = if (app.installerPackageName == "com.android.vending") {
                 app.googlePlayUrl
@@ -268,19 +257,22 @@ class PreFlashBackupManager(private val context: Context) {
         Pair(backupDir, manifest)
     }
 
-    /** (name inside the backup, source file) for base.apk and every split, as the folder backup names them. */
+    /**
+     * (name inside the backup, source file) for base.apk and every split the app has installed.
+     * Missing files are kept in the list on purpose: the caller reports them instead of skipping them.
+     */
     private fun appSourceFiles(app: InstalledAppInfo): List<Pair<String, File>> {
-        val out = mutableListOf<Pair<String, File>>()
-        File(app.baseApkPath).takeIf { it.exists() }?.let { out += "base.apk" to it }
+        val out = mutableListOf<Pair<String, File>>("base.apk" to File(app.baseApkPath))
         app.splitSourceDirs.forEachIndexed { i, path ->
             val f = File(path)
-            if (f.exists()) {
-                val name = if (f.name.endsWith(".apk") && f.name != "base.apk") FileNameAndHashUtils.sanitizeFileName(f.name, 64) else "split_config_$i.apk"
-                out += name to f
-            }
+            val name = if (f.name.endsWith(".apk") && f.name != "base.apk") FileNameAndHashUtils.sanitizeFileName(f.name, 64) else "split_config_$i.apk"
+            out += name to f
         }
         return out
     }
+
+    /** Apps (and the file) that couldn't be fully copied in the last backup; they are not in its manifest. */
+    val writeProblems = mutableListOf<String>()
 
     private fun appEntry(app: InstalledAppInfo, files: List<BackupFileEntry>) = BackupAppEntry(
         label = app.label, packageName = app.packageName, versionName = app.versionName, versionCode = app.versionCode,
@@ -363,7 +355,7 @@ class PreFlashBackupManager(private val context: Context) {
         context.contentResolver.openOutputStream(doc.uri)?.use { out ->
             out.write(content.toByteArray(Charsets.UTF_8))
             out.flush()
-        }
+        } ?: throw IllegalStateException("Unable to write $fileName")
     }
 
     /**
@@ -373,11 +365,23 @@ class PreFlashBackupManager(private val context: Context) {
     suspend fun verifyBackupFolderSha256(
         backupDir: DocumentFile,
         manifest: BackupManifest,
+        extraProblems: List<String> = emptyList(),
         onFileProgress: (checkedCount: Int, currentFile: String) -> Unit
     ): BackupVerificationReport = withContext(Dispatchers.IO) {
         var totalChecked = 0
         var matched = 0
         val corruptList = mutableListOf<String>()
+        corruptList += extraProblems.map { "$it (not copied)" }
+
+        // Restore reads manifest.json from the destination, so check that copy, not the one in memory.
+        val saved = runCatching {
+            val doc = backupDir.findFile("manifest.json") ?: error("missing")
+            context.contentResolver.openInputStream(doc.uri)?.use { parseManifestFromJson(it.bufferedReader(Charsets.UTF_8).readText()) } ?: error("unreadable")
+        }.getOrNull()
+        if (saved == null || saved.apps.map { it.packageName } != manifest.apps.map { it.packageName }) {
+            return@withContext BackupVerificationReport(manifest.apps.sumOf { it.files.size }, 0, corruptList + "manifest.json (unreadable)")
+        }
+        saved.apps.filter { app -> app.files.none { it.fileName == "base.apk" } }.forEach { corruptList += "${it.label}: base.apk (missing)" }
 
         manifest.archive?.let { archive ->
             // Re-read the whole archive: every entry's CRC-32, size and SHA-256 must match.
@@ -397,7 +401,7 @@ class PreFlashBackupManager(private val context: Context) {
                 totalFilesChecked = expected.size,
                 // A damaged archive (unreadable as a whole) verifies nothing.
                 verifiedMatchCount = if (problems.any { !it.contains('/') }) 0 else expected.size - problems.size,
-                corruptOrMissingFiles = problems
+                corruptOrMissingFiles = corruptList + problems
             )
         }
 
@@ -532,7 +536,9 @@ class PreFlashBackupManager(private val context: Context) {
                 }
             }
 
-            val selectedByDefault = (status == RestoreAppStatus.NOT_INSTALLED ||
+            // Without base.apk nothing can be installed, whatever else is there.
+            val hasBase = entry.files.any { it.fileName == "base.apk" }
+            val selectedByDefault = hasBase && (status == RestoreAppStatus.NOT_INSTALLED ||
                 status == RestoreAppStatus.OLDER_VERSION_INSTALLED) && filesExist
 
             RestoreCandidateApp(
@@ -541,7 +547,7 @@ class PreFlashBackupManager(private val context: Context) {
                 installedVersionName = installedInfo?.versionName,
                 installedVersionCode = installedInfo?.longVersionCode,
                 isSelected = selectedByDefault,
-                integrityOk = filesExist,
+                integrityOk = filesExist && hasBase,
                 incompatibilityReason = incompatibilityReason
             )
         }
