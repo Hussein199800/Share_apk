@@ -619,9 +619,17 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
             InstallStatusEventBus.latestResult.collect { result ->
                 if (result != null) {
                     _isCommittingInstall.value = false
-                    if (_isBatchRestoring.value) {
-                        onBatchRestorePackageCompleted(result.status == android.content.pm.PackageInstaller.STATUS_SUCCESS, result.messageAr)
-                    } else if (result.status == android.content.pm.PackageInstaller.STATUS_SUCCESS) {
+                    val ok = result.status == android.content.pm.PackageInstaller.STATUS_SUCCESS
+                    // Batch results are matched by session id, never by "whatever is current".
+                    val batchApp = batchSessions.remove(result.sessionId)
+                    if (batchApp != null) {
+                        if (_isBatchRestoring.value && result.sessionId == currentBatchSession) {
+                            currentBatchSession = null
+                            onBatchRestorePackageCompleted(ok, result.messageAr)
+                        } else if (ok) {
+                            lateBatchSuccess(batchApp.entry.packageName)
+                        }
+                    } else if (ok) {
                         refreshInstalledApps()
                     }
                 }
@@ -1173,6 +1181,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     private fun runBatch(selected: List<RestoreCandidateApp>) {
         val backupDir = activeRestoreBackupDir ?: return
         batchRestoreQueue = selected
+        batchGeneration++
+        currentBatchSession = null
         _batchRestoreTotal.value = selected.size
         batchInstalled.clear(); batchFailed.clear(); batchSkipped.clear()
         _batchRestoreSummary.value = null
@@ -1202,6 +1212,9 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
 
         val currentCandidate = batchRestoreQueue[idx]
         _batchRestoreCurrentLabel.value = currentCandidate.entry.label
+        val generation = batchGeneration
+        // True while this app is still the one the queue waits for (not skipped, not cancelled).
+        fun stillCurrent() = generation == batchGeneration && _isBatchRestoring.value && _batchRestoreCurrentIndex.value == idx
 
         viewModelScope.launch {
             runCatching {
@@ -1225,11 +1238,17 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
                         }
                     }
                     val failure = com.example.installer.ShizukuBridge.install(currentCandidate.entry.packageName, files)
-                    onBatchRestorePackageCompleted(failure == null, failure.orEmpty())
+                    // A silent install can't be interrupted: if it was skipped meanwhile, only a success changes the report.
+                    if (stillCurrent()) onBatchRestorePackageCompleted(failure == null, failure.orEmpty())
+                    else if (failure == null) lateBatchSuccess(currentCandidate.entry.packageName)
                 } else {
-                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry, open)
+                    packageInstallerManager.installFromBackupEntry(currentCandidate.entry, open) { sessionId ->
+                        batchSessions[sessionId] = currentCandidate
+                        if (stillCurrent()) currentBatchSession = sessionId
+                    }
                 }
             }.onFailure { e ->
+                if (!stillCurrent()) return@onFailure // skipped or cancelled: already recorded once
                 batchFailed += currentCandidate to (e.localizedMessage ?: e.javaClass.simpleName)
                 _batchRestoreCurrentIndex.value = idx + 1
                 installNextInBatchRestoreQueue(backupDir)
@@ -1248,7 +1267,28 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
         installNextInBatchRestoreQueue(backupDir)
     }
 
+    /** Sessions this batch committed → their app; results for other installs are not batch results. */
+    private val batchSessions = java.util.concurrent.ConcurrentHashMap<Int, RestoreCandidateApp>()
+    @Volatile private var currentBatchSession: Int? = null
+    /** Bumped on every new batch and on cancel, so stale callbacks can tell they're stale. */
+    @Volatile private var batchGeneration = 0
+
+    /** The app was skipped/cancelled but Android installed it after all: report it as installed, once. */
+    private fun lateBatchSuccess(packageName: String) {
+        if (_isBatchRestoring.value) {
+            batchSkipped.removeAll { it.entry.packageName == packageName }
+            batchFailed.removeAll { it.first.entry.packageName == packageName }
+            batchRestoreQueue.firstOrNull { it.entry.packageName == packageName }
+                ?.takeIf { c -> batchInstalled.none { it.entry.packageName == packageName } }?.let { batchInstalled += it }
+        } else {
+            _batchRestoreSummary.value = _batchRestoreSummary.value?.promote(packageName)
+        }
+        refreshInstalledApps()
+    }
+
     fun skipCurrentBatchRestoreItem() {
+        // The confirmation for the skipped app may still be on screen; its session is kept so a late "installed" is reported.
+        currentBatchSession = null
         val backupDir = activeRestoreBackupDir ?: return
         val idx = _batchRestoreCurrentIndex.value
         val candidate = batchRestoreQueue.getOrNull(idx)
@@ -1258,6 +1298,8 @@ class ShareApkViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelBatchRestore() {
+        batchGeneration++
+        currentBatchSession = null
         closeRestoreArchive()
         _isBatchRestoring.value = false
         // Whatever was still queued counts as skipped, so it can be installed later from the report.

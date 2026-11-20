@@ -158,5 +158,14 @@ data class BatchRestoreSummary(
         skipped = skipped.filterNot { it.entry.packageName in packages }
     )
 
+    /** A late "installed" result for an app already counted as skipped or failed: move it to installed, once. */
+    fun promote(packageName: String): BatchRestoreSummary {
+        val app = skipped.firstOrNull { it.entry.packageName == packageName }
+            ?: failed.firstOrNull { it.first.entry.packageName == packageName }?.first
+            ?: return this
+        if (installed.any { it.entry.packageName == packageName }) return this
+        return copy(installed = installed + app).without(setOf(packageName))
+    }
+
     operator fun plus(o: BatchRestoreSummary) = BatchRestoreSummary(installed + o.installed, failed + o.failed, skipped + o.skipped)
 }
