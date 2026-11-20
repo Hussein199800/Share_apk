@@ -63,6 +63,8 @@ button.dl{border:0;cursor:pointer;font:inherit;font-size:.8rem;width:auto;paddin
 .bar{height:6px;border-radius:4px;background:var(--chip);margin-top:7px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38bdf8,#4f46e5)}
 .ok{color:var(--ok)} .bad{color:var(--err)}
+.why{color:var(--err);font-size:.8rem;margin-top:6px}
+.retry{margin-top:6px;padding:6px 12px;font-size:.82rem}
 textarea{width:100%;min-height:90px;padding:12px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--txt);font:inherit;margin:8px 0}
 h3{margin:18px 0 6px;font-size:1rem}
 footer{margin-top:26px;text-align:center;color:var(--mute);font-size:.78rem}
@@ -119,12 +121,14 @@ footer{margin-top:26px;text-align:center;color:var(--mute);font-size:.78rem}
 var AR = {title:"شارك أبك",sub:"نقل الملفات بين هذا الحاسوب والهاتف عبر الشبكة المحلية",pinTitle:"أدخل الرمز",pinHint:"الرمز المكوّن من 4 أرقام يظهر على شاشة الهاتف",enter:"دخول",
  pinBad:"الرمز غير صحيح. بعد 5 محاولات خاطئة يتغيّر الرمز على الهاتف.",tabFrom:"من الهاتف",tabTo:"إلى الهاتف",search:"ابحث…",kAll:"الكل",kApps:"التطبيقات المثبتة",kReceived:"المستلمة",kFiles:"الملفات",
  empty:"لا شيء هنا",filesHint:"لإرسال صور أو ملفات أو نصوص إلى هذا الحاسوب: اخترها في تبويب «الملفات» في التطبيق، أو من زر «اختر ملفات» في نافذة المتصفح على الهاتف، وستظهر هنا تلقائياً.",copy:"نسخ",copied:"نُسخ ✓",dropTitle:"اسحب الملفات إلى هنا",dropHint:"أو انقر للاختيار. التطبيقات تُحفظ في «شارك أبك» والباقي في Download/ShareAPK",
- textTitle:"إرسال نص",textHint:"اكتب أو الصق نصاً ليظهر على الهاتف",sendText:"إرسال",sent:"وصل ✓",failed:"فشل",waiting:"بالانتظار",download:"تنزيل",
+ textTitle:"إرسال نص",textHint:"اكتب أو الصق نصاً ليظهر على الهاتف",sendText:"إرسال",sent:"حُفظ على الهاتف ✓",failed:"فشل",retry:"أعد المحاولة",saving:"جارٍ الحفظ على الهاتف…",
+ incomplete:"لم يكتمل الرفع، انقطع الاتصال.",save_failed:"وصل الملف لكن تعذّر حفظه على الهاتف.",no_space:"لا توجد مساحة كافية على الهاتف.",waiting:"بالانتظار",download:"تنزيل",
  footer:"شارك أبك · الصفحة تعمل ما دامت نافذة «من المتصفح» مفتوحة على الهاتف",lost:"انتهت الجلسة، أدخل الرمز من جديد"};
 var EN = {title:"ShareAPK",sub:"Move files between this computer and the phone over the local network",pinTitle:"Enter the code",pinHint:"The 4-digit code is shown on the phone",enter:"Enter",
  pinBad:"Wrong code. After 5 wrong tries the phone shows a new one.",tabFrom:"From phone",tabTo:"To phone",search:"Search…",kAll:"All",kApps:"Installed apps",kReceived:"Received",kFiles:"Files",
  empty:"Nothing here",filesHint:"To send photos, files or text to this computer, pick them in the app's Files tab or with “Choose files” in the phone's browser sheet. They show up here automatically.",copy:"Copy",copied:"Copied ✓",dropTitle:"Drop files here",dropHint:"or click to choose. Apps go to ShareAPK, everything else to Download/ShareAPK",
- textTitle:"Send text",textHint:"Type or paste text to show on the phone",sendText:"Send",sent:"Delivered ✓",failed:"Failed",waiting:"Waiting",download:"Download",
+ textTitle:"Send text",textHint:"Type or paste text to show on the phone",sendText:"Send",sent:"Saved on the phone ✓",failed:"Failed",retry:"Retry",saving:"Saving on the phone…",
+ incomplete:"The upload didn't finish; the connection dropped.",save_failed:"The file arrived but couldn't be saved on the phone.",no_space:"Not enough space on the phone.",waiting:"Waiting",download:"Download",
  footer:"ShareAPK · this page works while “From browser” is open on the phone",lost:"Session ended, enter the code again"};
 var ar = (navigator.language || "").toLowerCase().indexOf("ar") === 0;
 var T = ar ? AR : EN;
@@ -216,14 +220,29 @@ function next(){
   busy = true;
   var job = queue.shift(), xhr = new XMLHttpRequest(), st = job.row.querySelector(".st"), bar = job.row.querySelector(".bar i");
   xhr.open("POST", "/api/upload?name=" + encodeURIComponent(job.file.name));
-  xhr.upload.onprogress = function(e){ if (e.lengthComputable) { var p = Math.round(e.loaded * 100 / e.total); bar.style.width = p + "%"; st.textContent = p + "%"; } };
+  var old = job.row.querySelector(".why"); if (old) old.remove();
+  old = job.row.querySelector(".retry"); if (old) old.remove();
+  st.className = "st";
+  xhr.upload.onprogress = function(e){
+    if (!e.lengthComputable) return;
+    var p = Math.round(e.loaded * 100 / e.total); bar.style.width = p + "%";
+    // 100% sent is not saved yet: the phone confirms that.
+    st.textContent = p < 100 ? p + "%" : T.saving;
+  };
+  function fail(code){
+    st.textContent = T.failed; st.className = "st bad";
+    var why = document.createElement("div"); why.className = "why"; why.textContent = T[code] || T.save_failed;
+    var again = document.createElement("button"); again.className = "btn ghost retry"; again.textContent = T.retry;
+    again.onclick = function(){ why.remove(); again.remove(); st.textContent = T.waiting; st.className = "st"; bar.style.width = "0"; queue.push(job); next(); };
+    job.row.appendChild(why); job.row.appendChild(again);
+  }
   xhr.onload = function(){
     if (xhr.status === 401) { st.textContent = T.lost; st.className = "st bad"; show("login"); }
     else if (xhr.status < 300) { bar.style.width = "100%"; st.textContent = T.sent; st.className = "st ok"; }
-    else { st.textContent = T.failed; st.className = "st bad"; }
+    else fail((xhr.responseText || "").trim());
     busy = false; next();
   };
-  xhr.onerror = function(){ st.textContent = T.failed; st.className = "st bad"; busy = false; next(); };
+  xhr.onerror = function(){ fail("incomplete"); busy = false; next(); };
   xhr.send(job.file);
 }
 var drop = el("drop");

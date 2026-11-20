@@ -73,6 +73,30 @@ class LayoutScreenshotTest {
         )
     }
 
+    @Config(sdk = [36], qualifiers = "w390dp-h1400dp-port")
+    @Test fun backupCreate() = shoot("backup-create", false) {
+        fun app(i: Int, sys: Boolean = false) = com.example.data.model.InstalledAppInfo(
+            "com.example.app$i", listOf("واتساب", "سكينة", "طاقتي", "Telegram")[i % 4], "1.$i", i.toLong(), 31, 35, sys, i == 1,
+            "/x", emptyList(), emptyList(), 25_000_000L * (i + 1), 0, 0, null, "", "", emptyList()
+        )
+        val apps = List(4) { app(it) }
+        com.example.ui.screens.backup.BackupScreen(
+            candidateApps = apps, selectedPackageNames = setOf("com.example.app0", "com.example.app2"), includeSystemApps = false,
+            searchQuery = "", destinationUriString = "content://com.android.externalstorage.documents/tree/primary%3ABackups",
+            spaceCheckResult = com.example.backup.SpaceCheckResult(50_000_000, 100_000_000, false),
+            backupServiceState = com.example.service.BackupServiceProgressState(errorMessage = "ENOSPC no space left"),
+            safetyCheck1 = false, safetyCheck2 = false, safetyCheck3 = false,
+            restoreManifest = null, restoreCandidates = emptyList(), isBatchRestoring = false,
+            batchRestoreCurrentIndex = 0, batchRestoreCurrentLabel = "", batchRestoreSummary = null,
+            onToggleIncludeSystem = {}, onSearchQueryChange = {}, onToggleAppSelection = {},
+            onSelectAll = {}, onSelectNone = {}, onPickDestinationFolder = {}, onStartFullBackup = {},
+            onCancelFullBackup = {}, onSafetyCheckChange = { _, _ -> }, onConfirmSafetyChecklist = {},
+            onPickRestoreFolder = {}, onToggleRestoreCandidate = {}, onStartSequentialRestore = {},
+            onSkipCurrentRestoreApp = {}, onCancelBatchRestore = {}, onBack = {},
+            selectedTotals = 2 to 100_000_000L
+        )
+    }
+
     @Config(sdk = [36], qualifiers = "w390dp-h844dp-port")
     @Test fun screenTabIdle() { screenTab(false, "idle", false) }
 

@@ -72,7 +72,16 @@ fun BackupScreen(
     onSkipCurrentRestoreApp: () -> Unit,
     onCancelBatchRestore: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compress: Boolean = true,
+    onCompressChange: (Boolean) -> Unit = {},
+    onRetryRestore: (Set<String>) -> Unit = {},
+    onIgnoreRestore: (Set<String>) -> Unit = {},
+    shizukuStatus: com.example.installer.ShizukuStatus = com.example.installer.ShizukuStatus.NOT_INSTALLED,
+    onShizukuAllow: () -> Unit = {},
+    selectedTotals: Pair<Int, Long>? = null,
+    onSelectAllRestore: (Boolean) -> Unit = {},
+    batchTotal: Int = 0
 ) {
     val s = LocalAppStrings.current
     var activeSubTab by rememberSaveable { mutableIntStateOf(0) }
@@ -88,13 +97,17 @@ fun BackupScreen(
                 candidateApps, selectedPackageNames, includeSystemApps, searchQuery, destinationUriString,
                 spaceCheckResult, backupServiceState, safetyCheck1, safetyCheck2, safetyCheck3,
                 onToggleIncludeSystem, onSearchQueryChange, onToggleAppSelection, onSelectAll, onSelectNone,
-                onPickDestinationFolder, onStartFullBackup, onCancelFullBackup, onSafetyCheckChange, onConfirmSafetyChecklist
+                onPickDestinationFolder, onStartFullBackup, onCancelFullBackup, onSafetyCheckChange, onConfirmSafetyChecklist,
+                compress = compress, onCompressChange = onCompressChange, selectedTotals = selectedTotals
             )
         } else {
             BackupRestoreContent(
                 restoreManifest, restoreCandidates, isBatchRestoring, batchRestoreCurrentIndex, batchRestoreCurrentLabel,
                 batchRestoreSummary, onPickRestoreFolder, onToggleRestoreCandidate, onStartSequentialRestore,
-                onSkipCurrentRestoreApp, onCancelBatchRestore
+                onSkipCurrentRestoreApp, onCancelBatchRestore,
+                onRetry = onRetryRestore, onIgnore = onIgnoreRestore,
+                shizukuStatus = shizukuStatus, onShizukuAllow = onShizukuAllow,
+                onSelectAll = onSelectAllRestore, batchTotal = batchTotal
             )
         }
     }

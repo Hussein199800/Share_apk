@@ -16,6 +16,62 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val spaceNeededLabel: String,
+    val spaceFreeLabel: String,
+    val selectAllCheck: String,
+    val selectAllShownCheck: String,
+    val backupProgressFormat: String,
+    val backupSkippedFormat: String,
+    val backupCorruptFormat: String,
+    val backupVerifiedDetailFormat: String,
+    val backupFailedTitle: String,
+    val backupStoppedMsg: String,
+    val backupDoneLabel: String,
+    val destinationNotChosen: String,
+    val pickBtn: String,
+    val spaceInsufficient: String,
+    val restoreProgressFormat: String,
+    val restoreDeviceFormat: String,
+    val restoreDateFormat: String,
+    val restoreDamagedLabel: String,
+    val removeAppsBtn: String,
+    val removeTitle: String,
+    val removeUserHint: String,
+    val removeSystemHint: String,
+    val removeNeedsShizuku: String,
+    val removeProtected: String,
+    val removeModeUninstall: String,
+    val removeModeForUser: String,
+    val removeModeDisable: String,
+    val removeConfirmFormat: String,
+    val removeDoneFormat: String,
+    val tileRemovedTitle: String,
+    val tileRemovedSub: String,
+    val removedEmpty: String,
+    val restoreAppBtn: String,
+    val removedDisabledLabel: String,
+    val removedForUserLabel: String,
+    val restoreReportTitle: String,
+    val restoreInstalledFormat: String,
+    val restoreFailedFormat: String,
+    val restoreSkippedFormat: String,
+    val retryAllBtn: String,
+    val retryBtn: String,
+    val installAllBtn: String,
+    val restoreInstallNowBtn: String,
+    val ignoreBtn: String,
+    val ignoreAllBtn: String,
+    val openStoreBtn: String,
+    val shizukuTitle: String,
+    val shizukuReady: String,
+    val shizukuNotInstalled: String,
+    val shizukuNotRunning: String,
+    val shizukuNoPermission: String,
+    val shizukuAllowBtn: String,
+    val shizukuGetBtn: String,
+    val shizukuOpenBtn: String,
+    val backupCompressTitle: String,
+    val backupCompressHint: String,
     val navScreen: String,
     val screenSubtitle: String,
     val screenShareCardTitle: String,
@@ -358,6 +414,62 @@ data class AppStrings(
     val screenModePoint get() = x.screenModePoint
     val screenModeDraw get() = x.screenModeDraw
     val screenLeave get() = x.screenLeave
+    val backupCompressTitle get() = x.backupCompressTitle
+    val backupCompressHint get() = x.backupCompressHint
+    val restoreReportTitle get() = x.restoreReportTitle
+    val restoreInstalledFormat get() = x.restoreInstalledFormat
+    val restoreFailedFormat get() = x.restoreFailedFormat
+    val restoreSkippedFormat get() = x.restoreSkippedFormat
+    val retryAllBtn get() = x.retryAllBtn
+    val retryBtn get() = x.retryBtn
+    val installAllBtn get() = x.installAllBtn
+    val restoreInstallNowBtn get() = x.restoreInstallNowBtn
+    val ignoreBtn get() = x.ignoreBtn
+    val ignoreAllBtn get() = x.ignoreAllBtn
+    val openStoreBtn get() = x.openStoreBtn
+    val shizukuTitle get() = x.shizukuTitle
+    val shizukuReady get() = x.shizukuReady
+    val shizukuNotInstalled get() = x.shizukuNotInstalled
+    val shizukuNotRunning get() = x.shizukuNotRunning
+    val shizukuNoPermission get() = x.shizukuNoPermission
+    val shizukuAllowBtn get() = x.shizukuAllowBtn
+    val shizukuGetBtn get() = x.shizukuGetBtn
+    val shizukuOpenBtn get() = x.shizukuOpenBtn
+    val removeAppsBtn get() = x.removeAppsBtn
+    val removeTitle get() = x.removeTitle
+    val removeUserHint get() = x.removeUserHint
+    val removeSystemHint get() = x.removeSystemHint
+    val removeNeedsShizuku get() = x.removeNeedsShizuku
+    val removeProtected get() = x.removeProtected
+    val removeModeUninstall get() = x.removeModeUninstall
+    val removeModeForUser get() = x.removeModeForUser
+    val removeModeDisable get() = x.removeModeDisable
+    val removeConfirmFormat get() = x.removeConfirmFormat
+    val removeDoneFormat get() = x.removeDoneFormat
+    val tileRemovedTitle get() = x.tileRemovedTitle
+    val tileRemovedSub get() = x.tileRemovedSub
+    val removedEmpty get() = x.removedEmpty
+    val restoreAppBtn get() = x.restoreAppBtn
+    val removedDisabledLabel get() = x.removedDisabledLabel
+    val removedForUserLabel get() = x.removedForUserLabel
+    val selectAllCheck get() = x.selectAllCheck
+    val selectAllShownCheck get() = x.selectAllShownCheck
+    val backupProgressFormat get() = x.backupProgressFormat
+    val backupSkippedFormat get() = x.backupSkippedFormat
+    val backupCorruptFormat get() = x.backupCorruptFormat
+    val backupVerifiedDetailFormat get() = x.backupVerifiedDetailFormat
+    val backupFailedTitle get() = x.backupFailedTitle
+    val backupStoppedMsg get() = x.backupStoppedMsg
+    val backupDoneLabel get() = x.backupDoneLabel
+    val destinationNotChosen get() = x.destinationNotChosen
+    val pickBtn get() = x.pickBtn
+    val spaceInsufficient get() = x.spaceInsufficient
+    val restoreProgressFormat get() = x.restoreProgressFormat
+    val restoreDeviceFormat get() = x.restoreDeviceFormat
+    val restoreDateFormat get() = x.restoreDateFormat
+    val restoreDamagedLabel get() = x.restoreDamagedLabel
+    val spaceNeededLabel get() = x.spaceNeededLabel
+    val spaceFreeLabel get() = x.spaceFreeLabel
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -390,6 +502,62 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        spaceNeededLabel = "المطلوب",
+        spaceFreeLabel = "المتاح",
+        selectAllCheck = "تحديد الكل",
+        selectAllShownCheck = "تحديد كل نتائج البحث",
+        backupProgressFormat = "جارٍ النسخ: %1\$d من %2\$d",
+        backupSkippedFormat = "ملفات مطابقة تُخطّيت: %d",
+        backupCorruptFormat = "ملفات تالفة أو ناقصة: %s",
+        backupVerifiedDetailFormat = "المجلد: %1\$s · سليم: %2\$d من %3\$d",
+        backupFailedTitle = "لم تكتمل النسخة",
+        backupStoppedMsg = "أُوقف النسخ الاحتياطي. يمكنك البدء من جديد.",
+        backupDoneLabel = "اكتملت النسخة وتم التحقق منها ✓",
+        destinationNotChosen = "لم يُختر مجلد بعد",
+        pickBtn = "اختيار",
+        spaceInsufficient = "المساحة المتاحة قد لا تكفي. اختر مجلداً آخر أو قلّل التطبيقات.",
+        restoreProgressFormat = "جارٍ التثبيت: %1\$d من %2\$d",
+        restoreDeviceFormat = "الجهاز: %1\$s (أندرويد %2\$s)",
+        restoreDateFormat = "تاريخ النسخة: %1\$s · %2\$s (%3\$s)",
+        restoreDamagedLabel = "ملفاته ناقصة في النسخة",
+        removeAppsBtn = "إزالة",
+        removeTitle = "إزالة التطبيقات المحددة",
+        removeUserHint = "تطبيقات المستخدم تُحذف نهائياً مع بياناتها.",
+        removeSystemHint = "تطبيقات النظام لا تُحذف من الهاتف: تُزال للمستخدم الحالي أو تُعطَّل، ويمكن استرجاعها من «المزيد ← التطبيقات المحذوفة».",
+        removeNeedsShizuku = "إزالة تطبيقات النظام تحتاج Shizuku يعمل. بدونه تُحذف تطبيقات المستخدم فقط، بتأكيد أندرويد لكل تطبيق.",
+        removeProtected = "محمي: إزالته قد توقف الهاتف عن العمل",
+        removeModeUninstall = "حذف",
+        removeModeForUser = "إزالة للمستخدم",
+        removeModeDisable = "تعطيل",
+        removeConfirmFormat = "إزالة %s",
+        removeDoneFormat = "أُزيل %1\$s، وفشل %2\$s",
+        tileRemovedTitle = "التطبيقات المحذوفة",
+        tileRemovedSub = "استرجع تطبيقات النظام التي أزلتها أو عطّلتها",
+        removedEmpty = "لم تُزل أي تطبيقات نظام بعد.",
+        restoreAppBtn = "استرجاع",
+        removedDisabledLabel = "معطّل",
+        removedForUserLabel = "مُزال للمستخدم",
+        restoreReportTitle = "تقرير التثبيت",
+        restoreInstalledFormat = "نجح: %s",
+        restoreFailedFormat = "فشل: %s",
+        restoreSkippedFormat = "تخطّيت: %s",
+        retryAllBtn = "أعد المحاولة للكل",
+        retryBtn = "أعد المحاولة",
+        installAllBtn = "ثبّت الكل",
+        restoreInstallNowBtn = "ثبّت الآن",
+        ignoreBtn = "تجاهل",
+        ignoreAllBtn = "تجاهل الكل",
+        openStoreBtn = "المتجر",
+        shizukuTitle = "التثبيت والإزالة دون تأكيد (Shizuku)",
+        shizukuReady = "Shizuku يعمل: التثبيت الجماعي صامت، دون ضغطة لكل تطبيق.",
+        shizukuNotInstalled = "اختياري: ثبّت تطبيق Shizuku وشغّله ليصير التثبيت الجماعي صامتاً. بدونه يطلب أندرويد ضغطة «تثبيت» لكل تطبيق.",
+        shizukuNotRunning = "Shizuku مثبّت لكنه متوقف. افتحه وشغّله (يلزم بعد كل إعادة تشغيل للهاتف).",
+        shizukuNoPermission = "اسمح لـ«شارك أبك» باستخدام Shizuku.",
+        shizukuAllowBtn = "السماح",
+        shizukuGetBtn = "تنزيل Shizuku",
+        shizukuOpenBtn = "فتح Shizuku",
+        backupCompressTitle = "ضغط النسخة (ZIP)",
+        backupCompressHint = "توفّر مساحة، وكل ملف يُفحص ببصمة SHA-256 بعد الحفظ وقبل التثبيت. الاستعادة تقرأ من الملف المضغوط مباشرة دون فكّه. أطفئه لنسخة بمجلد لكل تطبيق.",
         navScreen = "الشاشة",
         screenSubtitle = "شارك شاشتك مع جوال قريب ليساعدك",
         screenShareCardTitle = "شارك شاشتي",
@@ -695,6 +863,62 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        spaceNeededLabel = "Needed",
+        spaceFreeLabel = "Free",
+        selectAllCheck = "Select all",
+        selectAllShownCheck = "Select all search results",
+        backupProgressFormat = "Backing up: %1\$d of %2\$d",
+        backupSkippedFormat = "Matching files skipped: %d",
+        backupCorruptFormat = "Damaged or missing files: %s",
+        backupVerifiedDetailFormat = "Folder: %1\$s · verified: %2\$d of %3\$d",
+        backupFailedTitle = "The backup didn't finish",
+        backupStoppedMsg = "The backup was stopped. You can start again.",
+        backupDoneLabel = "Backup finished and verified ✓",
+        destinationNotChosen = "No folder chosen yet",
+        pickBtn = "Choose",
+        spaceInsufficient = "Free space may not be enough. Choose another folder or fewer apps.",
+        restoreProgressFormat = "Installing: %1\$d of %2\$d",
+        restoreDeviceFormat = "Device: %1\$s (Android %2\$s)",
+        restoreDateFormat = "Backup date: %1\$s · %2\$s (%3\$s)",
+        restoreDamagedLabel = "Its files are missing from the backup",
+        removeAppsBtn = "Remove",
+        removeTitle = "Remove the selected apps",
+        removeUserHint = "User apps are deleted permanently with their data.",
+        removeSystemHint = "System apps aren't erased: they're removed for this user or disabled, and can be brought back from More → Removed apps.",
+        removeNeedsShizuku = "Removing system apps needs Shizuku running. Without it only user apps are removed, with Android's confirmation for each.",
+        removeProtected = "Protected: removing it can break the phone",
+        removeModeUninstall = "Delete",
+        removeModeForUser = "Remove for user",
+        removeModeDisable = "Disable",
+        removeConfirmFormat = "Remove %s",
+        removeDoneFormat = "Removed %1\$s, failed %2\$s",
+        tileRemovedTitle = "Removed apps",
+        tileRemovedSub = "Bring back system apps you removed or disabled",
+        removedEmpty = "No system apps removed yet.",
+        restoreAppBtn = "Restore",
+        removedDisabledLabel = "Disabled",
+        removedForUserLabel = "Removed for user",
+        restoreReportTitle = "Install report",
+        restoreInstalledFormat = "Installed: %s",
+        restoreFailedFormat = "Failed: %s",
+        restoreSkippedFormat = "Skipped: %s",
+        retryAllBtn = "Retry all",
+        retryBtn = "Retry",
+        installAllBtn = "Install all",
+        restoreInstallNowBtn = "Install now",
+        ignoreBtn = "Ignore",
+        ignoreAllBtn = "Ignore all",
+        openStoreBtn = "Store",
+        shizukuTitle = "Install & remove without prompts (Shizuku)",
+        shizukuReady = "Shizuku is running: batch installs are silent, no tap per app.",
+        shizukuNotInstalled = "Optional: install and start Shizuku to make batch installs silent. Without it Android asks for a tap per app.",
+        shizukuNotRunning = "Shizuku is installed but stopped. Open it and start it (needed after each reboot).",
+        shizukuNoPermission = "Allow ShareAPK to use Shizuku.",
+        shizukuAllowBtn = "Allow",
+        shizukuGetBtn = "Get Shizuku",
+        shizukuOpenBtn = "Open Shizuku",
+        backupCompressTitle = "Compress the backup (ZIP)",
+        backupCompressHint = "Saves space; every file is checked by SHA-256 after saving and before installing. Restore reads straight from the archive, no extraction. Turn off for a folder per app.",
         navScreen = "Screen",
         screenSubtitle = "Share your screen with a nearby phone for help",
         screenShareCardTitle = "Share my screen",

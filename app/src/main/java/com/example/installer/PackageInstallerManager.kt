@@ -260,41 +260,34 @@ class PackageInstallerManager(
     }
 
     /**
-     * Installs an already-installed app's base + split APKs or a backed-up DocumentFile folder
-     * through a single PackageInstaller.Session.
+     * Restores one backed-up app (folder or compressed archive) in a single session. Each file is
+     * checked against the manifest's size and SHA-256 while it streams in; a damaged file aborts the
+     * session, so nothing corrupted ever reaches the installer.
      */
-    suspend fun installFromBackupAppFolder(
-        appFolder: DocumentFile,
-        packageName: String
+    suspend fun installFromBackupEntry(
+        entry: com.example.data.model.BackupAppEntry,
+        open: (com.example.data.model.BackupFileEntry) -> java.io.InputStream?
     ) = withContext(Dispatchers.IO) {
-        val apkFiles = appFolder.listFiles().filter {
-            it.isFile && (it.name?.lowercase()?.endsWith(".apk") == true)
-        }
-        if (apkFiles.isEmpty()) {
-            throw IllegalStateException("No .apk files found in backup folder for $packageName")
-        }
-
+        if (entry.files.isEmpty()) throw IllegalStateException("No APK files in backup for ${entry.packageName}")
         val packageInstaller = packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
-            setAppPackageName(packageName)
+            setAppPackageName(entry.packageName)
         }
-
         val sessionId = packageInstaller.createSession(params)
         val session = packageInstaller.openSession(sessionId)
-
         try {
-            apkFiles.forEachIndexed { idx, docFile ->
-                val rawName = docFile.name ?: "split_$idx.apk"
-                val safeName = FileNameAndHashUtils.sanitizeFileName(rawName, 64)
-                val length = if (docFile.length() > 0) docFile.length() else -1L
-                context.contentResolver.openInputStream(docFile.uri)?.use { input ->
-                    session.openWrite(safeName, 0, length).use { output ->
-                        input.copyTo(output, 32 * 1024)
+            entry.files.forEachIndexed { idx, f ->
+                val raw = open(f) ?: throw IllegalStateException("${f.fileName} missing in backup")
+                val input = if (f.sha256.isNotBlank()) com.example.backup.BackupArchive.checked(raw, f.sizeBytes, f.sha256) else raw
+                val safeName = FileNameAndHashUtils.sanitizeFileName(f.fileName.ifBlank { "split_$idx.apk" }, 64)
+                input.use {
+                    session.openWrite(safeName, 0, f.sizeBytes.takeIf { s -> s > 0 } ?: -1L).use { output ->
+                        it.copyTo(output, 64 * 1024)
                         session.fsync(output)
                     }
                 }
             }
-            commitSessionWithReceiver(session, sessionId, packageName)
+            commitSessionWithReceiver(session, sessionId, entry.packageName)
         } catch (e: Exception) {
             session.abandon()
             throw e

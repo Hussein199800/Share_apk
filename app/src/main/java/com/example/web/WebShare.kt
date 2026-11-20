@@ -45,7 +45,8 @@ class WebShare(
     private val scope: CoroutineScope,
     private val receivedApps: () -> List<ReceivedItem>,
     private val receivedFiles: () -> List<ReceivedEntry>,
-    private val onUpload: suspend (File, String) -> Unit,
+    /** Returns null once the file is really saved, else a failure code. */
+    private val onUpload: suspend (File, String) -> String?,
     private val onText: suspend (String) -> Unit,
     private val onBusyChanged: () -> Unit
 ) {
@@ -120,10 +121,14 @@ class WebShare(
             return ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
         }
 
-        override suspend fun acceptUpload(tmp: File, name: String) {
-            onUpload(tmp, name)
-            snapshotAt = 0
-            _state.update { it.copy(receivedCount = it.receivedCount + 1) }
+        override suspend fun acceptUpload(tmp: File, name: String): String? {
+            val failure = onUpload(tmp, name)
+            // Count it only once it is really on the phone.
+            if (failure == null) {
+                snapshotAt = 0
+                _state.update { it.copy(receivedCount = it.receivedCount + 1) }
+            }
+            return failure
         }
 
         override suspend fun acceptText(text: String) {

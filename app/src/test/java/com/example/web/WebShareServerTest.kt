@@ -67,7 +67,12 @@ class WebShareServerTest {
                 WebItem("x1", WebItem.Kind.FILE, "ملف.txt", "text/plain", 5, "text/plain", "ملف.txt", open = { "hello".byteInputStream() })
             )
             override fun iconPng(id: String): ByteArray? = null
-            override suspend fun acceptUpload(tmp: File, name: String) { uploads += name to tmp.readText(); tmp.delete() }
+            override suspend fun acceptUpload(tmp: File, name: String): String? {
+                val text = tmp.readText(); tmp.delete()
+                if (name == "fail.txt") return WebShareServer.SAVE_FAILED
+                uploads += name to text
+                return null
+            }
             override suspend fun acceptText(text: String) { texts += text }
         }
         server = WebShareServer(gate, source, tmp.newFolder("up"))
@@ -104,6 +109,11 @@ class WebShareServerTest {
         http.newCall(req("/dl/missing").build()).execute().use { assertEquals(404, it.code) }
         http.newCall(req("/api/upload?name=..%2F..%2Fevil.txt").post("data".toRequestBody()).build()).execute().use { assertEquals(204, it.code) }
         assertEquals(listOf("evil.txt" to "data"), uploads)
+        // A save that fails on the phone is reported, not acknowledged.
+        http.newCall(req("/api/upload?name=fail.txt").post("x".toRequestBody()).build()).execute().use {
+            assertEquals(500, it.code); assertEquals(WebShareServer.SAVE_FAILED, it.body!!.string())
+        }
+        assertEquals(1, uploads.size)
         http.newCall(req("/api/text").post("مرحبا".toRequestBody()).build()).execute().use { assertEquals(204, it.code) }
         assertEquals(listOf("مرحبا"), texts)
     }

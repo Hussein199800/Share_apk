@@ -49,6 +49,8 @@ object BackupJobOrchestrator {
     var pendingApps: List<InstalledAppInfo> = emptyList()
     var pendingTreeUri: Uri? = null
     var pendingResumeFolderName: String? = null
+    /** Write app files into one ZIP (compressed backup) instead of a folder per app. */
+    @Volatile var pendingCompress: Boolean = false
 
     fun updateState(transform: (BackupServiceProgressState) -> BackupServiceProgressState) {
         _state.value = transform(_state.value)
@@ -74,8 +76,10 @@ class BackupForegroundService : Service() {
             context: Context,
             treeUri: Uri,
             apps: List<InstalledAppInfo>,
-            resumeFolderName: String? = null
+            resumeFolderName: String? = null,
+            compress: Boolean = false
         ) {
+            BackupJobOrchestrator.pendingCompress = compress
             BackupJobOrchestrator.pendingApps = apps
             BackupJobOrchestrator.pendingTreeUri = treeUri
             BackupJobOrchestrator.pendingResumeFolderName = resumeFolderName
@@ -109,7 +113,7 @@ class BackupForegroundService : Service() {
                     it.copy(
                         isRunning = false,
                         isVerifying = false,
-                        errorMessage = "Backup cancelled by user / تم إلغاء النسخ الاحتياطي"
+                        errorMessage = ""
                     )
                 }
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -171,7 +175,8 @@ class BackupForegroundService : Service() {
                 val (backupDir, manifest) = manager.executePreFlashBackup(
                     rootTreeUri = treeUri,
                     appsToBackup = apps,
-                    resumeFolderName = resumeFolderName
+                    resumeFolderName = resumeFolderName,
+                    compress = BackupJobOrchestrator.pendingCompress
                 ) { idx, total, appLabel, skipped ->
                     BackupJobOrchestrator.updateState {
                         it.copy(
@@ -193,7 +198,7 @@ class BackupForegroundService : Service() {
                     )
                 }
 
-                val report = manager.verifyBackupFolderSha256(backupDir, manifest) { count, fileLabel ->
+                val report = manager.verifyBackupFolderSha256(backupDir, manifest, manager.writeProblems.toList()) { count, fileLabel ->
                     BackupJobOrchestrator.updateState {
                         it.copy(
                             isVerifying = true,
@@ -218,7 +223,7 @@ class BackupForegroundService : Service() {
                     it.copy(
                         isRunning = false,
                         isVerifying = false,
-                        errorMessage = "تم إيقاف النسخ الاحتياطي (يمكنك الاستئناف لاحقاً)"
+                        errorMessage = ""
                     )
                 }
             } catch (e: Exception) {

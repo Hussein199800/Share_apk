@@ -180,8 +180,10 @@ class ReceiveSessionManager(
                         }
                     }
                 }
+                // Senders without a checksum (most LocalSend clients) still can't leave a short file behind.
+                if (total != dto.size) throw java.io.IOException("incomplete upload: $total of ${dto.size} bytes")
                 val expected = dto.sha256?.lowercase()
-                val actual = digest.digest().joinToString("") { "%02x".format(it) }
+                val actual = digest.digest().joinToString("") { String.format(java.util.Locale.ROOT, "%02x", it) }
                 if (expected != null && expected != actual) {
                     target.delete()
                     updateProgress(s.id, fileId, 0, false)

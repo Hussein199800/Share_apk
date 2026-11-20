@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        com.example.installer.ShizukuBridge.init(this)
         enableEdgeToEdge()
 
         handleIncomingPackageIntent(intent)

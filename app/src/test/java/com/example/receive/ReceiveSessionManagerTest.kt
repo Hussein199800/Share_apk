@@ -167,6 +167,20 @@ class ReceiveSessionManagerTest {
         assertTrue(res is UploadResult.Error)
     }
 
+    @Test fun uploadShorterThanDeclaredIsRejectedEvenWithoutChecksum() = runTest {
+        val m = manager()
+        val ok = accepted(m, file("b", "photo.jpg", ByteArray(10)))
+        val res = m.receive(ok.response.sessionId, "b", ok.response.files.getValue("b"), "ip", ByteArray(4).inputStream())
+        assertTrue(res is UploadResult.Error)
+        assertTrue("no partial file may stay behind", m.state.value !is ReceiveState.Done)
+    }
+
+    @Test fun emptyFileDeclaredEmptyIsAccepted() = runTest {
+        val m = manager()
+        val ok = accepted(m, file("e", "empty.txt", ByteArray(0)))
+        assertEquals(UploadResult.Ok, m.receive(ok.response.sessionId, "e", ok.response.files.getValue("e"), "ip", ByteArray(0).inputStream()))
+    }
+
     @Test fun folderPathsAreKeptSanitized() {
         assertEquals("Trip/Day 1", ReceiveSessionManager.relativeDirOf("Trip/Day 1/a.jpg"))
         assertEquals("x", ReceiveSessionManager.relativeDirOf("../../x/a.jpg"))
