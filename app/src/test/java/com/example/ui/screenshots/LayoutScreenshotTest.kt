@@ -73,6 +73,16 @@ class LayoutScreenshotTest {
         )
     }
 
+    private fun more(dark: Boolean, tag: String, scale: Float) = shoot("more-$tag", dark, scale) {
+        com.example.ui.screens.more.MoreScreen("Galaxy S25 Ultra", "3.3.1", {}, {}, {}, availableUpdate = "3.4.0")
+    }
+
+    @Config(sdk = [36], qualifiers = "w320dp-h1000dp-port")
+    @Test fun moreSmallLargest() { more(true, "small-1.3", 1.3f) }
+
+    @Config(sdk = [36], qualifiers = "w844dp-h390dp-land")
+    @Test fun moreLandscape() { more(false, "land", 1f) }
+
     @Config(sdk = [36], qualifiers = "w390dp-h1400dp-port")
     @Test fun backupCreate() = shoot("backup-create", false) {
         fun app(i: Int, sys: Boolean = false) = com.example.data.model.InstalledAppInfo(

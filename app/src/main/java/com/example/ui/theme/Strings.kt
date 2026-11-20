@@ -16,6 +16,15 @@ import com.example.data.model.LanguagePreference
 import java.util.Locale
 
 data class ExtraStrings(
+    val backupScopeNote: String,
+    val backupVerifiedAppsFormat: String,
+    val backupRecopyFormat: String,
+    val sendHowTitle: String,
+    val sendNearbyOption: String,
+    val sendNearbyHint: String,
+    val sendBrowserOption: String,
+    val sendBrowserHint: String,
+    val moreOtherTitle: String,
     val spaceNeededLabel: String,
     val spaceFreeLabel: String,
     val selectAllCheck: String,
@@ -470,6 +479,15 @@ data class AppStrings(
     val restoreDamagedLabel get() = x.restoreDamagedLabel
     val spaceNeededLabel get() = x.spaceNeededLabel
     val spaceFreeLabel get() = x.spaceFreeLabel
+    val backupScopeNote get() = x.backupScopeNote
+    val backupVerifiedAppsFormat get() = x.backupVerifiedAppsFormat
+    val backupRecopyFormat get() = x.backupRecopyFormat
+    val sendHowTitle get() = x.sendHowTitle
+    val sendNearbyOption get() = x.sendNearbyOption
+    val sendNearbyHint get() = x.sendNearbyHint
+    val sendBrowserOption get() = x.sendBrowserOption
+    val sendBrowserHint get() = x.sendBrowserHint
+    val moreOtherTitle get() = x.moreOtherTitle
     val webShareBtn get() = x.webShareBtn
     val webShareBtnHint get() = x.webShareBtnHint
     val webShareTitle get() = x.webShareTitle
@@ -502,6 +520,15 @@ data class AppStrings(
 
 val ArabicStrings = AppStrings(
     x = ExtraStrings(
+        backupScopeNote = "تحتوي النسخة على ملفات تثبيت التطبيقات (APK) فقط، بلا بياناتها أو حساباتها أو صورك. احفظ بياناتك المهمة بطريقتها الخاصة.",
+        backupVerifiedAppsFormat = "سليم: %s",
+        backupRecopyFormat = "يحتاج إعادة نسخ: %s",
+        sendHowTitle = "إلى أين؟",
+        sendNearbyOption = "جهاز قريب",
+        sendNearbyHint = "هاتف أو حاسوب عليه «شارك أبك» أو LocalSend على نفس الشبكة",
+        sendBrowserOption = "متصفح حاسوب",
+        sendBrowserHint = "أي حاسوب على نفس الشبكة، بلا تثبيت. سيظهر له ما اخترته:",
+        moreOtherTitle = "أدوات أخرى",
         spaceNeededLabel = "المطلوب",
         spaceFreeLabel = "المتاح",
         selectAllCheck = "تحديد الكل",
@@ -693,22 +720,22 @@ val ArabicStrings = AppStrings(
     wifiServerSubtitle = "امسح رمز QR أو افتح الرابط في المتصفح على أي جهاز متصل بنفس الشبكة أو نقطة الاتصال",
     stopServerBtn = "إيقاف الخادم فوراً",
     autoStopCountdown = "يتوقف تلقائياً خلال:",
-    backupRestoreHeader = "النسخ الاحتياطي الشامل قبل الفورمات (Pre-Flash)",
-    tabCreateBackup = "إنشاء نسخة شاملة",
-    tabRestoreBackup = "استرجاع من مجلد",
+    backupRestoreHeader = "احفظ ملفات تثبيت تطبيقاتك قبل الفورمات، واستعدها بعده",
+    tabCreateBackup = "نسخ ملفات التثبيت",
+    tabRestoreBackup = "الاستعادة",
     includeSystemAppsToggle = "تضمين تطبيقات النظام",
     selectAllBtn = "تحديد الكل",
     selectNoneBtn = "إلغاء الكل",
     chooseDestinationBtn = "اختيار مجلد الحفظ (USB / SD / ذاكرة)",
-    startFullBackupBtn = "بدء النسخ الاحتياطي الشامل",
+    startFullBackupBtn = "ابدأ النسخ",
     resumeBackupBtn = "استئناف النسخ (تخطي المتطابق بـ SHA-256)",
-    safetyChecklistTitle = "قائمة التحقق الإلزامية قبل الفورمات",
+    safetyChecklistTitle = "قبل الفورمات، تأكد من هذه النقاط",
     safetyCheck1 = "أدرك أن النسخ الاحتياطي يحفظ ملفات تثبيت التطبيقات (APK/APKS) فقط ولا يشمل البيانات الداخلية أو محادثات واتساب أو الصور.",
     safetyCheck2 = "إذا تم الحفظ في الذاكرة الداخلية، يجب نقل مجلد النسخة إلى فلاشة USB OTG أو بطاقة SD أو كمبيوتر قبل مسح الجهاز.",
     safetyCheck3 = "تأكدت من أخذ نسخة احتياطية منفصلة لرموز التحقق الثنائي (2FA) وكلمات المرور.",
     confirmChecklistAndFinish = "تأكيد القائمة واعتماد النسخة الاحتياطية",
     verifyBackupIntegrityBtn = "فحص تطابق SHA-256 لجميع الملفات",
-    backupVerifiedSuccess = "تم التحقق من سلامة النسخة الاحتياطية (100% متطابق مع manifest.json)",
+    backupVerifiedSuccess = "النسخة سليمة: كل الملفات طابقت بصمتها",
     selectBackupFolderToRestore = "اختيار مجلد ShareAPK_Backup للاسترجاع",
     startBatchRestoreBtn = "بدء الاسترجاع المتسلسل للتطبيقات المحددة",
     statusNotInstalled = "غير مثبت (محدد افتراضياً)",
@@ -744,8 +771,8 @@ val ArabicStrings = AppStrings(
     navMore = "المزيد",
     moreTitle = "المزيد",
     thisDeviceSub = "اسم هذا الجهاز عند الآخرين",
-    tileBackupTitle = "النسخ الاحتياطي",
-    tileBackupSub = "قبل الفلاش والاستعادة",
+    tileBackupTitle = "النسخ والاستعادة",
+    tileBackupSub = "ملفات تثبيت تطبيقاتك قبل الفورمات",
     tileHistoryTitle = "السجل",
     tileHistorySub = "المرسَل والمستلَم والمحفوظ",
     tileInstallTitle = "تثبيت من ملف",
@@ -863,6 +890,15 @@ val ArabicStrings = AppStrings(
 
 val EnglishStrings = AppStrings(
     x = ExtraStrings(
+        backupScopeNote = "The backup holds the apps' install files (APK) only: not their data, accounts or your photos. Back up important data its own way.",
+        backupVerifiedAppsFormat = "Verified: %s",
+        backupRecopyFormat = "Needs copying again: %s",
+        sendHowTitle = "Send where?",
+        sendNearbyOption = "A nearby device",
+        sendNearbyHint = "A phone or computer with ShareAPK or LocalSend on the same network",
+        sendBrowserOption = "A computer's browser",
+        sendBrowserHint = "Any computer on the same network, nothing to install. It will see what you picked:",
+        moreOtherTitle = "Other tools",
         spaceNeededLabel = "Needed",
         spaceFreeLabel = "Free",
         selectAllCheck = "Select all",
@@ -1054,22 +1090,22 @@ val EnglishStrings = AppStrings(
     wifiServerSubtitle = "Scan the QR code or open the URL in any browser on the same Wi-Fi network or hotspot",
     stopServerBtn = "Stop Server Now",
     autoStopCountdown = "Auto-stops in:",
-    backupRestoreHeader = "Pre-Flash Full Backup & Batch Restore",
-    tabCreateBackup = "Create Full Backup",
-    tabRestoreBackup = "Restore from Folder",
+    backupRestoreHeader = "Save your apps' install files before a reset, restore them after",
+    tabCreateBackup = "Copy install files",
+    tabRestoreBackup = "Restore",
     includeSystemAppsToggle = "Include System Apps",
     selectAllBtn = "Select All",
     selectNoneBtn = "Select None",
     chooseDestinationBtn = "Pick Destination Folder (SAF / USB / SD)",
-    startFullBackupBtn = "Start Full Pre-Flash Backup",
+    startFullBackupBtn = "Start copying",
     resumeBackupBtn = "Resume Backup (Skip Matching SHA-256)",
-    safetyChecklistTitle = "Mandatory Pre-Flash Safety Checklist",
+    safetyChecklistTitle = "Before resetting, confirm these",
     safetyCheck1 = "I understand that APK backup saves app installers only and does NOT include internal app data, WhatsApp chats, or photos.",
     safetyCheck2 = "If saving to internal storage, I must move the backup folder to an external USB OTG, SD card, or PC before wiping the device.",
     safetyCheck3 = "I have backed up my account 2FA codes and passwords separately.",
     confirmChecklistAndFinish = "Confirm Safety Checklist & Complete",
     verifyBackupIntegrityBtn = "Re-Verify All Files via SHA-256",
-    backupVerifiedSuccess = "Backup Verified: All APK files match manifest.json SHA-256 hashes",
+    backupVerifiedSuccess = "Backup is sound: every file matched its checksum",
     selectBackupFolderToRestore = "Select ShareAPK_Backup_* Folder",
     startBatchRestoreBtn = "Start Sequential Batch Restore",
     statusNotInstalled = "Not Installed (Selected)",
@@ -1105,8 +1141,8 @@ val EnglishStrings = AppStrings(
     navMore = "More",
     moreTitle = "More",
     thisDeviceSub = "How other devices see this phone",
-    tileBackupTitle = "Backup",
-    tileBackupSub = "Pre-flash backup & restore",
+    tileBackupTitle = "Backup & restore",
+    tileBackupSub = "Your apps' install files before a reset",
     tileHistoryTitle = "History",
     tileHistorySub = "Sent, received and saved",
     tileInstallTitle = "Install from file",

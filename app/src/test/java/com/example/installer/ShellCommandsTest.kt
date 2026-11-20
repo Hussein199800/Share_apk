@@ -52,4 +52,12 @@ class BatchSummaryTest {
         assertEquals(3, merged.installedCount)
         assertEquals(1, merged.skippedCount)
     }
+
+    @Test fun lateSuccessMovesASkippedAppToInstalledOnce() {
+        val s = BatchRestoreSummary(listOf(app("a")), listOf(app("b") to "x"), listOf(app("c")))
+        val p = s.promote("c").promote("c").promote("b")
+        assertEquals(listOf("a", "c", "b"), p.installed.map { it.entry.packageName })
+        assertTrue(p.skipped.isEmpty() && p.failed.isEmpty())
+        assertEquals(p, p.promote("zzz"))
+    }
 }

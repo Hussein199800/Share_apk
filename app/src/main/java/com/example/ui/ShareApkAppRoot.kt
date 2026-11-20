@@ -496,7 +496,12 @@ fun ShareApkAppRoot(
                 onAddManual = viewModel::addManualPeer,
                 onCancel = viewModel::cancelSend,
                 onReset = viewModel::resetSend,
-                onDismiss = viewModel::closeDevicePicker
+                onDismiss = viewModel::closeDevicePicker,
+                itemNames = when (target) {
+                    ShareApkViewModel.SendTarget.FILES -> pickedFiles.map { it.text?.take(40) ?: it.name.substringAfterLast('/') }
+                    ShareApkViewModel.SendTarget.APPS -> apps.filter { it.packageName in selectedPackageNames }.map { it.label }
+                },
+                onBrowser = { viewModel.closeDevicePicker(); showWebShare = true; viewModel.startWebShare() }
             )
         }
         if (showUpdateSheet) {

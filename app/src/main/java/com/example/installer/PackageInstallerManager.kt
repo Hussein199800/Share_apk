@@ -266,7 +266,9 @@ class PackageInstallerManager(
      */
     suspend fun installFromBackupEntry(
         entry: com.example.data.model.BackupAppEntry,
-        open: (com.example.data.model.BackupFileEntry) -> java.io.InputStream?
+        open: (com.example.data.model.BackupFileEntry) -> java.io.InputStream?,
+        /** Called with the session id just before commit, so the caller can match the result to this app. */
+        onSessionCommitting: (Int) -> Unit = {}
     ) = withContext(Dispatchers.IO) {
         if (entry.files.isEmpty()) throw IllegalStateException("No APK files in backup for ${entry.packageName}")
         val packageInstaller = packageManager.packageInstaller
@@ -287,6 +289,7 @@ class PackageInstallerManager(
                     }
                 }
             }
+            onSessionCommitting(sessionId)
             commitSessionWithReceiver(session, sessionId, entry.packageName)
         } catch (e: Exception) {
             session.abandon()

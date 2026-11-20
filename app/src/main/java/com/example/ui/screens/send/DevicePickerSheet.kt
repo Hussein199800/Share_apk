@@ -1,5 +1,6 @@
 package com.example.ui.screens.send
 
+import com.example.ui.components.design.ChoiceChipRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -77,10 +78,15 @@ fun DevicePickerSheet(
     onAddManual: (String) -> Unit,
     onCancel: () -> Unit,
     onReset: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Names of what is being sent, listed when the browser is chosen. */
+    itemNames: List<String> = emptyList(),
+    /** Opens the "From browser" page instead; null hides the choice. */
+    onBrowser: (() -> Unit)? = null
 ) {
     val s = LocalAppStrings.current
     val c = ShareApkTheme.colors
+    var viaBrowser by remember { mutableStateOf(false) }
     var showManual by remember { mutableStateOf(false) }
     var address by remember { mutableStateOf("") }
     LaunchedEffect(manualResult) { if (manualResult == true) showManual = false }
@@ -94,29 +100,43 @@ fun DevicePickerSheet(
             }
             IconActionButton(Icons.Outlined.Refresh, s.refreshAction, onRefresh, Modifier.testTag("send_refresh"))
         }
-        if (sendState !is SendState.Idle) SendStatusCard(sendState, onCancel, onReset)
-        if (scanning) GradientProgressBar(progress = null, height = 4.dp)
-        Column(
-            Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap)
-        ) {
-            if (peers.isEmpty()) {
-                Text(
-                    if (scanning) s.scanningNetwork else s.nearbyEmpty,
-                    style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant,
-                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
-                )
+        // Where to: a nearby device (LocalSend protocol) or any computer's browser.
+        if (onBrowser != null) {
+            ChoiceChipRow(listOf(false to s.sendNearbyOption, true to s.sendBrowserOption), viaBrowser, onSelect = { viaBrowser = it })
+        }
+        if (viaBrowser && onBrowser != null) {
+            Text(s.sendBrowserHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+            itemNames.take(5).forEach { n ->
+                Text("• $n", style = MaterialTheme.typography.bodyMedium, color = c.onBackground, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
-            peers.forEach { peer -> DeviceRow(peer, enabled = itemsCount > 0 && sendState !is SendState.Sending) { onSendTo(peer) } }
-        }
-        if (showManual) {
-            LtrBox { TextInputField(address, { address = it.trim() }, s.manualAddressHint) }
-            if (manualResult == false) StatusBadge(s.manualAddressNotFound, BadgeTone.Warning)
-            PrimaryButton(s.addBtn, { onAddManual(address) }, Modifier.fillMaxWidth(), enabled = address.isNotBlank())
+            if (itemNames.size > 5) Text("…", color = c.onSurfaceVariant)
+            PrimaryButton(s.webShareBtn, onBrowser, Modifier.fillMaxWidth().testTag("send_via_browser"), height = ShareApkTokens.SheetButtonHeight)
         } else {
-            SecondaryButton(s.manualAddressBtn, { showManual = true }, Modifier.fillMaxWidth())
+            Text(s.sendNearbyHint, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+            if (sendState !is SendState.Idle) SendStatusCard(sendState, onCancel, onReset)
+            if (scanning) GradientProgressBar(progress = null, height = 4.dp)
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(ShareApkTokens.CardGap)
+            ) {
+                if (peers.isEmpty()) {
+                    Text(
+                        if (scanning) s.scanningNetwork else s.nearbyEmpty,
+                        style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                peers.forEach { peer -> DeviceRow(peer, enabled = itemsCount > 0 && sendState !is SendState.Sending) { onSendTo(peer) } }
+            }
+            if (showManual) {
+                LtrBox { TextInputField(address, { address = it.trim() }, s.manualAddressHint) }
+                if (manualResult == false) StatusBadge(s.manualAddressNotFound, BadgeTone.Warning)
+                PrimaryButton(s.addBtn, { onAddManual(address) }, Modifier.fillMaxWidth(), enabled = address.isNotBlank())
+            } else {
+                SecondaryButton(s.manualAddressBtn, { showManual = true }, Modifier.fillMaxWidth())
+            }
+            Text(s.pickerTip, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
         }
-        Text(s.pickerTip, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
     }
 }
 

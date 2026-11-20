@@ -11,6 +11,17 @@ data class ChangelogEntry(val version: String, val ar: List<String>, val en: Lis
 object Changelog {
     val entries = listOf(
         ChangelogEntry(
+            "3.3.1",
+            ar = listOf(
+                "الاستعادة الجماعية أدق: كل نتيجة تثبيت تُربط بتطبيقها، فلا يُسجَّل تطبيق في القائمة الخطأ عند التخطي أو الإلغاء، والتطبيق الذي ثُبّت بعد تخطّيه يظهر في «نجح».",
+                "واجهة أوضح: «النسخ والاستعادة» تشرح أن النسخة ملفات تثبيت فقط وتعرض عدد التطبيقات السليمة وما يحتاج إعادة نسخ، وزر الإرسال يسألك: جهاز قريب أم متصفح حاسوب، و«المزيد» يبرز أهم أداتين."
+            ),
+            en = listOf(
+                "More accurate batch restore: each install result is tied to its own app, so skipping or cancelling never puts an app in the wrong list, and an app installed after being skipped shows as installed.",
+                "Clearer screens: Backup & restore explains it saves install files only and shows how many apps are sound and which need copying again, Send asks: a nearby device or a computer's browser, and More highlights the two main tools."
+            )
+        ),
+        ChangelogEntry(
             "3.3.0",
             ar = listOf(
                 "النسخ الاحتياطي المضغوط: خيار «ضغط النسخة (ZIP)» مفعّل افتراضياً، فتأخذ النسخة مساحة أقل.",
